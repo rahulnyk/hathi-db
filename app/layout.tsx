@@ -39,8 +39,8 @@ export default function RootLayout({
                 >
                     <main className="min-h-screen flex flex-col items-center">
                         {/* <div className="flex-1 w-full flex flex-col gap-20 items-center"> */}
-                        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 sticky top-0 bg-background z-50">
-                            <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
+                        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-14 sticky top-0 bg-background z-50">
+                            <div className="w-full flex justify-between items-center p-3 px-4 text-sm">
                                 <ThemeSwitcher />
                                 {!hasEnvVars ? (
                                     <EnvVarWarning />
@@ -49,7 +49,7 @@ export default function RootLayout({
                                 )}
                             </div>
                         </nav>
-                        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
+                        <div className="flex-1 flex flex-col gap-20 w-full p-5">
                             {children}
                         </div>
                     </main>
