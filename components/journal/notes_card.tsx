@@ -9,6 +9,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import remarkGfm from "remark-gfm";
 
 export function NoteCard({ note }: { note: Note }) {
     return (
@@ -40,7 +41,9 @@ export function NoteCard({ note }: { note: Note }) {
 
             {/* Note content */}
             <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{note.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {note.content}
+                </ReactMarkdown>
             </div>
         </div>
     );
