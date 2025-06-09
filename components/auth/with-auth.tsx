@@ -19,6 +19,6 @@ export function withAuth<P extends { user: User }>(
         }
 
         // Combine the passed props with the user prop
-        return <Component {...(props as any)} user={data.user} />;
+        return <Component {...(props as P)} user={data.user} />;
     };
 }

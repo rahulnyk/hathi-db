@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Lexend } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
-import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
+import { ReduxProvider } from "@/store/provider";
+import clsx from "clsx";
 
 const defaultUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -17,8 +17,13 @@ export const metadata: Metadata = {
     description: "The fastest way to build apps with Next.js and Supabase",
 };
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+// const quickSand = Quicksand({
+//     variable: "--font-quicksand",
+//     display: "swap",
+//     subsets: ["latin"],
+// });
+const lexend = Lexend({
+    variable: "--font-lexend",
     display: "swap",
     subsets: ["latin"],
 });
@@ -30,27 +35,29 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${geistSans.className} antialiased`}>
+            <body className={`${lexend.className} antialiased`}>
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <main className="min-h-screen flex flex-col items-center">
-                        {/* <div className="flex-1 w-full flex flex-col gap-20 items-center"> */}
-                        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-14 sticky top-0 bg-background z-50">
-                            <div className="w-full flex justify-between items-center p-3 px-4 text-sm">
+                    <main className="min-h-screen flex">
+                        <nav
+                            className={clsx(
+                                "h-screen fixed left-0 flex flex-col",
+                                "backdrop-blur-xl bg-white/50 dark:bg-zinc-800/50",
+                                "border-r border-foreground/10",
+                                "w-12"
+                            )}
+                        >
+                            <div className="flex flex-col gap-4 justify-center items-center pt-4">
                                 <ThemeSwitcher />
-                                {!hasEnvVars ? (
-                                    <EnvVarWarning />
-                                ) : (
-                                    <AuthButton />
-                                )}
+                                <AuthButton />
                             </div>
                         </nav>
-                        <div className="flex-1 flex flex-col gap-20 w-full p-5">
-                            {children}
+                        <div className="flex-1 p-5 bg-zinc-50 dark:bg-zinc-900">
+                            <ReduxProvider>{children}</ReduxProvider>
                         </div>
                     </main>
                 </ThemeProvider>
