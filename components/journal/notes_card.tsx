@@ -12,7 +12,7 @@ import {
 
 export function NoteCard({ note }: { note: Note }) {
     return (
-        <div className="p-4 rounded-lg bg-muted/40 dark:bg-muted/20 relative">
+        <div className="p-3 sm:p-4 rounded-lg bg-muted/40 dark:bg-muted/20 relative">
             {/* Show error icon only if persistence failed */}
             {note.persistenceStatus === "failed" && (
                 <div className="absolute top-3 right-3">

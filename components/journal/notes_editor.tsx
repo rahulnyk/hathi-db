@@ -44,18 +44,19 @@ export function NotesEditor({ user }: { user: User }) {
     };
 
     return (
-        <div className="border rounded p-4">
+        <div className="border rounded p-4 sm:p-6">
             <form onSubmit={handleSubmit}>
                 <Textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
+                    className="w-full" // Ensure it takes full width
                 />
-                <div className="flex justify-end items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-end items-center mt-4">
                     <Button
                         type="submit"
                         disabled={isSubmitting || !content.trim()}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 w-full sm:w-auto"
                     >
                         {isSubmitting ? "Saving..." : "Save Note"}
                     </Button>

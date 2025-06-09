@@ -8,7 +8,7 @@ export default function JournalLayout({
     return (
         <>
             <Nav />
-            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-12 mr-0">
+            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-0 md:ml-64 mr-0">
                 {children}
             </div>
         </>
