@@ -4,7 +4,6 @@ import { User } from "@supabase/supabase-js";
 import { NotesPanel } from "@/components/journal/notes_panel";
 // import clsx from "clsx";
 import { cn } from "@/lib/utils";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 export function JournalComponent({ user }: { user: User }) {
     // const [isRightColumnVisible, setIsRightColumnVisible] = useState(false);
     return (
