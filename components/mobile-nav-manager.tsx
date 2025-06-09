@@ -15,7 +15,7 @@ export function MobileNavManager({ children }: { children: ReactNode }) {
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="main-nav-panel" // This ID now refers to the div below
                 className={cn(
-                    "md:hidden fixed top-4 left-4 z-[51] p-2 rounded-md", // z-[51] to be above nav panel (z-50)
+                    "md:hidden fixed top-4 left-4 z-[51] p-2 rounded-full", // z-[51] to be above nav panel (z-50)
                     "text-foreground bg-background/80 backdrop-blur-sm hover:bg-muted"
                 )}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -45,7 +45,8 @@ export function MobileNavManager({ children }: { children: ReactNode }) {
                     // Background is now part of the Nav component rendered as children
                 )}
             >
-                {children} {/* Nav component is rendered inside this static container */}
+                {children}{" "}
+                {/* Nav component is rendered inside this static container */}
             </div>
         </>
     );
