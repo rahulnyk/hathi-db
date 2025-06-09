@@ -17,7 +17,7 @@ export function JournalComponent({ user }: { user: User }) {
             <div
                 className={cn(
                     "p-6 md:p-12 mx-auto my-auto overflow-y-auto", // Adjusted padding for consistency
-                    "lg:w-2/3 lg:flex", // Desktop: 2/3 width, flex
+                    "lg:w-3/4 lg:flex", // Desktop: 3/4 width, flex
                     showSuggestions ? "hidden lg:flex" : "flex w-full" // Mobile: hidden if suggestions shown, else full width
                 )}
             >
@@ -29,7 +29,7 @@ export function JournalComponent({ user }: { user: User }) {
                 className={cn(
                     "sticky flex-col top-0 h-screen overflow-y-auto pt-6 md:pt-12",
                     "bg-zinc-100 dark:bg-zinc-800",
-                    "lg:w-1/3 lg:flex lg:border-l lg:border-foreground/10", // Desktop: 1/3 width, flex, border
+                    "lg:w-1/4 lg:flex lg:border-l lg:border-foreground/10", // Desktop: 1/4 width, flex, border
                     showSuggestions ? "flex w-full z-10" : "hidden lg:flex" // Mobile: full width if shown (z-10 to be sure it's on top if needed), else hidden
                                                                             // No border-l on mobile full-width view
                 )}

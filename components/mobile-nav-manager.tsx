@@ -1,69 +1,52 @@
 "use client";
 
-import React, { useState, Children, cloneElement, isValidElement, ReactElement } from "react";
+import { useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Define an interface for the expected props of the child Nav component
-// This helps ensure MobileNavManager interacts correctly with Nav.
-interface NavComponentProps {
-    className?: string;
-    id?: string;
-    // Add any other props that Nav might have and MobileNavManager might need to interact with,
-    // though primarily className and id are relevant here.
-}
-
-export function MobileNavManager({ children }: { children: ReactElement<NavComponentProps> }) {
+export function MobileNavManager({ children }: { children: ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    // Ensure 'children' is a single, valid React element (the Nav component).
-    const navChild = Children.only(children);
-
-    if (!isValidElement(navChild)) {
-        // In a real app, you might throw an error or return a fallback UI.
-        console.error("MobileNavManager expects a single valid ReactElement child (the Nav component).");
-        return null;
-    }
-
-    // Determine the ID for ARIA attributes. Prefer the ID from the Nav component itself.
-    // Fallback to "main-nav-panel" if Nav doesn't provide an ID.
-    const navId = navChild.props.id || "main-nav-panel";
 
     return (
         <>
-            {/* Hamburger Menu Button */}
+            {/* Hamburger Button (remains mostly the same) */}
             <button
                 aria-label="Toggle navigation menu"
                 aria-expanded={isMobileMenuOpen}
-                aria-controls={navId} // Links to the Nav panel via its ID
+                aria-controls="main-nav-panel" // This ID now refers to the div below
                 className={cn(
                     "md:hidden fixed top-4 left-4 z-[51] p-2 rounded-md", // z-[51] to be above nav panel (z-50)
-                    "text-foreground bg-background/80 backdrop-blur-sm hover:bg-muted" // Basic styling
+                    "text-foreground bg-background/80 backdrop-blur-sm hover:bg-muted"
                 )}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
 
-            {/* Clone the Nav component (passed as children) and apply dynamic classes */}
-            {/* The original Nav component should have its own base classes for:
-                - Fixed positioning (fixed, top-0, left-0, h-screen, z-50)
-                - Styling (background, border, width like w-64)
-                - Initial transform state for mobile (e.g., "-translate-x-full")
-                - Transform state for desktop (e.g., "md:translate-x-0")
-                - Transition classes (e.g., "transition-transform duration-300 ease-in-out")
-            */}
-            {cloneElement(navChild, {
-                // Merge existing className from Nav with dynamic classes from MobileNavManager
-                className: cn(
-                    navChild.props.className, // Keep original classes from Nav
-                    isMobileMenuOpen ? "translate-x-0" : "-translate-x-full", // On mobile, toggle based on state
-                    "md:translate-x-0" // On desktop, ensure it's visible (overrides mobile's -translate-x-full)
-                ),
-                // Ensure the Nav component has an id for aria-controls.
-                // If navChild.props.id was undefined, this assigns the determined navId.
-                id: navId
-            })}
+            {/* Mobile Nav Panel (rendered by MobileNavManager) */}
+            <div
+                id="main-nav-panel" // ID for ARIA
+                className={cn(
+                    "md:hidden fixed top-0 left-0 h-screen w-14 z-50",
+                    "border-r border-foreground/10", // Border for the panel
+                    "transform transition-transform duration-300 ease-in-out",
+                    isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+                    // Background is now part of the Nav component rendered as children
+                )}
+            >
+                {children} {/* Nav component is rendered inside this panel */}
+            </div>
+
+            {/* Desktop Nav Container (static) */}
+            <div
+                className={cn(
+                    "hidden md:block fixed top-0 left-0 h-screen w-14 z-50",
+                    "border-r border-foreground/10" // Border for the panel
+                    // Background is now part of the Nav component rendered as children
+                )}
+            >
+                {children} {/* Nav component is rendered inside this static container */}
+            </div>
         </>
     );
 }
