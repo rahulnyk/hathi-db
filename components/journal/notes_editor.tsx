@@ -49,7 +49,7 @@ export function NotesEditor({ user }: { user: User }) {
                 <Textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Write your note in markdown format..."
+                    placeholder="Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
                 />
                 <div className="flex justify-end items-center">
                     <Button

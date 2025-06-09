@@ -15,6 +15,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                     "min-h-48 mb-4 bg-transparent border-none outline-none",
                     "focus:ring-0 focus:border-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
                     "disabled:cursor-not-allowed disabled:opacity-50",
+                    "resize",
                     // "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     className
                 )}
