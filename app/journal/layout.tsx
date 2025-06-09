@@ -1,3 +1,4 @@
+import { MobileNavManager } from "@/components/mobile-nav-manager";
 import { Nav } from "@/components/nav";
 
 export default function JournalLayout({
@@ -7,8 +8,10 @@ export default function JournalLayout({
 }) {
     return (
         <>
-            <Nav />
-            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-0 md:ml-64 mr-0">
+            <MobileNavManager>
+                <Nav />
+            </MobileNavManager>
+            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-0 md:ml-64"> {/* Adjusted margin */}
                 {children}
             </div>
         </>
