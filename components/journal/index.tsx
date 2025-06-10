@@ -6,7 +6,7 @@ import { SuggestionsPanel } from "./suggestions_panel";
 import { TogglePanelButton } from "./toggle_panel_button";
 import { createContext } from "react";
 
-export const UserContext = createContext<User | null>(null);
+export const UserContext = createContext<User>(null!); // Create a context for user, initialized with null
 
 export function JournalComponent({ user }: { user: User }) {
     const [showSuggestions, setShowSuggestions] = useState(false);

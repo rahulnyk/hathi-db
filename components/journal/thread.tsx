@@ -10,9 +10,6 @@ import { UserContext } from "@/components/journal";
 
 export function Thread() {
     const user = useContext(UserContext);
-    if (!user) {
-        return <div className="text-red-500">User not authenticated</div>;
-    }
     const dispatch = useAppDispatch();
     const { notes, collectionStatus, collectionError } = useAppSelector(
         (state) => state.notes

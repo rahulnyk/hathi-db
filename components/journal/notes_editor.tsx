@@ -15,9 +15,7 @@ import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 export function NotesEditor() {
     const user = useContext(UserContext);
-    if (!user) {
-        return <div className="text-red-500">User not authenticated</div>;
-    }
+
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const dispatch = useAppDispatch();
