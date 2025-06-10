@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import {
     addNote,
     addNoteOptimistically,
@@ -10,11 +10,16 @@ import {
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ArrowDownToLine } from "lucide-react";
 
 export function NotesEditor({ user }: { user: User }) {
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const dispatch = useAppDispatch();
+    // Get currentContext from the Redux store
+    const currentContext = useAppSelector(
+        (state) => state.notes.currentContext
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,8 +27,12 @@ export function NotesEditor({ user }: { user: User }) {
 
         setIsSubmitting(true);
 
-        // Create optimistic note with "pending" status
-        const optimisticNote = createOptimisticNote(content, user.id);
+        // Create optimistic note with "pending" status, passing currentContext
+        const optimisticNote = createOptimisticNote(
+            content,
+            user.id,
+            currentContext // Pass currentContext here
+        );
 
         // Add to UI immediately
         dispatch(addNoteOptimistically(optimisticNote));
@@ -37,6 +46,8 @@ export function NotesEditor({ user }: { user: User }) {
                 content,
                 userId: user.id,
                 tempId: optimisticNote.id,
+                key_context: optimisticNote.key_context || currentContext, // Pass key_context from optimistic note
+                // contexts and tags will default to [] in the thunk if not provided
             })
         ).finally(() => {
             setIsSubmitting(false);
@@ -58,7 +69,14 @@ export function NotesEditor({ user }: { user: User }) {
                         disabled={isSubmitting || !content.trim()}
                         className="flex items-center gap-2 w-full sm:w-auto"
                     >
-                        {isSubmitting ? "Saving..." : "Save Note"}
+                        {isSubmitting ? (
+                            "Saving..."
+                        ) : (
+                            <>
+                                <ArrowDownToLine className="h-4 w-4 mr-1" />
+                                Save Note
+                            </>
+                        )}
                     </Button>
                 </div>
             </form>
