@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { createClient } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { dateToSlug } from "@/lib/utils"; // Import the utility function
 
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
@@ -12,18 +13,23 @@ export type Note = {
     user_id: string;
     persistenceStatus: PersistenceStatus;
     errorMessage?: string; // Optional error message for failed persistence
+    key_context?: string; // Optional: Main context/type of the note
+    contexts?: string[]; // Optional: Array of additional contexts
+    tags?: string[]; // Optional: Array of tags
 };
 
 interface NotesState {
     notes: Note[];
     collectionStatus: "idle" | "loading" | "succeeded" | "failed";
     collectionError: string | null;
+    currentContext: string; // Slug of the current date context
 }
 
 const initialState: NotesState = {
     notes: [],
     collectionStatus: "idle",
     collectionError: null,
+    currentContext: dateToSlug(new Date()), // Default to today's date slug
 };
 
 const supabase = createClient();
@@ -35,7 +41,7 @@ export const fetchNotes = createAsyncThunk(
         try {
             const { data, error } = await supabase
                 .from("notes")
-                .select("*")
+                .select("*") // This will fetch all columns including new ones
                 .eq("user_id", userId)
                 .order("created_at", { ascending: false });
 
@@ -59,14 +65,31 @@ export const addNote = createAsyncThunk(
             content,
             userId,
             tempId,
-        }: { content: string; userId: string; tempId: string },
+            key_context, // key_context will be passed from the optimistic note
+            contexts, // Optional contexts
+            tags, // Optional tags
+        }: {
+            content: string;
+            userId: string;
+            tempId: string;
+            key_context: string;
+            contexts?: string[];
+            tags?: string[];
+        },
         { rejectWithValue }
     ) => {
         try {
+            const noteToInsert = {
+                content,
+                user_id: userId,
+                key_context,
+                contexts: contexts || [], // Default to empty array if undefined
+                tags: tags || [], // Default to empty array if undefined
+            };
             const { data, error } = await supabase
                 .from("notes")
-                .insert([{ content, user_id: userId }])
-                .select();
+                .insert([noteToInsert])
+                .select(); // Selects the inserted row with all its fields
 
             if (error) throw error;
 
@@ -141,6 +164,9 @@ const notesSlice = createSlice({
                 state.notes[noteIndex].persistenceStatus = status;
                 if (errorMessage) {
                     state.notes[noteIndex].errorMessage = errorMessage;
+                } else {
+                    // Clear error message if status is not 'failed'
+                    delete state.notes[noteIndex].errorMessage;
                 }
             }
         },
@@ -154,6 +180,10 @@ const notesSlice = createSlice({
             if (noteIndex !== -1) {
                 state.notes[noteIndex].persistenceStatus = "deleting";
             }
+        },
+        // Reducer to update currentContext if needed, e.g., when user navigates to a different date
+        setCurrentContext: (state, action: PayloadAction<string>) => {
+            state.currentContext = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -184,7 +214,12 @@ const notesSlice = createSlice({
                 const noteIndex = state.notes.findIndex((n) => n.id === tempId);
 
                 if (noteIndex !== -1) {
-                    state.notes[noteIndex] = note;
+                    // Ensure all fields from the server response are updated
+                    state.notes[noteIndex] = {
+                        ...state.notes[noteIndex], // Keep any client-side only fields if necessary
+                        ...note, // Overwrite with server data
+                        persistenceStatus: "persisted", // Explicitly set persisted
+                    };
                 }
             })
             .addCase(addNote.rejected, (state, action: any) => {
@@ -228,12 +263,17 @@ export const {
     addNoteOptimistically,
     updateNotePersistenceStatus,
     markNoteAsDeleting,
+    setCurrentContext, // Export the new reducer
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
 
 // Helper function to create an optimistic note
-export const createOptimisticNote = (content: string, userId: string): Note => {
+export const createOptimisticNote = (
+    content: string,
+    userId: string,
+    currentContext: string // Pass currentContext to set as key_context
+): Note => {
     const now = new Date().toISOString();
     return {
         id: uuidv4(), // Generate temporary ID
@@ -241,5 +281,8 @@ export const createOptimisticNote = (content: string, userId: string): Note => {
         created_at: now,
         user_id: userId,
         persistenceStatus: "pending", // Initially pending persistence
+        key_context: currentContext, // Set key_context from current state context
+        contexts: [], // Default to empty array
+        tags: [], // Default to empty array
     };
 };
