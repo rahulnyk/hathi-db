@@ -11,7 +11,8 @@ export default function JournalLayout({
             <MobileNavManager>
                 <Nav />
             </MobileNavManager>
-            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-0 md:ml-14"> {/* Adjusted margin for w-14 Nav */}
+            <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 ml-0 md:ml-14">
+                {/* Adjusted margin for w-14 Nav */}
                 {children}
             </div>
         </>
