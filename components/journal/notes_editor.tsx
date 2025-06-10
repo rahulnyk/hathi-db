@@ -34,7 +34,8 @@ export function NotesEditor() {
         const optimisticNote = createOptimisticNote(
             content,
             user.id,
-            currentContext // Pass currentContext here
+            currentContext,
+            "note"
         );
 
         // Add to UI immediately

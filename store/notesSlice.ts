@@ -6,6 +6,9 @@ import { dateToSlug } from "@/lib/utils"; // Import the utility function
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
 
+// Define possible note types
+export type NoteType = "note" | "todo" | null;
+
 export type Note = {
     id: string;
     content: string;
@@ -16,6 +19,7 @@ export type Note = {
     key_context?: string; // Optional: Main context/type of the note
     contexts?: string[]; // Optional: Array of additional contexts
     tags?: string[]; // Optional: Array of tags
+    note_type?: NoteType; // Optional: Type of note (note, todo, or null)
 };
 
 interface NotesState {
@@ -65,9 +69,10 @@ export const addNote = createAsyncThunk(
             content,
             userId,
             tempId,
-            key_context, // key_context will be passed from the optimistic note
-            contexts, // Optional contexts
-            tags, // Optional tags
+            key_context,
+            contexts,
+            tags,
+            note_type = "note", // Default to 'note' if not specified
         }: {
             content: string;
             userId: string;
@@ -75,6 +80,7 @@ export const addNote = createAsyncThunk(
             key_context: string;
             contexts?: string[];
             tags?: string[];
+            note_type?: NoteType;
         },
         { rejectWithValue }
     ) => {
@@ -83,8 +89,9 @@ export const addNote = createAsyncThunk(
                 content,
                 user_id: userId,
                 key_context,
-                contexts: contexts || [], // Default to empty array if undefined
-                tags: tags || [], // Default to empty array if undefined
+                contexts: contexts || [],
+                tags: tags || [],
+                note_type, // Include note_type in the database insertion
             };
             const { data, error } = await supabase
                 .from("notes")
@@ -272,7 +279,8 @@ export default notesSlice.reducer;
 export const createOptimisticNote = (
     content: string,
     userId: string,
-    currentContext: string // Pass currentContext to set as key_context
+    currentContext: string,
+    note_type: NoteType = "note" // Default to 'note' if not specified
 ): Note => {
     const now = new Date().toISOString();
     return {
@@ -284,5 +292,6 @@ export const createOptimisticNote = (
         key_context: currentContext, // Set key_context from current state context
         contexts: [], // Default to empty array
         tags: [], // Default to empty array
+        note_type, // Include the note_type in the optimistic note
     };
 };
