@@ -7,12 +7,15 @@ import {
     addNoteOptimistically,
     createOptimisticNote,
 } from "@/store/notesSlice";
-import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowDownToLine } from "lucide-react";
 
-export function NotesEditor({ user }: { user: User }) {
+import { useContext } from "react";
+import { UserContext } from "@/components/journal";
+export function NotesEditor() {
+    const user = useContext(UserContext);
+
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const dispatch = useAppDispatch();
