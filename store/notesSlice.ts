@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
 // Enhanced persistence status
-export type PersistenceStatus = "pending" | "persisted" | "failed";
+export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
 
 export type Note = {
     id: string;
@@ -88,6 +88,34 @@ export const addNote = createAsyncThunk(
     }
 );
 
+// New async thunk for deleting notes
+export const deleteNote = createAsyncThunk(
+    "notes/deleteNote",
+    async (
+        { noteId, userId }: { noteId: string; userId: string },
+        { rejectWithValue }
+    ) => {
+        try {
+            const { error } = await supabase
+                .from("notes")
+                .delete()
+                .eq("id", noteId)
+                .eq("user_id", userId);
+
+            if (error) throw error;
+
+            // Return the deleted note ID on success
+            return { noteId };
+        } catch (error: any) {
+            // Return both the error and the note ID for restoring the note
+            return rejectWithValue({
+                error: error?.message,
+                noteId,
+            });
+        }
+    }
+);
+
 const notesSlice = createSlice({
     name: "notes",
     initialState,
@@ -114,6 +142,17 @@ const notesSlice = createSlice({
                 if (errorMessage) {
                     state.notes[noteIndex].errorMessage = errorMessage;
                 }
+            }
+        },
+        // New reducer for optimistic note deletion
+        markNoteAsDeleting: (state, action: PayloadAction<string>) => {
+            const noteId = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].persistenceStatus = "deleting";
             }
         },
     },
@@ -158,6 +197,28 @@ const notesSlice = createSlice({
                     state.notes[noteIndex].persistenceStatus = "failed";
                     state.notes[noteIndex].errorMessage = action.payload.error;
                 }
+            })
+
+            // Handle deleteNote
+            .addCase(deleteNote.pending, (state) => {
+                // No global state change needed
+            })
+            .addCase(deleteNote.fulfilled, (state, action) => {
+                // Remove the note from state on successful deletion
+                const { noteId } = action.payload;
+                state.notes = state.notes.filter((note) => note.id !== noteId);
+            })
+            .addCase(deleteNote.rejected, (state, action: any) => {
+                // Restore the note's status if deletion fails
+                const { noteId, error } = action.payload;
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === noteId
+                );
+
+                if (noteIndex !== -1) {
+                    state.notes[noteIndex].persistenceStatus = "persisted";
+                    state.notes[noteIndex].errorMessage = error;
+                }
             });
     },
 });
@@ -166,6 +227,7 @@ export const {
     clearNotes,
     addNoteOptimistically,
     updateNotePersistenceStatus,
+    markNoteAsDeleting,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;

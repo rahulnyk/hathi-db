@@ -48,7 +48,7 @@ export function Thread({ user }: { user: User }) {
             ) : (
                 <div className="flex flex-col gap-4">
                     {notes.map((note) => (
-                        <NoteCard key={note.id} note={note} />
+                        <NoteCard key={note.id} note={note} user={user} />
                     ))}
                 </div>
             )}
