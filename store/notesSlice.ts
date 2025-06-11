@@ -1,10 +1,18 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { createClient } from "@/lib/supabase/client";
+// import { createClient } from "@/lib/supabase/client"; // Removed direct client import
 import { v4 as uuidv4 } from "uuid";
-import { dateToSlug } from "@/lib/utils"; // Import the utility function
+import { dateToSlug } from "@/lib/utils";
+import {
+    fetchNotes as fetchNotesAction,
+    addNote as addNoteAction,
+    deleteNote as deleteNoteAction,
+} from "@/app/actions/notes"; // Import server actions
 
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
+
+// Define possible note types
+export type NoteType = "note" | "todo" | null;
 
 export type Note = {
     id: string;
@@ -12,48 +20,39 @@ export type Note = {
     created_at: string;
     user_id: string;
     persistenceStatus: PersistenceStatus;
-    errorMessage?: string; // Optional error message for failed persistence
-    key_context?: string; // Optional: Main context/type of the note
-    contexts?: string[]; // Optional: Array of additional contexts
-    tags?: string[]; // Optional: Array of tags
+    errorMessage?: string;
+    key_context?: string;
+    contexts?: string[];
+    tags?: string[];
+    note_type?: NoteType;
 };
 
 interface NotesState {
     notes: Note[];
     collectionStatus: "idle" | "loading" | "succeeded" | "failed";
     collectionError: string | null;
-    currentContext: string; // Slug of the current date context
+    currentContext: string;
 }
 
 const initialState: NotesState = {
     notes: [],
     collectionStatus: "idle",
     collectionError: null,
-    currentContext: dateToSlug(new Date()), // Default to today's date slug
+    currentContext: dateToSlug(new Date()),
 };
 
-const supabase = createClient();
+// const supabase = createClient(); // Removed Supabase client initialization
 
-// Async thunks for API calls
+// Async thunks for API calls using server actions
 export const fetchNotes = createAsyncThunk(
     "notes/fetchNotes",
     async (userId: string, { rejectWithValue }) => {
         try {
-            const { data, error } = await supabase
-                .from("notes")
-                .select("*") // This will fetch all columns including new ones
-                .eq("user_id", userId)
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
-
-            // Mark all fetched notes as persisted
-            return data.map((note) => ({
-                ...note,
-                persistenceStatus: "persisted" as PersistenceStatus,
-            }));
+            const notes = await fetchNotesAction(userId);
+            // The server action already maps persistenceStatus, so no need to map here
+            return notes;
         } catch (error: any) {
-            return rejectWithValue(error?.message);
+            return rejectWithValue(error?.message || "Failed to fetch notes");
         }
     }
 );
@@ -64,10 +63,11 @@ export const addNote = createAsyncThunk(
         {
             content,
             userId,
-            tempId,
-            key_context, // key_context will be passed from the optimistic note
-            contexts, // Optional contexts
-            tags, // Optional tags
+            tempId, // tempId is used for optimistic updates, not passed to server action directly
+            key_context,
+            contexts,
+            tags,
+            note_type = "note",
         }: {
             content: string;
             userId: string;
@@ -75,43 +75,34 @@ export const addNote = createAsyncThunk(
             key_context: string;
             contexts?: string[];
             tags?: string[];
+            note_type?: NoteType;
         },
         { rejectWithValue }
     ) => {
         try {
-            const noteToInsert = {
+            // Call the server action
+            const newNote = await addNoteAction({
                 content,
-                user_id: userId,
+                userId,
                 key_context,
-                contexts: contexts || [], // Default to empty array if undefined
-                tags: tags || [], // Default to empty array if undefined
-            };
-            const { data, error } = await supabase
-                .from("notes")
-                .insert([noteToInsert])
-                .select(); // Selects the inserted row with all its fields
-
-            if (error) throw error;
-
-            // Return both the temp ID and the real data
+                contexts,
+                tags,
+                note_type,
+            });
+            // The server action returns the persisted note with its actual ID
             return {
-                tempId,
-                note: {
-                    ...data[0],
-                    persistenceStatus: "persisted" as PersistenceStatus,
-                },
+                tempId, // Return tempId to update the optimistic note
+                note: newNote, // newNote already has persistenceStatus: "persisted"
             };
         } catch (error: any) {
-            console.log(error);
             return rejectWithValue({
-                error: error?.message,
-                tempId,
+                error: error?.message || "Failed to add note",
+                tempId, // Pass tempId back for error handling in reducer
             });
         }
     }
 );
 
-// New async thunk for deleting notes
 export const deleteNote = createAsyncThunk(
     "notes/deleteNote",
     async (
@@ -119,21 +110,14 @@ export const deleteNote = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const { error } = await supabase
-                .from("notes")
-                .delete()
-                .eq("id", noteId)
-                .eq("user_id", userId);
-
-            if (error) throw error;
-
-            // Return the deleted note ID on success
-            return { noteId };
+            // Call the server action
+            const result = await deleteNoteAction({ noteId, userId });
+            // Server action returns { noteId } on success
+            return result; // This will be { noteId: string }
         } catch (error: any) {
-            // Return both the error and the note ID for restoring the note
             return rejectWithValue({
-                error: error?.message,
-                noteId,
+                error: error?.message || "Failed to delete note",
+                noteId, // Pass noteId back for error handling in reducer
             });
         }
     }
@@ -149,7 +133,6 @@ const notesSlice = createSlice({
         addNoteOptimistically: (state, action: PayloadAction<Note>) => {
             state.notes.unshift(action.payload);
         },
-        // Updated action to set the persistence status
         updateNotePersistenceStatus: (
             state,
             action: PayloadAction<{
@@ -165,30 +148,25 @@ const notesSlice = createSlice({
                 if (errorMessage) {
                     state.notes[noteIndex].errorMessage = errorMessage;
                 } else {
-                    // Clear error message if status is not 'failed'
                     delete state.notes[noteIndex].errorMessage;
                 }
             }
         },
-        // New reducer for optimistic note deletion
         markNoteAsDeleting: (state, action: PayloadAction<string>) => {
             const noteId = action.payload;
             const noteIndex = state.notes.findIndex(
                 (note) => note.id === noteId
             );
-
             if (noteIndex !== -1) {
                 state.notes[noteIndex].persistenceStatus = "deleting";
             }
         },
-        // Reducer to update currentContext if needed, e.g., when user navigates to a different date
         setCurrentContext: (state, action: PayloadAction<string>) => {
             state.currentContext = action.payload;
         },
     },
     extraReducers: (builder) => {
         builder
-            // Handle fetchNotes - affects the entire collection
             .addCase(fetchNotes.pending, (state) => {
                 state.collectionStatus = "loading";
             })
@@ -196,61 +174,52 @@ const notesSlice = createSlice({
                 fetchNotes.fulfilled,
                 (state, action: PayloadAction<Note[]>) => {
                     state.collectionStatus = "succeeded";
-                    state.notes = action.payload;
+                    state.notes = action.payload; // Payload is now directly the array of notes
                 }
             )
             .addCase(fetchNotes.rejected, (state, action) => {
                 state.collectionStatus = "failed";
                 state.collectionError = action.payload as string;
             })
-
-            // Handle addNote - only affects individual notes
             .addCase(addNote.pending, (state) => {
-                // No global state change, individual note is already marked as pending
+                // Optimistic update already handled by addNoteOptimistically
             })
             .addCase(addNote.fulfilled, (state, action) => {
-                // No change to global state, just update the individual note
                 const { tempId, note } = action.payload;
                 const noteIndex = state.notes.findIndex((n) => n.id === tempId);
-
                 if (noteIndex !== -1) {
-                    // Ensure all fields from the server response are updated
+                    // Replace optimistic note with the real one from server
                     state.notes[noteIndex] = {
-                        ...state.notes[noteIndex], // Keep any client-side only fields if necessary
-                        ...note, // Overwrite with server data
-                        persistenceStatus: "persisted", // Explicitly set persisted
+                        ...note, // note from server action already has persistenceStatus: "persisted"
+                        // id is now the real id from the database
                     };
                 }
             })
             .addCase(addNote.rejected, (state, action: any) => {
-                // No change to global state, just update the individual note
-                const tempId = action.payload.tempId;
+                const { tempId, error } = action.payload;
                 const noteIndex = state.notes.findIndex(
                     (note) => note.id === tempId
                 );
                 if (noteIndex !== -1) {
                     state.notes[noteIndex].persistenceStatus = "failed";
-                    state.notes[noteIndex].errorMessage = action.payload.error;
+                    state.notes[noteIndex].errorMessage = error;
                 }
             })
-
-            // Handle deleteNote
             .addCase(deleteNote.pending, (state) => {
-                // No global state change needed
+                // Optimistic update handled by markNoteAsDeleting
             })
             .addCase(deleteNote.fulfilled, (state, action) => {
-                // Remove the note from state on successful deletion
-                const { noteId } = action.payload;
+                const { noteId } = action.payload; // payload is { noteId: string }
                 state.notes = state.notes.filter((note) => note.id !== noteId);
             })
             .addCase(deleteNote.rejected, (state, action: any) => {
-                // Restore the note's status if deletion fails
                 const { noteId, error } = action.payload;
                 const noteIndex = state.notes.findIndex(
                     (note) => note.id === noteId
                 );
-
                 if (noteIndex !== -1) {
+                    // Revert status from "deleting" to "persisted" or "failed"
+                    // Assuming "persisted" is the state before deletion was attempted
                     state.notes[noteIndex].persistenceStatus = "persisted";
                     state.notes[noteIndex].errorMessage = error;
                 }
@@ -263,26 +232,27 @@ export const {
     addNoteOptimistically,
     updateNotePersistenceStatus,
     markNoteAsDeleting,
-    setCurrentContext, // Export the new reducer
+    setCurrentContext,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
 
-// Helper function to create an optimistic note
 export const createOptimisticNote = (
     content: string,
     userId: string,
-    currentContext: string // Pass currentContext to set as key_context
+    currentContext: string,
+    note_type: NoteType = "note"
 ): Note => {
     const now = new Date().toISOString();
     return {
-        id: uuidv4(), // Generate temporary ID
+        id: uuidv4(),
         content,
         created_at: now,
         user_id: userId,
-        persistenceStatus: "pending", // Initially pending persistence
-        key_context: currentContext, // Set key_context from current state context
-        contexts: [], // Default to empty array
-        tags: [], // Default to empty array
+        persistenceStatus: "pending",
+        key_context: currentContext,
+        contexts: [],
+        tags: [],
+        note_type,
     };
 };
