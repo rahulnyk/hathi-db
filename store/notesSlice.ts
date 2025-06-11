@@ -52,7 +52,7 @@ export const fetchNotes = createAsyncThunk(
             // The server action already maps persistenceStatus, so no need to map here
             return notes;
         } catch (error: any) {
-            return rejectWithValue(error?.message || 'Failed to fetch notes');
+            return rejectWithValue(error?.message || "Failed to fetch notes");
         }
     }
 );
@@ -96,7 +96,7 @@ export const addNote = createAsyncThunk(
             };
         } catch (error: any) {
             return rejectWithValue({
-                error: error?.message || 'Failed to add note',
+                error: error?.message || "Failed to add note",
                 tempId, // Pass tempId back for error handling in reducer
             });
         }
@@ -116,7 +116,7 @@ export const deleteNote = createAsyncThunk(
             return result; // This will be { noteId: string }
         } catch (error: any) {
             return rejectWithValue({
-                error: error?.message || 'Failed to delete note',
+                error: error?.message || "Failed to delete note",
                 noteId, // Pass noteId back for error handling in reducer
             });
         }
