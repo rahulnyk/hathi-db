@@ -46,10 +46,12 @@ const initialState: NotesState = {
 // Async thunks for API calls using server actions
 export const fetchNotes = createAsyncThunk(
     "notes/fetchNotes",
-    async (userId: string, { rejectWithValue }) => {
+    async (
+        { userId, keyContext }: { userId: string; keyContext?: string },
+        { rejectWithValue }
+    ) => {
         try {
-            const notes = await fetchNotesAction(userId);
-            // The server action already maps persistenceStatus, so no need to map here
+            const notes = await fetchNotesAction({ userId, keyContext });
             return notes;
         } catch (error: any) {
             return rejectWithValue(error?.message || "Failed to fetch notes");
