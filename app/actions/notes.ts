@@ -3,14 +3,27 @@
 import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
 
-export async function fetchNotes(userId: string): Promise<Note[]> {
+export async function fetchNotes({
+    userId,
+    keyContext,
+}: {
+    userId: string;
+    keyContext?: string;
+}): Promise<Note[]> {
     const supabase = await createClient();
     try {
-        const { data, error } = await supabase
-            .from("notes")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false });
+        // Start building the query
+        let query = supabase.from("notes").select("*").eq("user_id", userId);
+
+        // Add key_context filter if provided
+        if (keyContext) {
+            query = query.eq("key_context", keyContext);
+        }
+
+        // Execute the query with ordering
+        const { data, error } = await query.order("created_at", {
+            ascending: false,
+        });
 
         if (error) throw error;
 

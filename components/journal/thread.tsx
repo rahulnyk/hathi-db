@@ -11,14 +11,13 @@ import { UserContext } from "@/components/journal";
 export function Thread() {
     const user = useContext(UserContext);
     const dispatch = useAppDispatch();
-    const { notes, collectionStatus, collectionError } = useAppSelector(
-        (state) => state.notes
-    );
+    const { notes, collectionStatus, collectionError, currentContext } =
+        useAppSelector((state) => state.notes);
 
     // Fetch notes on component mount
     useEffect(() => {
-        dispatch(fetchNotes(user.id));
-    }, [dispatch, user.id]);
+        dispatch(fetchNotes({ userId: user.id, keyContext: currentContext }));
+    }, [dispatch, user.id, currentContext]);
 
     // Show loading state
     if (collectionStatus === "loading" && notes.length === 0) {
