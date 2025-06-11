@@ -1,27 +1,28 @@
-'use server';
+"use server";
 
-import { createClient } from '@/lib/supabase/server';
-import { type Note, NoteType } from '@/store/notesSlice'; // Assuming Note and NoteType types are exported from notesSlice
+import { createClient } from "@/lib/supabase/server";
+import { type Note, NoteType } from "@/store/notesSlice";
 
 export async function fetchNotes(userId: string): Promise<Note[]> {
     const supabase = await createClient();
     try {
         const { data, error } = await supabase
-            .from('notes')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .from("notes")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false });
 
         if (error) throw error;
 
         return data.map((note) => ({
             ...note,
-            persistenceStatus: 'persisted',
+            persistenceStatus: "persisted",
         })) as Note[];
-    } catch (error: any) {
-        console.error('Error fetching notes:', error.message);
-        // In a real app, you might want to return a more structured error
-        throw new Error(`Failed to fetch notes: ${error.message}`);
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error fetching notes:", errorMessage);
+        throw new Error(`Failed to fetch notes: ${errorMessage}`);
     }
 }
 
@@ -31,7 +32,7 @@ export async function addNote({
     key_context,
     contexts,
     tags,
-    note_type = 'note',
+    note_type = "note",
 }: {
     content: string;
     userId: string;
@@ -51,21 +52,23 @@ export async function addNote({
             note_type,
         };
         const { data, error } = await supabase
-            .from('notes')
+            .from("notes")
             .insert([noteToInsert])
             .select();
 
         if (error) throw error;
-        if (!data || data.length === 0) throw new Error('No data returned after insert');
-
+        if (!data || data.length === 0)
+            throw new Error("No data returned after insert");
 
         return {
             ...data[0],
-            persistenceStatus: 'persisted',
+            persistenceStatus: "persisted",
         } as Note;
-    } catch (error: any) {
-        console.error('Error adding note:', error.message);
-        throw new Error(`Failed to add note: ${error.message}`);
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error adding note:", errorMessage);
+        throw new Error(`Failed to add note: ${errorMessage}`);
     }
 }
 
@@ -79,16 +82,18 @@ export async function deleteNote({
     const supabase = await createClient();
     try {
         const { error } = await supabase
-            .from('notes')
+            .from("notes")
             .delete()
-            .eq('id', noteId)
-            .eq('user_id', userId);
+            .eq("id", noteId)
+            .eq("user_id", userId);
 
         if (error) throw error;
 
         return { noteId };
-    } catch (error: any) {
-        console.error('Error deleting note:', error.message);
-        throw new Error(`Failed to delete note: ${error.message}`);
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error fetching notes:", errorMessage);
+        throw new Error(`Failed to fetch notes: ${errorMessage}`);
     }
 }
