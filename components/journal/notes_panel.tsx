@@ -2,7 +2,7 @@
 
 import { NotesEditor } from "./notes_editor";
 import { Thread } from "./thread";
-import { NotesPanelHeader } from "./notes_panel_header"; // Import the new component
+import { NotesPanelHeader } from "./notes_panel_header";
 import { cn } from "@/lib/utils";
 
 export function NotesPanel({ hidden = false }: { hidden?: boolean }) {
@@ -15,7 +15,7 @@ export function NotesPanel({ hidden = false }: { hidden?: boolean }) {
             )}
         >
             <div className="flex flex-col w-full relative gap-4 md:gap-4 lg:gap-4">
-                {/* Context header - now using the extracted component */}
+                {/* Context header with self-contained menu state */}
                 <NotesPanelHeader />
 
                 {/* Note input section */}

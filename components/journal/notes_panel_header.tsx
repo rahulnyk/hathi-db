@@ -1,37 +1,81 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { NotebookPen } from "lucide-react";
 import { useAppSelector } from "@/store";
+import { DateContextPicker } from "./date_context_picker";
 
 export function NotesPanelHeader() {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { currentContext } = useAppSelector((state) => state.notes);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    const handleToggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    // Handle clicks outside of the component
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
+                setIsMenuOpen(false);
+            }
+        }
+
+        // Only add the event listener if the menu is open
+        if (isMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     return (
-        <div
-            className={cn(
-                "flex flex-row w-full relative p-2 px-4 rounded-2xl justify-start items-center gap-4",
-                "text-zinc-400 dark:text-zinc-500",
-                "hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            )}
-        >
-            <NotebookPen size={24} />
-            <h2
+        <div className="relative z-50 w-full" ref={menuRef}>
+            {/* Header bar */}
+            <div
                 className={cn(
-                    "text-2xl font-extrabold inline-block"
-                    // "bg-gradient-to-r from-zinc-500 to-zinc-700",
-                    // "bg-clip-text text-transparent"
+                    "flex flex-row justify-start items-center gap-4",
+                    "text-zinc-400 dark:text-zinc-500",
+                    "cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors",
+                    // isMenuOpen && "bg-zinc-200/50 dark:bg-zinc-800/50",
+                    // "hover:bg-zinc-200/50 hover:dark:bg-zinc-800/50",
+                    // "backdrop-blur-2xl",
+                    "group",
+                    "p-2 px-4 rounded-xl"
                 )}
+                onClick={handleToggleMenu}
             >
-                {currentContext
-                    .split("-")
-                    .map(
-                        (word) =>
-                            word.charAt(0).toUpperCase() +
-                            word.slice(1).toLowerCase()
-                    )
-                    .join(" ")}
-            </h2>
+                <NotebookPen
+                    size={24}
+                    className="group-hover:text-primary transition-colors"
+                />
+                <h2
+                    className={cn(
+                        "text-2xl font-extrabold inline-block transition-colors",
+                        "group-hover:text-foreground"
+                    )}
+                >
+                    {currentContext
+                        .split("-")
+                        .map(
+                            (word) =>
+                                word.charAt(0).toUpperCase() +
+                                word.slice(1).toLowerCase()
+                        )
+                        .join(" ")}
+                </h2>
+            </div>
+            {/* Context menu */}
+            <div className="absolute w-auto">
+                <DateContextPicker isOpen={isMenuOpen} />
+            </div>
         </div>
     );
 }
