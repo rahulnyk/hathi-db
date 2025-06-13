@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { NotebookPen } from "lucide-react";
 import { useAppSelector } from "@/store";
-import { NotesContextMenu } from "./notes_context_menu";
+import { DateContextPicker } from "./date_context_picker";
 
 export function NotesPanelHeader() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,17 +37,18 @@ export function NotesPanelHeader() {
     }, [isMenuOpen]);
 
     return (
-        <div className="relative w-full" ref={menuRef}>
+        <div className="relative z-50 w-full" ref={menuRef}>
             {/* Header bar */}
             <div
                 className={cn(
-                    "flex flex-row w-full justify-start items-center gap-4",
+                    "flex flex-row justify-start items-center gap-4",
                     "text-zinc-400 dark:text-zinc-500",
                     "cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors",
-                    isMenuOpen && "bg-zinc-200/50 dark:bg-zinc-800/50",
-                    "hover:bg-zinc-200/50 hover:dark:bg-zinc-800/50",
+                    // isMenuOpen && "bg-zinc-200/50 dark:bg-zinc-800/50",
+                    // "hover:bg-zinc-200/50 hover:dark:bg-zinc-800/50",
+                    // "backdrop-blur-2xl",
                     "group",
-                    "p-4 rounded-t-xl"
+                    "p-2 px-4 rounded-xl"
                 )}
                 onClick={handleToggleMenu}
             >
@@ -71,10 +72,9 @@ export function NotesPanelHeader() {
                         .join(" ")}
                 </h2>
             </div>
-
             {/* Context menu */}
-            <div className="absolute w-full">
-                <NotesContextMenu isOpen={isMenuOpen} />
+            <div className="absolute w-auto">
+                <DateContextPicker isOpen={isMenuOpen} />
             </div>
         </div>
     );
