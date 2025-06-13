@@ -8,9 +8,6 @@ interface NotesContextMenuProps {
 }
 
 export function NotesContextMenu({ isOpen }: NotesContextMenuProps) {
-    if (!isOpen) return null;
-    // const [date, setDate] = useState<Date | undefined>(new Date());
-
     return (
         <div
             className={cn(
@@ -21,8 +18,9 @@ export function NotesContextMenu({ isOpen }: NotesContextMenuProps) {
                 // "border border-border/50 border-t-0",
                 "shadow-lg",
                 "transition-all duration-200 ease-in-out",
+                "hidden",
                 isOpen
-                    ? "opacity-100 translate-y-0"
+                    ? "opacity-100 translate-y-0 block"
                     : "opacity-0 -translate-y-4 pointer-events-none"
             )}
         >
