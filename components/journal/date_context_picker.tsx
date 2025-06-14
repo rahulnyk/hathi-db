@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentContext } from "@/store/notesSlice";
+import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { dateToSlug } from "@/lib/utils";
 
 interface DateContextPickerProps {
@@ -12,15 +12,18 @@ interface DateContextPickerProps {
 }
 
 export function DateContextPicker({ isOpen }: DateContextPickerProps) {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-        new Date()
+    const selectedDateString = useAppSelector(
+        (state) => state.ui.datePickerSelectedDate
     );
+    const selectedDate = new Date(selectedDateString); // Convert string back to Date
     const dispatch = useAppDispatch();
 
     const handleDateChange = (date: Date | undefined) => {
-        setSelectedDate(date);
         if (date) {
-            // Update the current context in Redux when date changes
+            // Update the date picker state in Redux (convert Date to string)
+            dispatch(setDatePickerSelectedDate(date.toISOString()));
+
+            // Update the current context in Redux when date changes (existing behavior)
             dispatch(setCurrentContext(dateToSlug(date)));
         }
     };
