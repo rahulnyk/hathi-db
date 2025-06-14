@@ -6,8 +6,11 @@ import { LogoutButton } from "@/components/logout-button";
 import { Home, Calendar } from "lucide-react";
 import { DateContextPicker } from "@/components/journal/date_context_picker";
 import { useState, useRef, useEffect } from "react";
-import { useAppDispatch } from "@/lib/hooks";
-import { setCurrentContext, setDatePickerSelectedDate } from "@/lib/features/journal/journalSlice";
+// import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch } from "@/store";
+// import { setCurrentContext, setDatePickerSelectedDate } from "@/lib/features/journal/journalSlice";
+import { setCurrentContext } from "@/store/notesSlice";
+import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { Button } from "./ui/button";
 
 export function Nav() {
@@ -17,7 +20,10 @@ export function Nav() {
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
                 setIsMenuOpen(false);
             }
         }
@@ -34,8 +40,8 @@ export function Nav() {
     const handleHomeClick = () => {
         const today = new Date();
         const todaySlug = dateToSlug(today);
-        dispatch(setCurrentContext({ currentContext: todaySlug }));
-        dispatch(setDatePickerSelectedDate({ datePickerSelectedDate: today.toISOString() }));
+        dispatch(setCurrentContext(todaySlug));
+        dispatch(setDatePickerSelectedDate(today.toISOString()));
         setIsMenuOpen(false);
     };
 
@@ -51,17 +57,30 @@ export function Nav() {
             <div className="relative flex flex-col h-full w-full items-center pt-16">
                 {/* Top button group */}
                 <div className="flex flex-col gap-2">
-                    <Button variant="ghost" size="icon" onClick={handleHomeClick} aria-label="Home">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleHomeClick}
+                        aria-label="Home"
+                    >
                         <Home className="h-5 w-5" />
                     </Button>
                     {/* Wrapper for Calendar button and DateContextPicker */}
                     <div className="relative">
-                        <Button variant="ghost" size="icon" onClick={handleCalendarClick} aria-label="Open calendar">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleCalendarClick}
+                            aria-label="Open calendar"
+                        >
                             <Calendar className="h-5 w-5" />
                         </Button>
                         {isMenuOpen && (
-                            <div ref={menuRef} className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50">
-                                <DateContextPicker />
+                            <div
+                                ref={menuRef}
+                                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50"
+                            >
+                                <DateContextPicker isOpen={isMenuOpen} />
                             </div>
                         )}
                     </div>
