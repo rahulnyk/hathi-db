@@ -57,13 +57,13 @@ export function NotesPanelHeader() {
             <div
                 className={cn(
                     "flex flex-row justify-between items-center gap-4",
-                    "text-zinc-400 dark:text-zinc-500",
-                    "p-2 px-4 rounded-xl",
+                    "text-zinc-400 dark:text-zinc-400",
+                    "px-4 rounded-xl",
                     "group"
                 )}
             >
                 {/* Left side - Context title */}
-                <div className="flex flex-row items-center gap-4 min-w-0 flex-1 text-foreground/30">
+                <div className="flex flex-row items-center gap-4 min-w-0 flex-1 text-foreground/40">
                     <NotebookPen size={22} className="flex-shrink-0" />
                     <h2
                         className={cn(
