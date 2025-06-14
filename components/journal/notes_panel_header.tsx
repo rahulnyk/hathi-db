@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { NotebookPen, Calendar, Home } from "lucide-react";
+import { Calendar, Home } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { setCurrentContext } from "@/store/notesSlice";
 import { setDatePickerSelectedDate } from "@/store/uiSlice";
@@ -64,10 +64,9 @@ export function NotesPanelHeader() {
             >
                 {/* Left side - Context title */}
                 <div className="flex flex-row items-center gap-4 min-w-0 flex-1 text-foreground/40">
-                    <NotebookPen size={22} className="flex-shrink-0" />
                     <h2
                         className={cn(
-                            "text-xl sm:text-2xl font-extrabold",
+                            "text-xl sm:text-xl font-extrabold",
                             "truncate" // Ensures text doesn't overflow on small screens
                         )}
                     >
@@ -119,7 +118,7 @@ export function NotesPanelHeader() {
             </div>
 
             {/* Calendar menu */}
-            <div className="absolute w-auto max-w-sm right-0 bottom-full mb-2">
+            <div className="absolute w-auto max-w-sm right-0 bottom-full mb-4">
                 <DateContextPicker isOpen={isMenuOpen} />
             </div>
         </div>
