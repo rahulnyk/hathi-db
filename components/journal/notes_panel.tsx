@@ -9,7 +9,7 @@ export function NotesPanel({ hidden = false }: { hidden?: boolean }) {
     return (
         <div
             className={cn(
-                "p-6 md:p-12 mx-auto my-auto overflow-y-auto flex-grow max-w-full",
+                "p-6 md:p-12 overflow-y-auto flex-grow max-w-full",
                 "lg:w-2/3 lg:flex", // Desktop: 2/3 width, flex container
                 hidden ? "hidden lg:flex" : "flex w-full" // Mobile: hidden if suggestions shown, else full width flex. LG: respects lg:flex
             )}

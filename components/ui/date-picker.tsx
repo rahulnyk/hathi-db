@@ -94,19 +94,19 @@ export function DatePicker({
             )}
         >
             {/* Header with month/year and navigation */}
-            <div className="flex items-center justify-center px-4 py-3 border-b relative">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={handlePrevMonth}
-                    className="absolute left-4 h-8 w-8 p-0 hover:bg-accent"
+                    className="h-8 w-8 p-0 hover:bg-accent flex-shrink-0"
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-2 flex-1">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium min-w-[120px] text-center">
+                    <span className="text-sm font-medium text-center">
                         {format(currentMonth, "MMMM yyyy")}
                     </span>
                 </div>
@@ -115,7 +115,7 @@ export function DatePicker({
                     variant="ghost"
                     size="sm"
                     onClick={handleNextMonth}
-                    className="absolute right-4 h-8 w-8 p-0 hover:bg-accent"
+                    className="h-8 w-8 p-0 hover:bg-accent flex-shrink-0"
                 >
                     <ChevronRight className="h-4 w-4" />
                 </Button>
