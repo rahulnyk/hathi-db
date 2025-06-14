@@ -40,15 +40,19 @@ export function Thread() {
             </div>
         );
     }
+
+    // Reverse notes for chat-like display (oldest at top, newest at bottom)
+    const reversedNotes = [...notes].reverse();
+
     return (
-        <div className="w-full">
-            {notes.length === 0 ? (
+        <div className="w-full flex-grow overflow-y-auto p-4 md:p-6">
+            {reversedNotes.length === 0 ? (
                 <div className="text-center p-8 border rounded-lg text-muted-foreground">
                     Write your first note above!
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {notes.map((note) => (
+                    {reversedNotes.map((note) => (
                         <NoteCard key={note.id} note={note} user={user} />
                     ))}
                 </div>
