@@ -15,18 +15,17 @@ import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { Button } from "./ui/button";
 
 export function Nav() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const dispatch = useAppDispatch();
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-
             if (
                 menuRef.current &&
                 !menuRef.current.contains(event.target as Node)
             ) {
-                setIsMenuOpen(false);
+                setIsCalendarOpen(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -36,7 +35,7 @@ export function Nav() {
     }, [menuRef]);
 
     const handleCalendarClick = () => {
-        setIsMenuOpen(!isMenuOpen);
+        setIsCalendarOpen(!isCalendarOpen);
     };
 
     const handleHomeClick = () => {
@@ -45,7 +44,7 @@ export function Nav() {
 
         dispatch(setCurrentContext(todaySlug));
         dispatch(setDatePickerSelectedDate(today.toISOString()));
-        setIsMenuOpen(false);
+        setIsCalendarOpen(false);
     };
 
     return (
@@ -60,7 +59,6 @@ export function Nav() {
             <div className="relative flex flex-col h-full w-full items-center pt-16">
                 {/* Top button group */}
                 <div className="flex flex-col gap-2">
-
                     <Button
                         variant="ghost"
                         size="icon"
@@ -71,20 +69,27 @@ export function Nav() {
                     </Button>
                     {/* Wrapper for Calendar button and DateContextPicker */}
                     <div className="relative">
-                        <Button variant="ghost" size="icon" onClick={handleCalendarClick} aria-label="Open calendar">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleCalendarClick}
+                            aria-label="Open calendar"
+                        >
                             <Calendar className="h-5 w-5" />
                         </Button>
-                        {isMenuOpen && (
-                            <div ref={menuRef} className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50">
-
-                                <DateContextPicker isOpen={isMenuOpen} />
+                        {isCalendarOpen && (
+                            <div
+                                ref={menuRef}
+                                className="absolute left-full ml-4 mt-4 top-28 -translate-y-1/2 z-50"
+                            >
+                                <DateContextPicker isOpen={isCalendarOpen} />
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Bottom button group */}
-                <div className="mt-auto flex flex-col gap-4 pb-4 items-center">
+                <div className="mt-auto flex flex-col gap-4 pb-4 items-center mb-6">
                     <ThemeSwitcher />
                     <LogoutButton />
                 </div>
