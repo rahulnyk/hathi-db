@@ -35,7 +35,12 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     };
 
     return (
-        <div className="p-3 sm:p-4 py-2 rounded-lg bg-muted/40 dark:bg-muted/20 relative">
+        <div
+            className={cn(
+                "p-3 sm:p-4 py-2 rounded-lg relative"
+                // "bg-muted/40 dark:bg-muted/20"
+            )}
+        >
             {/* More options dropdown in top right */}
             <div className="absolute top-2 right-2">
                 <DropdownMenu>
