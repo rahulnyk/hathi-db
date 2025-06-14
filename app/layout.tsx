@@ -34,7 +34,7 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <main className="min-h-screen flex bg-slate-50 dark:bg-slate-900">
+                    <main className="min-h-screen flex">
                         <ReduxProvider>{children}</ReduxProvider>
                     </main>
                 </ThemeProvider>
