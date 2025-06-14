@@ -119,7 +119,7 @@ export function NotesPanelHeader() {
             </div>
 
             {/* Calendar menu */}
-            <div className="absolute w-auto max-w-sm right-0">
+            <div className="absolute w-auto max-w-sm right-0 bottom-full mb-2">
                 <DateContextPicker isOpen={isMenuOpen} />
             </div>
         </div>
