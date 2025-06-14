@@ -22,8 +22,8 @@ export function Thread() {
     // Show loading state
     if (collectionStatus === "loading" && notes.length === 0) {
         return (
-            <div className="w-full">
-                <div className="text-center p-8 border rounded-lg text-muted-foreground">
+            <div className="w-full flex-grow overflow-y-auto p-4 md:p-6 flex items-center justify-center">
+                <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">
                     Loading notes...
                 </div>
             </div>
@@ -33,22 +33,28 @@ export function Thread() {
     // Show error state
     if (collectionStatus === "failed") {
         return (
-            <div className="w-full">
-                <div className="text-center p-8 border rounded-lg text-red-500">
+            <div className="w-full flex-grow overflow-y-auto p-4 md:p-6 flex items-center justify-center">
+                <div className="text-center p-4 border rounded-lg text-red-500 bg-card">
                     Error loading notes: {collectionError}
                 </div>
             </div>
         );
     }
+
+    // Reverse notes for chat-like display (oldest at top, newest at bottom)
+    const reversedNotes = [...notes].reverse();
+
     return (
-        <div className="w-full">
-            {notes.length === 0 ? (
-                <div className="text-center p-8 border rounded-lg text-muted-foreground">
-                    Write your first note above!
+        <div className="w-full flex-grow overflow-y-auto p-4 md:p-6">
+            {reversedNotes.length === 0 ? (
+                <div className="flex-grow flex items-center justify-center h-full">
+                    <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">
+                        Write your first note above!
+                    </div>
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {notes.map((note) => (
+                    {reversedNotes.map((note) => (
                         <NoteCard key={note.id} note={note} user={user} />
                     ))}
                 </div>
