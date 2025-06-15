@@ -16,7 +16,7 @@ export function InputPanel() {
                 "m-4 md:m-4 rounded-lg" // Margin for spacing
             )}
         >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
                 <NotesPanelHeader />
                 <NotesEditor />
             </div>
