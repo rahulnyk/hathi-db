@@ -28,7 +28,7 @@ export function MobileNavManager({ children }: { children: ReactNode }) {
                 id="main-nav-panel" // ID for ARIA
                 className={cn(
                     "md:hidden fixed top-0 left-0 h-screen w-14 z-50",
-                    "border-r border-foreground/10", // Border for the panel
+                    // "border-r border-foreground/10", // Border for the panel
                     "transform transition-transform duration-300 ease-in-out",
                     isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
                     // Background is now part of the Nav component rendered as children
@@ -40,8 +40,8 @@ export function MobileNavManager({ children }: { children: ReactNode }) {
             {/* Desktop Nav Container (static) */}
             <div
                 className={cn(
-                    "hidden md:block fixed top-0 left-0 h-screen w-14 z-50",
-                    "border-r border-foreground/10" // Border for the panel
+                    "hidden md:block fixed top-0 left-0 h-screen w-14 z-50"
+                    // "border-r border-foreground/10" // Border for the panel
                     // Background is now part of the Nav component rendered as children
                 )}
             >
