@@ -77,3 +77,21 @@ export function slugToDate(slug: string): Date | null {
 
     return date;
 }
+
+export function slugToSentenceCase(slug: string): string {
+    if (!slug) return "";
+    return slug
+        .split("-")
+        .map(
+            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ");
+}
+
+export function sentenceCaseToSlug(sentence: string): string {
+    if (!sentence) return "";
+    return sentence
+        .toLowerCase()
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .replace(/[^\w-]+/g, ""); // Remove non-alphanumeric characters except hyphens
+}
