@@ -13,6 +13,14 @@
 .dark .accent-font {
     @apply font-outfit font-black tracking-wider text-neutral-600; /* Added font-montserrat */
 }
+
+.accent-font-active {
+    @apply font-outfit font-black tracking-wider text-neutral-600; /* Added font-montserrat */
+}
+
+.dark .accent-font-active {
+    @apply font-outfit font-black tracking-wider text-neutral-300; /* Added font-montserrat */
+}
 @layer base {
     :root {
         --background: 240 5.9% 96.1%; /* Updated to zinc-50 */

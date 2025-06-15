@@ -89,12 +89,12 @@ export function DatePicker({
     return (
         <div
             className={cn(
-                "flex flex-col w-full min-w-[280px] max-w-sm mx-auto",
+                "flex flex-col w-full min-w-[280px] max-w-sm mx-auto accent-font-active",
                 className
             )}
         >
             {/* Header with month/year and navigation */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="flex items-center justify-between px-6 py-2">
                 <Button
                     variant="ghost"
                     size="sm"
@@ -122,7 +122,7 @@ export function DatePicker({
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex flex-col items-center px-4 py-3">
+            <div className="flex flex-col items-center px-4 py-1">
                 {/* Weekday headers */}
                 <div className="grid grid-cols-7 gap-1 mb-2 w-full max-w-[224px]">
                     {weekDays.map((day) => (
@@ -171,7 +171,7 @@ export function DatePicker({
             </div>
 
             {/* Footer with Today button */}
-            <div className="px-4 py-3 border-t">
+            <div className="px-2 py-2 border-t">
                 <Button
                     variant="outline"
                     onClick={handleTodayClick}
