@@ -59,7 +59,7 @@ export function NotesEditor() {
     };
 
     return (
-        <div className="rounded-lg p-2">
+        <div className="rounded-lg p-0">
             <form onSubmit={handleSubmit}>
                 <Textarea
                     value={content}
