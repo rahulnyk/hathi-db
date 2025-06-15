@@ -1,94 +1,80 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Laptop, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react"; // Keep useEffect and useState for mounted check
 
-const ThemeSwitcher = () => {
+interface ThemeSwitcherProps {
+    isExpanded?: boolean;
+}
+
+export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
     const [mounted, setMounted] = useState(false);
     const { theme, setTheme } = useTheme();
 
-    // useEffect only runs on the client, so now we can safely show the UI
     useEffect(() => {
         setMounted(true);
     }, []);
 
     if (!mounted) {
-        return null;
-    }
-
-    const ICON_SIZE = 16;
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        // To prevent hydration mismatch, button logic relies on theme, which is client-side
+        // Render a placeholder or null until mounted
+        if (isExpanded) {
+            return (
                 <Button
                     variant="ghost"
-                    size={"sm"}
-                    className="h-8 w-8 rounded-md"
+                    size="default"
+                    disabled
+                    className="w-full flex items-center justify-start gap-3 text-base py-6 hover:bg-muted"
                 >
-                    {theme === "light" ? (
-                        <Sun
-                            key="light"
-                            size={ICON_SIZE}
-                            className={"text-foreground"}
-                        />
-                    ) : theme === "dark" ? (
-                        <Moon
-                            key="dark"
-                            size={ICON_SIZE}
-                            className={"text-foreground"}
-                        />
-                    ) : (
-                        <Laptop
-                            key="system"
-                            size={ICON_SIZE}
-                            className={"text-foreground"}
-                        />
-                    )}
+                    <Sun className="h-5 w-5 mr-0" />
+                    <span>Loading Theme...</span>
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-content" align="start">
-                <DropdownMenuRadioGroup
-                    value={theme}
-                    onValueChange={(e) => setTheme(e)}
-                >
-                    <DropdownMenuRadioItem className="flex gap-2" value="light">
-                        <Sun
-                            size={ICON_SIZE}
-                            className="text-muted-foreground"
-                        />{" "}
-                        <span>Light</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem className="flex gap-2" value="dark">
-                        <Moon
-                            size={ICON_SIZE}
-                            className="text-muted-foreground"
-                        />{" "}
-                        <span>Dark</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                        className="flex gap-2"
-                        value="system"
-                    >
-                        <Laptop
-                            size={ICON_SIZE}
-                            className="text-muted-foreground"
-                        />{" "}
-                        <span>System</span>
-                    </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-};
+            );
+        }
+        return (
+            <Button
+                variant="ghost"
+                size="icon"
+                disabled
+                className="h-12 w-12 justify-center"
+            >
+                <Sun className="h-5 w-5" />
+            </Button>
+        );
+    }
 
-export { ThemeSwitcher };
+    const toggleTheme = () => {
+        setTheme(theme === "dark" ? "light" : "dark");
+    };
+
+    // Text and icon for the button should indicate the theme it will switch TO
+    const isCurrentlyDark = theme === "dark";
+    const targetThemeText = isCurrentlyDark ? "Light Mode" : "Dark Mode";
+    const TargetIcon = isCurrentlyDark ? Sun : Moon;
+
+    return (
+        <Button
+            variant="ghost"
+            size={isExpanded ? "default" : "icon"}
+            onClick={toggleTheme}
+            className={cn(
+                "text-base hover:bg-muted", // Common classes
+                isExpanded
+                    ? "w-full flex items-center justify-start gap-3 py-6" // Expanded: full width, justify start, specific padding
+                    : "h-12 w-12 justify-center" // Collapsed: fixed size, justify center
+            )}
+            aria-label={`Switch to ${targetThemeText.toLowerCase()}`}
+        >
+            <TargetIcon className={cn("h-5 w-5", isExpanded && "mr-0")} />
+            {isExpanded && <span>{targetThemeText}</span>}
+        </Button>
+    );
+}
+
+// Re-exporting with a different name to avoid conflict if old ThemeSwitcher was named differently,
+// but the prompt uses 'ThemeSwitcher' for the component name.
+// For clarity, ensure the export name is consistent.
+// export { ThemeSwitcher };
