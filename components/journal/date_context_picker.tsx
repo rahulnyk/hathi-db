@@ -31,7 +31,8 @@ export function DateContextPicker({ isOpen }: DateContextPickerProps) {
     return isOpen ? (
         <div
             className={cn(
-                "bg-zinc-200/50 dark:bg-zinc-700/50 backdrop-blur-xl border border-border/50",
+                "bg-zinc-200 dark:bg-zinc-700 border border-border/50",
+                // "bg-zinc-200/50 dark:bg-zinc-700/50 backdrop-blur-xl border border-border/50",
                 "rounded-xl shadow-md",
                 "transition-all duration-200 ease-in-out",
                 "w-auto max-w-sm mx-auto p-2 flex flex-col items-center justify-center"

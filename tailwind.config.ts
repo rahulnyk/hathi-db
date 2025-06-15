@@ -10,6 +10,12 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ["Inter", "sans-serif"], // Your default sans-serif font
+                montserrat: ["Montserrat", "sans-serif"], // Added Montserrat
+                outfit: ["Outfit", "sans-serif"], // Added Montserrat
+                comfortaa: ["Comfortaa", "sans-serif"], // Added Comfortaa
+            },
             colors: {
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
