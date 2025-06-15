@@ -10,8 +10,9 @@ export function InputPanel() {
             className={cn(
                 "sticky bottom-4 left-0 right-0 z-10", // Sticky positioning at the bottom
                 // "border-t border-border", // Background and top border
-                "bg-zinc-100 dark:bg-zinc-800", // Background color
-                "border border-zinc-200 dark:border-zinc-600", // Border color
+                "bg-zinc-200/50 dark:bg-zinc-700/50", // Background color
+                "backdrop-blur-2xl",
+                "border border-zinc-300 dark:border-zinc-600", // Border color
                 "px-4 py-2 md:px-2 md:py-2", // Padding
                 "m-4 md:m-4 rounded-lg" // Margin for spacing
             )}
