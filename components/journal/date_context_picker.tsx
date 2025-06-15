@@ -9,9 +9,10 @@ import { dateToSlug } from "@/lib/utils";
 
 interface DateContextPickerProps {
     isOpen: boolean;
+    onDateChangeHook?: () => void; // New prop
 }
 
-export function DateContextPicker({ isOpen }: DateContextPickerProps) {
+export function DateContextPicker({ isOpen, onDateChangeHook }: DateContextPickerProps) {
     const selectedDateString = useAppSelector(
         (state) => state.ui.datePickerSelectedDate
     );
@@ -25,23 +26,28 @@ export function DateContextPicker({ isOpen }: DateContextPickerProps) {
 
             // Update the current context in Redux when date changes (existing behavior)
             dispatch(setCurrentContext(dateToSlug(date)));
+
+            if (onDateChangeHook) { // Call the hook
+                onDateChangeHook();
+            }
         }
     };
 
     return isOpen ? (
         <div
             className={cn(
-                "bg-zinc-200 dark:bg-zinc-700 border border-border/50",
+                // "bg-zinc-200 dark:bg-zinc-700 border border-border/50", // Removed background and direct border
                 // "bg-zinc-200/50 dark:bg-zinc-700/50 backdrop-blur-xl border border-border/50",
-                "rounded-xl shadow-md",
+                "rounded-md", // Simpler rounding, can be adjusted by parent
+                // "shadow-md", // Shadow can be controlled by parent if needed
                 "transition-all duration-200 ease-in-out",
-                "w-auto max-w-sm mx-auto p-2 flex flex-col items-center justify-center"
+                "p-1 flex flex-col items-center justify-center" // Removed w-full
             )}
         >
             <DatePicker
                 selectedDate={selectedDate}
                 onDateChange={handleDateChange}
-                className="flex-1 mx-auto my-auto"
+                className="flex-1 mx-auto my-auto" // Removed w-full from DatePicker's direct class too, as it has internal max-w-sm
             />
         </div>
     ) : null;

@@ -9,7 +9,10 @@ import {
 } from "@/store/notesSlice";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDownToLine } from "lucide-react";
+// import { ArrowDownToLine } from "lucide-react";
+// import { ArrowUpToLine } from "lucide-react";
+import { ArrowUp } from "lucide-react";
+import { HashLoader } from "react-spinners";
 
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
@@ -74,11 +77,16 @@ export function NotesEditor() {
                         className="flex items-center gap-2 w-full sm:w-auto"
                     >
                         {isSubmitting ? (
-                            "Saving..."
+                            <HashLoader size={16} />
                         ) : (
                             <>
-                                <ArrowDownToLine className="h-4 w-4 mr-1" />
-                                Save Note
+                                {/* <ArrowDownToLine className="h-4 w-4 mr-1" /> */}
+                                {/* <ArrowUpToLine className="h-4 w-4 mr-1" /> */}
+                                <ArrowUp
+                                    // className="h-4 w-4"
+                                    strokeWidth={3}
+                                    size={16}
+                                />
                             </>
                         )}
                     </Button>
