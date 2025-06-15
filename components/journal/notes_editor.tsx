@@ -9,8 +9,8 @@ import {
 } from "@/store/notesSlice";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDownToLine } from "lucide-react";
-import { ArrowUpToLine } from "lucide-react";
+// import { ArrowDownToLine } from "lucide-react";
+// import { ArrowUpToLine } from "lucide-react";
 import { ArrowUp } from "lucide-react";
 import { HashLoader } from "react-spinners";
 
