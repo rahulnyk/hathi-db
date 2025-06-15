@@ -52,7 +52,8 @@ export function Nav() {
             className={cn(
                 "w-full h-full",
                 "flex flex-col items-center",
-                "bg-zinc-100/50 dark:bg-zinc-800/50",
+                "bg-zinc-500/60 dark:bg-zinc-500/60",
+                "border-r border-zinc-500/80 dark:border-zinc-500/80",
                 "backdrop-blur-lg"
             )}
         >
