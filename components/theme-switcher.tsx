@@ -77,4 +77,4 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
 // Re-exporting with a different name to avoid conflict if old ThemeSwitcher was named differently,
 // but the prompt uses 'ThemeSwitcher' for the component name.
 // For clarity, ensure the export name is consistent.
-export { ThemeSwitcher };
+// export { ThemeSwitcher };

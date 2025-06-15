@@ -15,7 +15,7 @@ interface RetractableMenuProps {
     onClose: () => void;
 }
 
-export function RetractableMenu({ isOpen, onClose }: RetractableMenuProps) {
+export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     // isDatePickerOpen state and related useEffect/handleCalendarButtonClick removed
 
     // if (!isOpen) return null; // Using translate-x for animation, so always render
