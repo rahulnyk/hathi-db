@@ -24,35 +24,41 @@ const BRACKET_PAIRS: Record<string, string> = {
     "<": ">",
 };
 
-// Helper function for auto-inserting bracket pairs
-function handleAutoInsertBracketPair(
-    typedChar: string,
-    currentValue: string, // This is the event.target.value
-    cursorPosition: number,
+// New unified helper function for bracket insertion (wrapping selection or empty pair)
+function handleBracketInsertion(
+    openingBracket: string,
+    currentContent: string,
+    selection: { start: number; end: number },
     localBracketPairs: Record<string, string>
-): { newValue: string; newCursorPosition: number } | null {
-    const closingBracket = localBracketPairs[typedChar];
-    if (closingBracket) {
-        // Simple insertion: assumes no text selected.
-        // The full `newValue` from the event already includes the typedChar.
-        const textBeforeTypedCharAndCursor = currentValue.substring(
-            0,
-            cursorPosition
-        );
-        const textAfterCursor = currentValue.substring(cursorPosition);
+): { newValue: string; newSelectionStart: number; newSelectionEnd: number } {
+    const closingBracket = localBracketPairs[openingBracket];
+    // It's assumed openingBracket is a valid key, otherwise closingBracket would be undefined.
+    // Robustness: if (!closingBracket) { /* return original or throw error */ }
 
-        // We need to reconstruct the string to insert the closing bracket
-        // The `currentValue` is `textBeforeTypedChar + typedChar + textAfterCursor`
-        // So, `textBeforeTypedCharAndCursor` already includes `typedChar` at its end
-        const finalValue =
-            textBeforeTypedCharAndCursor + closingBracket + textAfterCursor;
+    const textBefore = currentContent.substring(0, selection.start);
+    const selectedText = currentContent.substring(
+        selection.start,
+        selection.end
+    );
+    const textAfter = currentContent.substring(selection.end);
 
-        return {
-            newValue: finalValue,
-            newCursorPosition: cursorPosition, // Cursor stays after the typed opening bracket
-        };
+    const newValue =
+        textBefore + openingBracket + selectedText + closingBracket + textAfter;
+
+    let newSelectionStart: number;
+    let newSelectionEnd: number;
+
+    if (selectedText.length > 0) {
+        // Text was selected, keep it selected
+        newSelectionStart = selection.start + openingBracket.length;
+        newSelectionEnd = newSelectionStart + selectedText.length;
+    } else {
+        // No text selected, cursor goes between brackets
+        newSelectionStart = selection.start + openingBracket.length;
+        newSelectionEnd = newSelectionStart; // Cursor, not a selection
     }
-    return null;
+
+    return { newValue, newSelectionStart, newSelectionEnd };
 }
 
 // Helper function for auto-deleting bracket pairs
@@ -111,9 +117,18 @@ export function NotesEditor() {
         const newSelectionStart = event.target.selectionStart;
         const newSelectionEnd = event.target.selectionEnd;
 
-        // If text was deleted by non-Backspace key (e.g., Delete key, or cut)
-        // or if Backspace didn't trigger auto-delete pair.
+        // This function is now simpler.
+        // Bracket insertion (enclosing or empty pair) is handled in onKeyDown.
+        // Bracket pair deletion is handled in onKeyDown.
+
+        // This handles text changes from:
+        // 1. Deletions not caught by onKeyDown (e.g., Delete key, cut, Backspace not on a pair).
+        // 2. Normal character typing (non-brackets).
+        // 3. Pasting text.
+        // 4. IME composition.
+
         if (newFullValue.length < content.length) {
+            // Handles deletions
             setContent(newFullValue);
             setActiveSelection({
                 start: newSelectionStart,
@@ -122,90 +137,43 @@ export function NotesEditor() {
             return;
         }
 
-        // Handle auto-insertion of a closing bracket if an opening bracket was typed AND no text was selected.
-        // The "enclose selected text" feature is now handled in onKeyDown.
-        const typedChar =
-            newSelectionStart > 0
-                ? newFullValue.substring(
-                      newSelectionStart - 1,
-                      newSelectionStart
-                  )
-                : "";
-        const isOpeningBracketTyped = typedChar && BRACKET_PAIRS[typedChar];
-
-        if (
-            isOpeningBracketTyped &&
-            activeSelection.start === activeSelection.end && // Ensure no text was selected (handled by onKeyDown now)
-            newFullValue.length > content.length
-        ) {
-            // Ensure it's an insertion
-
-            const insertResult = handleAutoInsertBracketPair(
-                typedChar,
-                newFullValue,
-                newSelectionStart,
-                BRACKET_PAIRS
-            );
-
-            if (insertResult) {
-                setContent(insertResult.newValue);
-                requestAnimationFrame(() => {
-                    if (textareaRef.current) {
-                        textareaRef.current.setSelectionRange(
-                            insertResult.newCursorPosition,
-                            insertResult.newCursorPosition
-                        );
-                    }
-                });
-                return;
-            }
-        }
-
-        // Default behavior for other text changes (normal typing, pasting, etc.)
-        // or if it's an opening bracket but selection was present (handled by onKeyDown)
-        // or if auto-pair logic didn't apply.
+        // For any other change (additions, modifications not handled by onKeyDown)
         if (newFullValue !== content) {
-            // Avoid redundant setContent if value hasn't actually changed
             setContent(newFullValue);
+            // activeSelection will be updated by the onSelect handler naturally.
         }
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const pressedKey = event.key;
 
-        // Handle enclosing selected text when an opening bracket is pressed
-        if (
-            BRACKET_PAIRS[pressedKey] &&
-            activeSelection.start !== activeSelection.end
-        ) {
-            event.preventDefault();
-            const openingBracket = pressedKey;
-            const closingBracket = BRACKET_PAIRS[openingBracket];
+        // If an opening bracket is pressed (e.g., '[', '(', '{')
+        if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
+            event.preventDefault(); // Prevent default character insertion
 
-            const textBefore = content.substring(0, activeSelection.start);
-            const selectedText = content.substring(
-                activeSelection.start,
-                activeSelection.end
+            const result = handleBracketInsertion(
+                pressedKey,
+                content, // Current content from state
+                activeSelection, // Current selection from state {start, end}
+                BRACKET_PAIRS
             );
-            const textAfter = content.substring(activeSelection.end);
 
-            const newValue =
-                textBefore +
-                openingBracket +
-                selectedText +
-                closingBracket +
-                textAfter;
-            setContent(newValue);
-
-            const newSelStart = activeSelection.start + 1;
-            const newSelEnd = newSelStart + selectedText.length;
+            setContent(result.newValue);
 
             requestAnimationFrame(() => {
-                textareaRef.current?.setSelectionRange(newSelStart, newSelEnd);
-                // After programmatically changing content and selection, update activeSelection
-                setActiveSelection({ start: newSelStart, end: newSelEnd });
+                if (textareaRef.current) {
+                    textareaRef.current.setSelectionRange(
+                        result.newSelectionStart,
+                        result.newSelectionEnd
+                    );
+                    // Update activeSelection state to keep it synchronized
+                    setActiveSelection({
+                        start: result.newSelectionStart,
+                        end: result.newSelectionEnd,
+                    });
+                }
             });
-            return;
+            return; // Bracket insertion handled
         }
 
         // Handle auto-deletion of bracket pairs on Backspace
