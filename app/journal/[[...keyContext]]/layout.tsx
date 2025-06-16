@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Menu } from "@/components/menu";
-import { Button } from "@/components/ui/button";
-import { PanelLeftOpen, X as XIcon } from "lucide-react"; // Renamed X to XIcon to avoid conflict
+// import { Button } from "@/components/ui/button";
+import { PanelLeftOpen } from "lucide-react"; // Renamed X to XIcon to avoid conflict
 import { cn } from "@/lib/utils"; // Import cn
+import { useViewportHeight } from "@/hooks/use_viewport_height"; // Import the custom hook
 
 export default function JournalLayout({
     children,
@@ -12,27 +13,27 @@ export default function JournalLayout({
     children: React.ReactNode;
 }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    useViewportHeight(); // Call the hook
 
     return (
         <>
             {/* Button to toggle menu visibility */}
-            <Button
-                variant="ghost"
-                size="icon"
+            <button
+                // variant="ghost"
+                // size="bigIcon"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="fixed top-4 left-4 z-[101] bg-background/80 backdrop-blur-sm text-foreground hover:bg-muted p-2 rounded-full" // Adjusted styling
-                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-                title={isMenuOpen ? "Close menu" : "Open menu"} // Added title for better UX
+                className="fixed top-4 left-4 z-20 text-foreground hover:bg-accent p-2 rounded-md" // Adjusted styling
+                aria-label="Open menu"
+                title="Open menu" // Added title for better UX
             >
-                {isMenuOpen ? <XIcon size={22} /> : <PanelLeftOpen size={22} />}{" "}
-                {/* Adjusted icon size */}
-            </Button>
+                <PanelLeftOpen size={22} /> {/* Adjusted icon size */}
+            </button>
 
             <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
             <main
                 className={cn(
-                    "flex-1 bg-zinc-50 dark:bg-zinc-900 transition-all duration-300 ease-in-out",
+                    "flex-1 transition-all duration-300 ease-in-out",
                     {
                         "lg:ml-80": isMenuOpen, // Apply ml-80 (20rem) on lg screens when menu is open
                     }

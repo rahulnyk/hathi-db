@@ -62,7 +62,7 @@ export function NotesEditor() {
     };
 
     return (
-        <div className="rounded-lg p-0">
+        <div className="p-0">
             <form onSubmit={handleSubmit}>
                 <Textarea
                     value={content}
@@ -70,11 +70,12 @@ export function NotesEditor() {
                     placeholder="Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
                     className="w-full" // Ensure it takes full width
                 />
-                <div className="flex flex-col sm:flex-row sm:justify-end items-center mt-4">
+                <div className="flex justify-end m-1 mt-0">
                     <Button
                         type="submit"
                         disabled={isSubmitting || !content.trim()}
-                        className="flex items-center gap-2 w-full sm:w-auto"
+                        className="flex items-center gap-2 rounded-xl"
+                        size="icon"
                     >
                         {isSubmitting ? (
                             <HashLoader size={16} />
