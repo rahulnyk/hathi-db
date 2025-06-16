@@ -3,6 +3,8 @@
 // useState and useEffect removed as isDatePickerOpen state is removed
 // Button import removed as child components (ThemeSwitcher, LogoutButton) import it themselves.
 // CalendarIcon import removed
+// import { Button } from "@/components/ui/button"; // Import Button
+import { PanelLeftClose } from "lucide-react"; // Import XIcon
 import { ThemeSwitcher } from "./theme-switcher";
 import { LogoutButton } from "./logout-button";
 import { DateContextPicker } from "./journal/date_context_picker";
@@ -23,10 +25,30 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     return (
         <div
             className={cn(
-                "fixed top-0 left-0 h-screen bg-zinc-200 dark:bg-zinc-800 text-foreground transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-80 z-[100]", // z-index 100. Changed bg-zinc-100 to bg-zinc-200 and dark:bg-zinc-900 to dark:bg-zinc-800
+                "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-72 z-[100]", // z-index 100. Changed bg-zinc-100 to bg-zinc-200 and dark:bg-zinc-900 to dark:bg-zinc-800
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}
         >
+            <button
+                // variant="ghost"
+                // size="bigIcon"
+                onClick={onClose}
+                className="fixed top-4 right-4 z-20 text-foreground hover:bg-accent p-2 rounded-md" // Adjusted styling
+                aria-label="Open menu"
+                title="Open menu" // Added title for better UX
+            >
+                <PanelLeftClose size={22} /> {/* Adjusted icon size */}
+            </button>
+            {/* <Button
+                variant="outline"
+                size="bigIcon"
+                onClick={onClose}
+                className="absolute top-4 right-4 rounded-md bg-card text-card-foreground border-border z-[102]"
+                aria-label="Close menu"
+                title="Close menu"
+            >
+                <XIcon size={28} />
+            </Button> */}
             {/* Increased top padding from pt-4 to pt-16 (4rem) */}
             <div className="flex flex-col h-full pt-16">
                 {/* Scrollable Area - always rendered when menu itself is open */}
