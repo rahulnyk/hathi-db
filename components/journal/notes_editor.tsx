@@ -70,7 +70,7 @@ export function NotesEditor() {
                     placeholder="Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
                     className="w-full" // Ensure it takes full width
                 />
-                <div className="flex justify-end m-1 mt-0">
+                <div className="flex justify-end m-0 mb-1">
                     <Button
                         type="submit"
                         disabled={isSubmitting || !content.trim()}
