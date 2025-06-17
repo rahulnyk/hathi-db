@@ -238,14 +238,23 @@ export const {
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
-
 export const createOptimisticNote = (
     content: string,
     userId: string,
     currentContext: string,
-    note_type: NoteType = "note"
+    note_type: NoteType = "note",
+    contexts?: string[],
+    tags?: string[]
 ): Note => {
     const now = new Date().toISOString();
+
+    // Start with provided contexts or empty array, then add currentContext
+    const contextArray = contexts || [];
+    const allContexts = [...contextArray, currentContext];
+
+    // Remove duplicates to ensure distinct values
+    const distinctContexts = [...new Set(allContexts)];
+
     return {
         id: uuidv4(),
         content,
@@ -253,8 +262,27 @@ export const createOptimisticNote = (
         user_id: userId,
         persistenceStatus: "pending",
         key_context: currentContext,
-        contexts: [],
-        tags: [],
+        contexts: distinctContexts,
+        tags: tags || [],
         note_type,
     };
 };
+// export const createOptimisticNote = (
+//     content: string,
+//     userId: string,
+//     currentContext: string,
+//     note_type: NoteType = "note"
+// ): Note => {
+//     const now = new Date().toISOString();
+//     return {
+//         id: uuidv4(),
+//         content,
+//         created_at: now,
+//         user_id: userId,
+//         persistenceStatus: "pending",
+//         key_context: currentContext,
+//         contexts: [],
+//         tags: [],
+//         note_type,
+//     };
+// };
