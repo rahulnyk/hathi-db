@@ -6,6 +6,8 @@ import { AlertCircle, MoreVertical, Trash2, Loader2 } from "lucide-react";
 import remarkGfm from "remark-gfm";
 import { useAppDispatch } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
+import remarkContextPlugin from "@/lib/remark_context_plugin";
+import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
@@ -33,6 +36,31 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             })
         );
     };
+
+    useEffect(() => {
+        const handleClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+
+            if (target.classList.contains("context-pill")) {
+                const content =
+                    target.getAttribute("data-content") ||
+                    target.textContent ||
+                    "";
+                console.log("Context clicked:", content);
+            }
+
+            if (target.classList.contains("hashtag-pill")) {
+                const content =
+                    target.getAttribute("data-content") ||
+                    target.textContent?.replace("#", "") ||
+                    "";
+                console.log("Hashtag clicked:", content);
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+        return () => document.removeEventListener("click", handleClick);
+    }, []);
 
     return (
         <div
@@ -80,12 +108,14 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             </div>
 
             {/* Note content */}
-            <div className="prose prose-sm dark:prose-invert max-w-none mb-2">
+            <div className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base">
                 <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        code: CodeBlock,
-                    }}
+                    remarkPlugins={[
+                        remarkGfm,
+                        remarkContextPlugin,
+                        remarkHashtagPlugin,
+                    ]}
+                    // components={components}
                 >
                     {note.content}
                 </ReactMarkdown>
@@ -126,35 +156,5 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 </div>
             )}
         </div>
-    );
-}
-
-export function CodeBlock({
-    inline,
-    className,
-    children,
-    ...props
-}: React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
-    // Get language from className (e.g., "language-js")
-    // const match = /language-(\w+)/.exec(className || "");
-    return !inline ? (
-        <code
-            className={cn(
-                className,
-                "rounded px-2 sm:px-3 py-1 sm:py-2 overflow-x-auto my-4 sm:my-2 bg-transparent",
-                "w-full max-w-full text-wrap whitespace-pre-wrap",
-                "text-xs sm:text-xs"
-            )}
-            {...props}
-        >
-            {children}
-        </code>
-    ) : (
-        <code
-            className="rounded px-0.5 sm:px-1 py-0.5 bg-transparent w-full max-w-full sm:text-base text-wrap whitespace-pre-wrap"
-            {...props}
-        >
-            {children}
-        </code>
     );
 }
