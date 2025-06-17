@@ -16,6 +16,7 @@ import { HashLoader } from "react-spinners";
 
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
+import { extractMetadata } from "@/lib/noteUtils";
 
 const BRACKET_PAIRS: Record<string, string> = {
     "[": "]",
@@ -219,6 +220,8 @@ export function NotesEditor() {
         if (!content.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        // extract contexts and tags from the note content
+        const { contexts, tags } = extractMetadata(content);
 
         // Create optimistic note with "pending" status, passing currentContext
         const optimisticNote = createOptimisticNote(
@@ -229,7 +232,7 @@ export function NotesEditor() {
         );
 
         // Add to UI immediately
-        dispatch(addNoteOptimistically(optimisticNote));
+        dispatch(addNoteOptimistically({ ...optimisticNote, contexts, tags }));
 
         // Clear input
         setContent("");
@@ -241,7 +244,8 @@ export function NotesEditor() {
                 userId: user.id,
                 tempId: optimisticNote.id,
                 key_context: optimisticNote.key_context || currentContext, // Pass key_context from optimistic note
-                // contexts and tags will default to [] in the thunk if not provided
+                contexts,
+                tags,
             })
         ).finally(() => {
             setIsSubmitting(false);

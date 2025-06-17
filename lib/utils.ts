@@ -91,6 +91,7 @@ export function slugToSentenceCase(slug: string): string {
 export function sentenceCaseToSlug(sentence: string): string {
     if (!sentence) return "";
     return sentence
+        .trim() // Remove leading and trailing spaces
         .toLowerCase()
         .replace(/\s+/g, "-") // Replace spaces with hyphens
         .replace(/[^\w-]+/g, ""); // Remove non-alphanumeric characters except hyphens
