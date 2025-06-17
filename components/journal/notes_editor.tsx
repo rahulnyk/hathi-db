@@ -228,11 +228,13 @@ export function NotesEditor() {
             content,
             user.id,
             currentContext,
-            "note"
+            "note",
+            contexts,
+            tags
         );
 
         // Add to UI immediately
-        dispatch(addNoteOptimistically({ ...optimisticNote, contexts, tags }));
+        dispatch(addNoteOptimistically(optimisticNote));
 
         // Clear input
         setContent("");
