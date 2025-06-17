@@ -21,6 +21,16 @@
 .dark .accent-font-active {
     @apply font-outfit font-black tracking-wider text-neutral-300; /* Added font-montserrat */
 }
+
+/* Add to your globals.css */
+.context-pill {
+    @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
+}
+
+.hashtag-pill {
+    @apply inline-block bg-yellow-500/30 text-amber-800 dark:text-amber-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
+}
+
 @layer base {
     :root {
         --background: 240 5.9% 96.1%; /* Updated to zinc-50 */
