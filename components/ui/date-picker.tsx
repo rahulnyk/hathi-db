@@ -173,7 +173,8 @@ export function DatePicker({
             {/* Footer with Today button */}
             <div className="px-2 py-2 border-t">
                 <Button
-                    variant="outline"
+                    variant="default"
+                    size="sm"
                     onClick={handleTodayClick}
                     className="w-full h-9 text-sm"
                 >
