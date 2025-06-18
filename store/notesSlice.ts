@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 // import { createClient } from "@/lib/supabase/client"; // Removed direct client import
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid";
 import { dateToSlug } from "@/lib/utils";
 import {
     fetchNotes as fetchNotesAction,
@@ -41,23 +41,62 @@ const initialState: NotesState = {
     currentContext: dateToSlug(new Date()),
 };
 
-// const supabase = createClient(); // Removed Supabase client initialization
+/**
+ * Async thunks for API calls using server actions
+ */
 
-// Async thunks for API calls using server actions
+/**
+ * Fetches notes for a specific user with the given contexts.
+ * @param userId - The user ID to fetch notes for
+ * @param contexts - Non-empty array of context strings to filter notes by
+ * @throws Will reject with an error message if contexts is empty or if the fetch fails
+ * @returns Array of Note objects that match the contexts
+ */
 export const fetchNotes = createAsyncThunk(
     "notes/fetchNotes",
     async (
-        { userId, keyContext }: { userId: string; keyContext?: string },
+        {
+            userId,
+            contexts,
+        }: {
+            userId: string;
+            contexts: [string, ...string[]]; // Non-empty array type
+        },
         { rejectWithValue }
     ) => {
         try {
-            const notes = await fetchNotesAction({ userId, keyContext });
+            // Additional runtime check to ensure contexts is not empty
+            if (contexts.length === 0) {
+                return rejectWithValue("Context array cannot be empty");
+            }
+
+            const notes = await fetchNotesAction(userId, {
+                contexts,
+                method: "OR",
+            });
             return notes;
         } catch (error: any) {
             return rejectWithValue(error?.message || "Failed to fetch notes");
         }
     }
 );
+// export const fetchNotes = createAsyncThunk(
+//     "notes/fetchNotes",
+//     async (
+//         { userId, contexts }: { userId: string; contexts: string[] },
+//         { rejectWithValue }
+//     ) => {
+//         try {
+//             const notes = await fetchNotesAction(userId, {
+//                 contexts,
+//                 method: "OR",
+//             });
+//             return notes;
+//         } catch (error: any) {
+//             return rejectWithValue(error?.message || "Failed to fetch notes");
+//         }
+//     }
+// );
 
 export const addNote = createAsyncThunk(
     "notes/addNote",
@@ -238,23 +277,3 @@ export const {
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
-
-export const createOptimisticNote = (
-    content: string,
-    userId: string,
-    currentContext: string,
-    note_type: NoteType = "note"
-): Note => {
-    const now = new Date().toISOString();
-    return {
-        id: uuidv4(),
-        content,
-        created_at: now,
-        user_id: userId,
-        persistenceStatus: "pending",
-        key_context: currentContext,
-        contexts: [],
-        tags: [],
-        note_type,
-    };
-};
