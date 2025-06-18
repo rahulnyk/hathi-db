@@ -25,7 +25,8 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     return (
         <div
             className={cn(
-                "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-72 z-[100]", // z-index 100. Changed bg-zinc-100 to bg-zinc-200 and dark:bg-zinc-900 to dark:bg-zinc-800
+                "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
+                "transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-80 z-[100]",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}
         >
@@ -38,7 +39,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                 <PanelLeftClose size={22} /> {/* Adjusted icon size */}
             </button>
 
-            <div className="flex flex-col h-full pt-16">
+            <div className="flex flex-col h-full pt-10">
                 <div className="flex-grow overflow-y-auto px-4 space-y-2">
                     <div className="p-1 rounded-md flex justify-center">
                         <DateContextPicker
