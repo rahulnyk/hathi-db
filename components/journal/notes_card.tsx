@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import { sentenceCaseToSlug } from "@/lib/utils";
+import { setCurrentContext } from "@/store/notesSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
@@ -46,7 +48,10 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                     target.getAttribute("data-content") ||
                     target.textContent ||
                     "";
-                console.log("Context clicked:", content);
+                const context = sentenceCaseToSlug(content);
+                // Dispatch action to set current context
+                dispatch(setCurrentContext(context));
+                console.log("Context clicked:", context);
             }
 
             if (target.classList.contains("hashtag-pill")) {
@@ -60,7 +65,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
 
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
-    }, []);
+    }, [dispatch]);
 
     return (
         <div

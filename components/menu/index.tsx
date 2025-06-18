@@ -5,10 +5,10 @@
 // CalendarIcon import removed
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
-import { ThemeSwitcher } from "./theme-switcher";
-import { LogoutButton } from "./logout-button";
-import { DateContextPicker } from "./journal/date_context_picker";
-
+import { ThemeSwitcher } from "../theme-switcher";
+import { LogoutButton } from "../logout-button";
+import { DateContextPicker } from "../journal/date_context_picker";
+import { ContextList } from "./ContextList"; // Import ContextList component
 // Unused imports related to dispatch and dateToSlug are now fully removed.
 import { cn } from "@/lib/utils";
 
@@ -30,8 +30,6 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
             )}
         >
             <button
-                // variant="ghost"
-                // size="bigIcon"
                 onClick={onClose}
                 className="fixed top-4 right-4 z-20 text-foreground hover:bg-accent p-2 rounded-md" // Adjusted styling
                 aria-label="Open menu"
@@ -39,25 +37,9 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
             >
                 <PanelLeftClose size={22} /> {/* Adjusted icon size */}
             </button>
-            {/* <Button
-                variant="outline"
-                size="bigIcon"
-                onClick={onClose}
-                className="absolute top-4 right-4 rounded-md bg-card text-card-foreground border-border z-[102]"
-                aria-label="Close menu"
-                title="Close menu"
-            >
-                <XIcon size={28} />
-            </Button> */}
-            {/* Increased top padding from pt-4 to pt-16 (4rem) */}
-            <div className="flex flex-col h-full pt-16">
-                {/* Scrollable Area - always rendered when menu itself is open */}
-                {/* Removed pt-0 from here, padding is now on parent */}
-                <div className="flex-grow overflow-y-auto px-4 space-y-2">
-                    {/* Home Button Removed */}
-                    {/* Calendar Button Removed */}
 
-                    {/* DateContextPicker is now always rendered when menu is open */}
+            <div className="flex flex-col h-full pt-16">
+                <div className="flex-grow overflow-y-auto px-4 space-y-2">
                     <div className="p-1 rounded-md flex justify-center">
                         <DateContextPicker
                             isOpen={true} // DateContextPicker is always "open" when RetractableMenu is
@@ -67,7 +49,11 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             }}
                         />
                     </div>
+                    <ContextList />
                 </div>
+                {/* <div className="flex-grow overflow-y-auto border-t border-neutral-200 dark:border-neutral-800 mt-2 pt-2">
+                    
+                </div> */}
 
                 {/* Sticky Bottom Group - always rendered in "expanded" form because menu is either open or not rendered */}
                 <div className="p-3 border-t border-border/20 mt-auto">
