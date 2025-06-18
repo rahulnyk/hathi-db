@@ -16,7 +16,7 @@ export function Thread() {
 
     // Fetch notes on component mount
     useEffect(() => {
-        dispatch(fetchNotes({ userId: user.id, keyContext: currentContext }));
+        dispatch(fetchNotes({ userId: user.id, contexts: [currentContext] }));
     }, [dispatch, user.id, currentContext]);
 
     // Show loading state

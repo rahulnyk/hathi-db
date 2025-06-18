@@ -2,11 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
-import {
-    addNote,
-    addNoteOptimistically,
-    createOptimisticNote,
-} from "@/store/notesSlice";
+import { addNote, addNoteOptimistically } from "@/store/notesSlice";
+import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 // import { ArrowDownToLine } from "lucide-react";
@@ -242,12 +239,10 @@ export function NotesEditor() {
         // Then try to persist to server
         dispatch(
             addNote({
-                content,
                 userId: user.id,
                 tempId: optimisticNote.id,
-                key_context: optimisticNote.key_context || currentContext, // Pass key_context from optimistic note
-                contexts,
-                tags,
+                key_context: currentContext, // Ensure key_context is set
+                ...optimisticNote,
             })
         ).finally(() => {
             setIsSubmitting(false);
