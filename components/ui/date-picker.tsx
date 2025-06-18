@@ -136,7 +136,7 @@ export function DatePicker({
                 </div>
 
                 {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-1 w-full max-w-[224px]">
+                <div className="grid grid-cols-7 gap-1 w-full max-w-[230px]">
                     {calendarDays.map((date, index) => {
                         const isCurrentMonth = isSameMonth(date, currentMonth);
                         const isSelected =
