@@ -3,7 +3,7 @@ import { Lexend } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ReduxProvider } from "@/store/provider";
-import { DeviceTypeDetector } from "@/components/device_type_detector";
+import { DeviceTypeDetector } from "@/components/device-type-detector";
 
 const defaultUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`

@@ -1,5 +1,4 @@
 "use client";
-// Example: _app.tsx or layout.tsx or a top-level component
 import { useEffect } from "react";
 import { useAppDispatch } from "@/store";
 import { setDeviceType } from "@/store/uiSlice";
