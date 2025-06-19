@@ -100,5 +100,6 @@ export const createOptimisticNote = (
         contexts: distinctContexts,
         tags: tags || [],
         note_type,
+        suggested_contexts: [],
     };
 };
