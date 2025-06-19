@@ -3,6 +3,7 @@ import { Lexend } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ReduxProvider } from "@/store/provider";
+import { DeviceTypeDetector } from "@/components/device_type_detector";
 
 const defaultUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -35,7 +36,10 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <main className="min-h-screen flex">
-                        <ReduxProvider>{children}</ReduxProvider>
+                        <ReduxProvider>
+                            <DeviceTypeDetector />
+                            {children}
+                        </ReduxProvider>
                     </main>
                 </ThemeProvider>
             </body>
