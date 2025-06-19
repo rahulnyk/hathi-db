@@ -11,7 +11,7 @@ export function DeviceTypeDetector() {
         const userAgent = navigator.userAgent;
         if (/Mobi/i.test(userAgent)) {
             dispatch(setDeviceType("mobile"));
-        } else if (/Tablet/i.test(userAgent)) {
+        } else if (/Tablet/i.test(userAgent) || /iPad/i.test(userAgent)) {
             dispatch(setDeviceType("tablet"));
         } else {
             dispatch(setDeviceType("desktop"));
