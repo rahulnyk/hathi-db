@@ -138,6 +138,75 @@ export async function fetchNotes(
 }
 
 /**
+ * Patches a note with the provided updates
+ *
+ * @param noteId - The ID of the note to update
+ * @param patches - Partial note object with fields to update
+ * @param userId - The user ID for authorization
+ * @returns Promise that resolves to the updated note
+ */
+export async function patchNote({
+    noteId,
+    patches,
+    userId,
+}: {
+    noteId: string;
+    patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">>;
+    userId: string;
+}): Promise<Note> {
+    const supabase = await createClient();
+
+    try {
+        // First verify the note belongs to the user
+        const { error: fetchError } = await supabase
+            .from("notes")
+            .select("id")
+            .eq("id", noteId)
+            .eq("user_id", userId)
+            .single();
+
+        if (fetchError) {
+            if (fetchError.code === 'PGRST116') {
+                throw new Error("Note not found");
+            }
+            throw fetchError;
+        }
+
+        // Prepare the update object
+        const updateData: Record<string, unknown> = {};
+
+        // Only include fields that are actually being updated
+        if (patches.content !== undefined) updateData.content = patches.content;
+        if (patches.contexts !== undefined) updateData.contexts = patches.contexts;
+        if (patches.tags !== undefined) updateData.tags = patches.tags;
+        if (patches.suggested_contexts !== undefined) updateData.suggested_contexts = patches.suggested_contexts;
+        if (patches.note_type !== undefined) updateData.note_type = patches.note_type;
+
+        // Update the note
+        const { data, error } = await supabase
+            .from("notes")
+            .update(updateData)
+            .eq("id", noteId)
+            .eq("user_id", userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        if (!data) throw new Error("No data returned after update");
+
+        return {
+            ...data,
+            persistenceStatus: "persisted",
+        } as Note;
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error patching note:", errorMessage);
+        throw new Error(`Failed to patch note: ${errorMessage}`);
+    }
+}
+
+/**
  * Applies context array filtering to Supabase query
  *
  * @param query - Supabase query builder instance

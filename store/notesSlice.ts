@@ -6,6 +6,7 @@ import {
     fetchNotes as fetchNotesAction,
     addNote as addNoteAction,
     deleteNote as deleteNoteAction,
+    patchNote as patchNoteAction,
 } from "@/app/actions/notes"; // Import server actions
 
 // Enhanced persistence status
@@ -25,6 +26,7 @@ export type Note = {
     contexts?: string[];
     tags?: string[];
     note_type?: NoteType;
+    suggested_contexts?: string[];
 };
 
 interface NotesState {
@@ -159,6 +161,36 @@ export const deleteNote = createAsyncThunk(
             return rejectWithValue({
                 error: error?.message || "Failed to delete note",
                 noteId, // Pass noteId back for error handling in reducer
+            });
+        }
+    }
+);
+
+export const patchNote = createAsyncThunk(
+    "notes/patchNote",
+    async (
+        {
+            noteId,
+            patches,
+            userId,
+        }: {
+            noteId: string;
+            patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">>;
+            userId: string;
+        },
+        { rejectWithValue }
+    ) => {
+        try {
+            const updatedNote = await patchNoteAction({
+                noteId,
+                patches,
+                userId,
+            });
+            return updatedNote;
+        } catch (error: any) {
+            return rejectWithValue({
+                error: error?.message || "Failed to patch note",
+                noteId,
             });
         }
     }
