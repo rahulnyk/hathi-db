@@ -159,7 +159,7 @@ export function DatePicker({
                                         "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
                                     isTodayDate &&
                                         !isSelected &&
-                                        "bg-accent font-medium",
+                                        "bg-accent-foreground/20 font-medium",
                                     "transition-colors"
                                 )}
                             >
