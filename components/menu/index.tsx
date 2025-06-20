@@ -34,7 +34,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
         >
             <div className="flex items-center justify-between pt-2 pr-4 pl-6 border-b border-border/20">
                 <div className="flex flex-row items-center space-x-2 text-foreground/50">
-                    <ElephantIcon size={40} />
+                    <ElephantIcon size={40} aria-hidden="true" />
                     <span className="text-xl font-bold">hathi</span>
                 </div>
                 <button
