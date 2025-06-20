@@ -34,21 +34,11 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     // Handle AI state changes for this specific note
     useEffect(() => {
         if (aiState?.status === "succeeded" && aiState.suggestions.length > 0) {
-            // Update the note with suggested contexts
-            dispatch(
-                patchNote({
-                    noteId: note.id,
-                    patches: {
-                        suggested_contexts: aiState.suggestions,
-                    },
-                    userId: user?.id || "",
-                })
-            );
-
             // Clear the suggestions from AI state to prevent duplicate updates
+            // The database update is now handled directly in the AI thunk
             dispatch(clearSuggestedContexts(note.id));
         }
-    }, [aiState, dispatch, note.id, user?.id]);
+    }, [aiState, dispatch, note.id]);
 
     const handleDelete = () => {
         if (!user) return;
@@ -232,24 +222,33 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                             </>
                         )}
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => {
-                            if (!user) return;
-                            dispatch(
-                                generateSuggestedContexts({
-                                    noteId: note.id,
-                                    content: note.content,
-                                    userId: user.id,
-                                })
-                            );
-                        }}
-                        disabled={aiState?.status === "loading"}
-                    >
-                        <RefreshCw className={cn("h-3 w-3", aiState?.status === "loading" && "animate-spin")} />
-                    </Button>
+                    {aiState.status === "failed" && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                                if (!user) return;
+                                dispatch(
+                                    generateSuggestedContexts({
+                                        noteId: note.id,
+                                        content: note.content,
+                                        userId: user.id,
+                                    })
+                                );
+                            }}
+                        >
+                            <RefreshCw className="h-3 w-3" />
+                        </Button>
+                    )}
+                </div>
+            )}
+
+            {/* Show loading state for newly created notes that don't have AI state yet */}
+            {!aiState && !note.suggested_contexts?.length && note.persistenceStatus === "persisted" && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Generating context suggestions...</span>
                 </div>
             )}
 

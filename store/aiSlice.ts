@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { suggestContexts, generateEmbedding } from "@/app/actions/ai";
 import { patchNote } from "@/app/actions/notes";
-import { Note } from "@/store/notesSlice";
+import { Note, updateNoteWithSuggestedContexts } from "@/store/notesSlice";
 
 // Types for AI-generated data
 export interface SuggestedContexts {
@@ -27,19 +27,32 @@ export const generateSuggestedContexts = createAsyncThunk(
         {
             noteId,
             content,
-            userId: _userId, // Keep for future use if needed
+            userId,
         }: {
             noteId: string;
             content: string;
             userId: string;
         },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
             const suggestions = await suggestContexts({
                 noteId,
                 content,
             });
+
+            // Dispatch action to update the note in Redux store immediately
+            dispatch(updateNoteWithSuggestedContexts({ noteId, suggestions }));
+
+            // Update the note optimistically in the database
+            await patchNote({
+                noteId,
+                patches: {
+                    suggested_contexts: suggestions,
+                },
+                userId,
+            });
+
             return { noteId, suggestions };
         } catch (error: any) {
             return rejectWithValue({
