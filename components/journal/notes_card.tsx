@@ -144,28 +144,32 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 {/* Accept/Reject buttons - show when in preview mode */}
                 {structurizeState?.status === "succeeded" && structurizeState.structuredContent && (
                     <>
-                        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 px-2 py-1 rounded border border-blue-200 dark:border-blue-800 whitespace-nowrap">
-                            ✨ Structured preview - click ✓ to save, ↶ to revert
+                        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 px-4 py-1 rounded whitespace-nowrap flex items-center gap-1">
+                            <span>✨ Structured preview - click</span>
+                            <Check className="h-3 w-3 inline" />
+                            <span>to save or</span>
+                            <Undo className="h-3 w-3 inline" />
+                            <span>to revert</span>
                         </div>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100 text-red-600 dark:text-red-400"
-                            onClick={handleRejectStructurize}
-                            title="Revert to original content"
-                        >
-                            <Undo className="h-4 w-4" />
-                            <span className="sr-only">Revert to original content</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100 text-green-600 dark:text-green-400"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
                             onClick={handleAcceptStructurize}
                             title="Accept structured content"
                         >
                             <Check className="h-4 w-4" />
                             <span className="sr-only">Accept structured content</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                            onClick={handleRejectStructurize}
+                            title="Revert to original content"
+                        >
+                            <Undo className="h-4 w-4" />
+                            <span className="sr-only">Revert to original content</span>
                         </Button>
                     </>
                 )}
