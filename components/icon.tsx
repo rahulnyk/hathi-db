@@ -39,4 +39,3 @@ export const ElephantIcon = ({ size = 100, ...rest }: ElephantIconProps) => (
     </svg>
 );
 
-// export default ElephantIcon;
