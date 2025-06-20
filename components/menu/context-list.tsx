@@ -47,9 +47,6 @@ export function ContextList() {
 
     return (
         <div className="flex flex-col gap-0.5 px-2 py-1">
-            {/* <h3 className="px-2 py-0.5 text-xs font-semibold tracking-wider text-neutral-400 uppercase">
-                Contexts
-            </h3> */}
             {sortedContexts.map((contextStat: ContextStat) => (
                 <div
                     key={contextStat.context}

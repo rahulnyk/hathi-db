@@ -124,7 +124,7 @@ export function DatePicker({
             {/* Calendar Grid */}
             <div className="flex flex-col items-center px-4 py-0">
                 {/* Weekday headers */}
-                <div className="grid grid-cols-7 gap-1 mb-1 w-full max-w-[260px]">
+                <div className="grid grid-cols-7 gap-1 mb-1 w-full max-w-[280px]">
                     {weekDays.map((day) => (
                         <div
                             key={day}
@@ -171,7 +171,7 @@ export function DatePicker({
             </div>
 
             {/* Footer with Today button */}
-            <div className="px-2 py-1 border-t">
+            <div className="px-2 py-2 border-t">
                 <Button
                     variant="default"
                     size="sm"
