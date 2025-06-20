@@ -111,7 +111,9 @@ You will receive raw, unstructured notes that may contain:
 
 Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
 - Group content into appropriate sections using headings (e.g. Work, Personal, Tasks, Todos, Reflections, Ideas, Experiences, Cooking, Commute, Health, Fitness, etc.).
-- Use the user's existing contexts if relevant for headings/sections.
+- Use the user's existing contexts if relevant for headings/sections, but only use them if they are strictly relevant as section headings.
+- Don't create a section of a context just because there is context attached to the note.
+- Don't create a section heading of a context just because there is context attached to the note.
 - Use bullet points for tasks and lists.
 - Highlight dates, priorities, and deadlines in bold if they are present.
 - Italicize any optional or self-reflective statements.
