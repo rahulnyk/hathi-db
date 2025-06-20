@@ -22,8 +22,9 @@ export default function JournalLayout({
                 // variant="ghost"
                 // size="bigIcon"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="fixed top-4 left-4 z-20 text-foreground bg-accent/50 backdrop-blur-md hover:bg-accent p-2 rounded-md" // Adjusted styling
+                className="fixed top-2 left-4 z-20 text-foreground bg-accent/50 backdrop-blur-md hover:bg-accent p-2 rounded-md" // Adjusted styling
                 aria-label="Open menu"
+                aria-expanded={isMenuOpen}
                 title="Open menu" // Added title for better UX
             >
                 <PanelLeftOpen size={22} /> {/* Adjusted icon size */}
