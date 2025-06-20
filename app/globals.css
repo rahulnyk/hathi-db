@@ -27,6 +27,10 @@
     @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
 }
 
+.suggested-context-pill {
+    @apply bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-900/50;
+}
+
 .hashtag-pill {
     @apply inline-block bg-yellow-500/30 text-amber-800 dark:text-amber-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
 }
