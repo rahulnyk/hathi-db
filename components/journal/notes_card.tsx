@@ -44,7 +44,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                     userId: user?.id || "",
                 })
             );
-            
+
             // Clear the suggestions from AI state to prevent duplicate updates
             dispatch(clearSuggestedContexts(note.id));
         }

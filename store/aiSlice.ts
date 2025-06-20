@@ -69,7 +69,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
             const embedding = await generateEmbedding({
                 content,
             });
-            
+
             // Update the note directly in the database without triggering frontend updates
             // since embeddings are not used in the UI
             await patchNote({
@@ -81,7 +81,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
                 },
                 userId,
             });
-            
+
             return { noteId, embedding };
         } catch (error: any) {
             return rejectWithValue({
