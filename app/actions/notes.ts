@@ -151,7 +151,11 @@ export async function patchNote({
     userId,
 }: {
     noteId: string;
-    patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">>;
+    patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">> & {
+        embedding?: number[];
+        embedding_model?: string;
+        embedding_created_at?: string;
+    };
     userId: string;
 }): Promise<Note> {
     const supabase = await createClient();
@@ -181,6 +185,9 @@ export async function patchNote({
         if (patches.tags !== undefined) updateData.tags = patches.tags;
         if (patches.suggested_contexts !== undefined) updateData.suggested_contexts = patches.suggested_contexts;
         if (patches.note_type !== undefined) updateData.note_type = patches.note_type;
+        if (patches.embedding !== undefined) updateData.embedding = patches.embedding;
+        if (patches.embedding_model !== undefined) updateData.embedding_model = patches.embedding_model;
+        if (patches.embedding_created_at !== undefined) updateData.embedding_created_at = patches.embedding_created_at;
 
         // Update the note
         const { data, error } = await supabase
