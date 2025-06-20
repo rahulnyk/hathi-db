@@ -161,6 +161,26 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                             </Button>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Context suggestions loading/error states and refresh button when no suggestions */}
+            {aiState && !note.suggested_contexts?.length && (
+                <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {aiState.status === "loading" && (
+                            <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span>Generating context suggestions...</span>
+                            </>
+                        )}
+                        {aiState.status === "failed" && (
+                            <>
+                                <AlertCircle className="h-3 w-3" />
+                                <span>Failed to generate suggestions: {aiState.error}</span>
+                            </>
+                        )}
+                    </div>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -179,45 +199,6 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                     >
                         <RefreshCw className={cn("h-3 w-3", aiState?.status === "loading" && "animate-spin")} />
                     </Button>
-                </div>
-            )}
-
-            {/* Context suggestions loading/error states */}
-            {aiState && !note.suggested_contexts?.length && (
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {aiState.status === "loading" && (
-                            <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                <span>Generating context suggestions...</span>
-                            </>
-                        )}
-                        {aiState.status === "failed" && (
-                            <>
-                                <AlertCircle className="h-3 w-3" />
-                                <span>Failed to generate suggestions: {aiState.error}</span>
-                            </>
-                        )}
-                    </div>
-                    {aiState.status === "failed" && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                                if (!user) return;
-                                dispatch(
-                                    generateSuggestedContexts({
-                                        noteId: note.id,
-                                        content: note.content,
-                                        userId: user.id,
-                                    })
-                                );
-                            }}
-                        >
-                            <RefreshCw className="h-3 w-3" />
-                        </Button>
-                    )}
                 </div>
             )}
 
