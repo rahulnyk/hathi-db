@@ -250,7 +250,7 @@ export function NotesEditor() {
         // If note was successfully added, generate context suggestions
         if (addNote.fulfilled.match(addNoteResult)) {
             const persistedNote = addNoteResult.payload.note;
-            
+
             // Fire-and-forget: Dispatch context suggestions generation
             // Thread component will handle the AI state management
             dispatch(
