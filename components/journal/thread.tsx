@@ -4,7 +4,8 @@ import { useEffect } from "react";
 // import clsx from "clsx";
 import { NoteCard } from "./notes_card";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { fetchNotes } from "@/store/notesSlice";
+import { fetchNotes, patchNote } from "@/store/notesSlice";
+import { clearSuggestedContexts } from "@/store/aiSlice";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 
@@ -13,6 +14,30 @@ export function Thread() {
     const dispatch = useAppDispatch();
     const { notes, collectionStatus, collectionError, currentContext } =
         useAppSelector((state) => state.notes);
+
+    // Listen for successful context suggestions and update the note
+    const suggestedContexts = useAppSelector((state) => state.ai.suggestedContexts);
+
+    useEffect(() => {
+        // Check for any notes that have successfully generated suggestions
+        Object.entries(suggestedContexts).forEach(([noteId, contextData]) => {
+            if (contextData.status === "succeeded" && contextData.suggestions.length > 0) {
+                // Update the note with suggested contexts
+                dispatch(
+                    patchNote({
+                        noteId,
+                        patches: {
+                            suggested_contexts: contextData.suggestions,
+                        },
+                        userId: user.id,
+                    })
+                );
+
+                // Clear the suggestions from AI state to prevent duplicate updates
+                dispatch(clearSuggestedContexts(noteId));
+            }
+        });
+    }, [suggestedContexts, dispatch, user.id]);
 
     // Fetch notes on component mount
     useEffect(() => {
