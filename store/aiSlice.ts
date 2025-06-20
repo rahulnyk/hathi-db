@@ -35,6 +35,10 @@ export const generateSuggestedContexts = createAsyncThunk(
         },
         { rejectWithValue, dispatch }
     ) => {
+
+        // Clear any existing suggestions for this note
+        dispatch(clearSuggestedContexts(noteId));
+
         try {
             const suggestions = await suggestContexts({
                 noteId,

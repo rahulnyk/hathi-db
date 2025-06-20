@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
-import { generateSuggestedContexts, clearSuggestedContexts } from "@/store/aiSlice";
+import { generateSuggestedContexts } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
@@ -30,15 +30,6 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
 
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
-
-    // Handle AI state changes for this specific note
-    useEffect(() => {
-        if (aiState?.status === "succeeded" && aiState.suggestions.length > 0) {
-            // Clear the suggestions from AI state to prevent duplicate updates
-            // The database update is now handled directly in the AI thunk
-            dispatch(clearSuggestedContexts(note.id));
-        }
-    }, [aiState, dispatch, note.id]);
 
     const handleDelete = () => {
         if (!user) return;
