@@ -144,7 +144,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 {/* Accept/Reject buttons - show when in preview mode */}
                 {structurizeState?.status === "succeeded" && structurizeState.structuredContent && (
                     <>
-                        <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 px-4 py-1 rounded whitespace-nowrap flex items-center gap-1">
+                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
                             <span>✨ Structured preview - click</span>
                             <Check className="h-3 w-3 inline" />
                             <span>to save or</span>
@@ -158,7 +158,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                             onClick={handleAcceptStructurize}
                             title="Accept structured content"
                         >
-                            <Check className="h-4 w-4" />
+                            <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                             <span className="sr-only">Accept structured content</span>
                         </Button>
                         <Button
@@ -168,7 +168,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                             onClick={handleRejectStructurize}
                             title="Revert to original content"
                         >
-                            <Undo className="h-4 w-4" />
+                            <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                             <span className="sr-only">Revert to original content</span>
                         </Button>
                     </>
