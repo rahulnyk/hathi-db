@@ -8,6 +8,7 @@ import {
     deleteNote as deleteNoteAction,
     patchNote as patchNoteAction,
 } from "@/app/actions/notes"; // Import server actions
+import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
@@ -107,43 +108,34 @@ export const addNote = createAsyncThunk(
     "notes/addNote",
     async (
         {
-            content,
             userId,
-            tempId, // tempId is used for optimistic updates, not passed to server action directly
-            key_context,
-            contexts,
-            tags,
-            note_type = "note",
+            tempId,
+            ...noteData
         }: {
-            content: string;
             userId: string;
             tempId: string;
+            content: string;
             key_context: string;
             contexts?: string[];
             tags?: string[];
             note_type?: NoteType;
         },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
-            // Call the server action
             const newNote = await addNoteAction({
-                content,
                 userId,
-                key_context,
-                contexts,
-                tags,
-                note_type,
+                ...noteData,
             });
-            // The server action returns the persisted note with its actual ID
-            return {
-                tempId, // Return tempId to update the optimistic note
-                note: newNote, // newNote already has persistenceStatus: "persisted"
-            };
+
+            // Refresh context metadata since new contexts might have been created
+            dispatch(refreshContextsMetadata());
+
+            return { tempId, note: newNote };
         } catch (error: any) {
             return rejectWithValue({
                 error: error?.message || "Failed to add note",
-                tempId, // Pass tempId back for error handling in reducer
+                tempId,
             });
         }
     }
@@ -153,11 +145,15 @@ export const deleteNote = createAsyncThunk(
     "notes/deleteNote",
     async (
         { noteId, userId }: { noteId: string; userId: string },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
             // Call the server action
             const result = await deleteNoteAction({ noteId, userId });
+
+            // Refresh context metadata since deleting a note might affect context statistics
+            dispatch(refreshContextsMetadata());
+
             // Server action returns { noteId } on success
             return result; // This will be { noteId: string }
         } catch (error: any) {
@@ -181,7 +177,7 @@ export const patchNote = createAsyncThunk(
             patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type" | "embedding" | "embedding_model" | "embedding_created_at">>;
             userId: string;
         },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
             const updatedNote = await patchNoteAction({
@@ -189,6 +185,10 @@ export const patchNote = createAsyncThunk(
                 patches,
                 userId,
             });
+
+            // Refresh context metadata since contexts might have been modified
+            dispatch(refreshContextsMetadata());
+
             return updatedNote;
         } catch (error: any) {
             return rejectWithValue({

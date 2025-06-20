@@ -35,7 +35,12 @@ export const fetchContextsMetadata = createAsyncThunk<ContextStat[]>(
 const notesMetadataSlice = createSlice({
     name: "notesMetadata",
     initialState,
-    reducers: {},
+    reducers: {
+        // Add a refresh action that resets status to idle to trigger a refetch
+        refreshContextsMetadata: (state) => {
+            state.status = "idle";
+        },
+    },
     extraReducers: (builder) => {
         builder
             .addCase(fetchContextsMetadata.pending, (state) => {
@@ -56,4 +61,5 @@ const notesMetadataSlice = createSlice({
     },
 });
 
+export const { refreshContextsMetadata } = notesMetadataSlice.actions;
 export default notesMetadataSlice.reducer;
