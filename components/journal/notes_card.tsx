@@ -139,7 +139,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                 key={index}
                                 variant="outline"
                                 size="sm"
-                                className="suggested-context-pill h-6 px-2 text-xs rounded-full"
+                                className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
                                 onClick={() => {
                                     if (!user) return;
                                     
@@ -157,7 +157,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                 }}
                             >
                                 {context}
-                                <Plus className="h-3 w-3 ml-1" />
+                                <Plus className="h-3 w-3" />
                             </Button>
                         ))}
                     </div>

@@ -28,7 +28,7 @@
 }
 
 .suggested-context-pill {
-    @apply bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800 dark:hover:bg-blue-900/50;
+    @apply bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200 dark:bg-zinc-800/50 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700/50;
 }
 
 .hashtag-pill {
