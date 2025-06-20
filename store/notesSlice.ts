@@ -296,6 +296,30 @@ const notesSlice = createSlice({
                     state.notes[noteIndex].persistenceStatus = "persisted";
                     state.notes[noteIndex].errorMessage = error;
                 }
+            })
+            .addCase(patchNote.fulfilled, (state, action) => {
+                const updatedNote = action.payload;
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === updatedNote.id
+                );
+                if (noteIndex !== -1) {
+                    // Update the note with the new data from server
+                    state.notes[noteIndex] = {
+                        ...state.notes[noteIndex],
+                        ...updatedNote,
+                        persistenceStatus: "persisted",
+                    };
+                }
+            })
+            .addCase(patchNote.rejected, (state, action: any) => {
+                const { noteId, error } = action.payload;
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === noteId
+                );
+                if (noteIndex !== -1) {
+                    state.notes[noteIndex].persistenceStatus = "failed";
+                    state.notes[noteIndex].errorMessage = error;
+                }
             });
     },
 });

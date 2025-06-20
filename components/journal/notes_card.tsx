@@ -1,10 +1,10 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting } from "@/store/notesSlice";
+import { Note, deleteNote, markNoteAsDeleting, patchNote } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle, MoreVertical, Trash2, Loader2 } from "lucide-react";
+import { AlertCircle, MoreVertical, Trash2, Loader2, Tag, Check, RefreshCw } from "lucide-react";
 import remarkGfm from "remark-gfm";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
 import remarkContextPlugin from "@/lib/remark_context_plugin";
 import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
@@ -20,9 +20,13 @@ import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
+import { generateSuggestedContexts } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
+    
+    // Get AI state for this note
+    const aiState = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
 
     const handleDelete = () => {
         if (!user) return;
@@ -125,6 +129,111 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                     {note.content}
                 </ReactMarkdown>
             </div>
+
+            {/* Suggested contexts */}
+            {note.suggested_contexts && note.suggested_contexts.length > 0 && (
+                <div className="mt-3 p-2 bg-muted/30 rounded-md">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Tag className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground font-medium">
+                                Suggested contexts:
+                            </span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                                if (!user) return;
+                                dispatch(
+                                    generateSuggestedContexts({
+                                        noteId: note.id,
+                                        content: note.content,
+                                        userId: user.id,
+                                    })
+                                );
+                            }}
+                            disabled={aiState?.status === "loading"}
+                        >
+                            <RefreshCw className={cn("h-3 w-3", aiState?.status === "loading" && "animate-spin")} />
+                        </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                        {note.suggested_contexts.map((context, index) => (
+                            <Button
+                                key={index}
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-xs rounded-full"
+                                onClick={() => {
+                                    if (!user) return;
+                                    
+                                    // Add this context to the note's contexts
+                                    const updatedContexts = [...(note.contexts || []), context];
+                                    dispatch(
+                                        patchNote({
+                                            noteId: note.id,
+                                            patches: {
+                                                contexts: updatedContexts,
+                                            },
+                                            userId: user.id,
+                                        })
+                                    );
+                                }}
+                            >
+                                {context}
+                                <Check className="h-3 w-3 ml-1" />
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Context suggestions loading/error states */}
+            {aiState && !note.suggested_contexts?.length && (
+                <div className="mt-3 p-2 bg-muted/30 rounded-md">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Tag className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground font-medium">
+                                Context suggestions:
+                            </span>
+                        </div>
+                        {aiState.status === "failed" && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => {
+                                    if (!user) return;
+                                    dispatch(
+                                        generateSuggestedContexts({
+                                            noteId: note.id,
+                                            content: note.content,
+                                            userId: user.id,
+                                        })
+                                    );
+                                }}
+                            >
+                                <RefreshCw className="h-3 w-3" />
+                            </Button>
+                        )}
+                    </div>
+                    {aiState.status === "loading" && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Generating context suggestions...</span>
+                        </div>
+                    )}
+                    {aiState.status === "failed" && (
+                        <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                            <AlertCircle className="h-3 w-3" />
+                            <span>Failed to generate suggestions: {aiState.error}</span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Status indicator pill at bottom */}
             {(note.persistenceStatus === "failed" ||
