@@ -2,7 +2,7 @@
 
 import { Note, deleteNote, markNoteAsDeleting, patchNote } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle, MoreVertical, Trash2, Loader2, Tag, Check, RefreshCw } from "lucide-react";
+import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw } from "lucide-react";
 import remarkGfm from "remark-gfm";
 import { useAppDispatch, useAppSelector } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
@@ -132,40 +132,14 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
 
             {/* Suggested contexts */}
             {note.suggested_contexts && note.suggested_contexts.length > 0 && (
-                <div className="mt-3 p-2 bg-muted/30 rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <Tag className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground font-medium">
-                                Suggested contexts:
-                            </span>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                                if (!user) return;
-                                dispatch(
-                                    generateSuggestedContexts({
-                                        noteId: note.id,
-                                        content: note.content,
-                                        userId: user.id,
-                                    })
-                                );
-                            }}
-                            disabled={aiState?.status === "loading"}
-                        >
-                            <RefreshCw className={cn("h-3 w-3", aiState?.status === "loading" && "animate-spin")} />
-                        </Button>
-                    </div>
+                <div className="mt-3 flex items-center justify-between">
                     <div className="flex flex-wrap gap-1">
                         {note.suggested_contexts.map((context, index) => (
                             <Button
                                 key={index}
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-xs rounded-full"
+                                className="suggested-context-pill h-6 px-2 text-xs rounded-full"
                                 onClick={() => {
                                     if (!user) return;
                                     
@@ -183,54 +157,66 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                 }}
                             >
                                 {context}
-                                <Check className="h-3 w-3 ml-1" />
+                                <Plus className="h-3 w-3 ml-1" />
                             </Button>
                         ))}
                     </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                            if (!user) return;
+                            dispatch(
+                                generateSuggestedContexts({
+                                    noteId: note.id,
+                                    content: note.content,
+                                    userId: user.id,
+                                })
+                            );
+                        }}
+                        disabled={aiState?.status === "loading"}
+                    >
+                        <RefreshCw className={cn("h-3 w-3", aiState?.status === "loading" && "animate-spin")} />
+                    </Button>
                 </div>
             )}
 
             {/* Context suggestions loading/error states */}
             {aiState && !note.suggested_contexts?.length && (
-                <div className="mt-3 p-2 bg-muted/30 rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <Tag className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground font-medium">
-                                Context suggestions:
-                            </span>
-                        </div>
+                <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {aiState.status === "loading" && (
+                            <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span>Generating context suggestions...</span>
+                            </>
+                        )}
                         {aiState.status === "failed" && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => {
-                                    if (!user) return;
-                                    dispatch(
-                                        generateSuggestedContexts({
-                                            noteId: note.id,
-                                            content: note.content,
-                                            userId: user.id,
-                                        })
-                                    );
-                                }}
-                            >
-                                <RefreshCw className="h-3 w-3" />
-                            </Button>
+                            <>
+                                <AlertCircle className="h-3 w-3" />
+                                <span>Failed to generate suggestions: {aiState.error}</span>
+                            </>
                         )}
                     </div>
-                    {aiState.status === "loading" && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Generating context suggestions...</span>
-                        </div>
-                    )}
                     {aiState.status === "failed" && (
-                        <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                            <AlertCircle className="h-3 w-3" />
-                            <span>Failed to generate suggestions: {aiState.error}</span>
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => {
+                                if (!user) return;
+                                dispatch(
+                                    generateSuggestedContexts({
+                                        noteId: note.id,
+                                        content: note.content,
+                                        userId: user.id,
+                                    })
+                                );
+                            }}
+                        >
+                            <RefreshCw className="h-3 w-3" />
+                        </Button>
                     )}
                 </div>
             )}
