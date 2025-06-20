@@ -5,7 +5,7 @@ import { aiProvider } from "@/lib/ai";
 
 /**
  * Generates context suggestions for a note using AI
- * 
+ *
  * @param noteId - The ID of the note to generate suggestions for
  * @param content - The content of the note
  * @returns Promise that resolves to an array of suggested contexts
@@ -38,7 +38,7 @@ export async function suggestContexts({
 
 /**
  * Generates embeddings for a note (for future use)
- * 
+ *
  * @param content - The content of the note
  * @returns Promise that resolves to the embedding vector
  */
@@ -55,4 +55,4 @@ export async function generateEmbedding({
         console.error("Error generating embedding:", errorMessage);
         throw new Error(`Failed to generate embedding: ${errorMessage}`);
     }
-} 
+}

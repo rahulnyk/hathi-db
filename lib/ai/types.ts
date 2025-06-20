@@ -47,4 +47,4 @@ export class AIQuotaExceededError extends AIError {
         super(message, "QUOTA_EXCEEDED", false);
         this.name = "AIQuotaExceededError";
     }
-} 
+}
