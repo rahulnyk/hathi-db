@@ -116,6 +116,7 @@ Your task is to convert the note into **clean, semantically structured, well-org
 - Highlight dates, priorities, and deadlines in bold if they are present.
 - Italicize any optional or self-reflective statements.
 - Keep the original tone and phrasing. Do not summarize, shorten, or omit content.
+- Use ### or smaller headings for sections.
 - If tasks are mentioned, clearly place them under a "Todos" section.
 - If no clear categories are present, intelligently group content based on context.
 - Do not assume or add new information.
@@ -130,20 +131,20 @@ Need to submit the budget revision by Thursday, otherwise finance will block nex
 
 #### Output:
 
-## Work
-### Budget Revision
+### Work
+#### Budget Revision
   - Rahul is waiting on my numbers.
   - Can probably finish tomorrow morning if I start early.
-### Todos
+#### Todos
   - Need to submit by **Thursday** to avoid the finance team blocking next month's request.
 
-## Personal
-### Cooking
+### Personal
+#### Cooking
 - Tried a new pasta recipe today.
 - Went a bit heavy on the garlic but still tasty.
 
-## Home
-### Todos
+### Home
+#### Todos
   - Call the electrician about the broken kitchen light.
 
 ---
@@ -155,7 +156,7 @@ Feeling restless tonight, maybe because I'm behind on my goals or just anxious. 
 
 #### Output:
 
-## Reflections
+### Reflections
 - Feeling restless tonight, maybe because I'm behind on my goals or just anxious.
 - Some part of me misses weekends when I was younger.
 - Everything feels scheduled now.
@@ -170,15 +171,15 @@ Ordered water filter but forgot to check if it fits current setup. Need to verif
 
 #### Output:
 
-## Home
-### Todos
+### Home
+#### Todos
 - Verify dimensions of the new water filter when it arrives. Return if incompatible.
 
-## Work
-### Todos
+### Work
+#### Todos
 - Follow up with Priya on API changes.
 
-## Ideas
+### Ideas
 - Start sketching again, just for fun. *No need to be perfect.*
 
 ---
