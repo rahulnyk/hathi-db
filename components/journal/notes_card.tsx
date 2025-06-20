@@ -2,7 +2,7 @@
 
 import { Note, deleteNote, markNoteAsDeleting, patchNote } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw } from "lucide-react";
+import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw, Sparkles } from "lucide-react";
 import remarkGfm from "remark-gfm";
 import { useAppDispatch, useAppSelector } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
@@ -20,13 +20,14 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
-import { generateSuggestedContexts } from "@/store/aiSlice";
+import { generateSuggestedContexts, structurizeNoteThunk } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
 
     // Get AI state for this specific note only
     const aiState = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
+    const structurizeState = useAppSelector((state) => state.ai.structurizeNote[note.id]);
 
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
@@ -42,6 +43,17 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             deleteNote({
                 noteId: note.id,
                 userId: user.id,
+            })
+        );
+    };
+
+    const handleStructurize = () => {
+        if (!user) return;
+
+        dispatch(
+            structurizeNoteThunk({
+                noteId: note.id,
+                content: note.content,
             })
         );
     };
@@ -82,7 +94,24 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             )}
         >
             {/* More options dropdown in top right */}
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 flex items-center gap-1">
+                {/* Structurize button */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                    onClick={handleStructurize}
+                    disabled={structurizeState?.status === "loading"}
+                    title="Structurize note with AI"
+                >
+                    {structurizeState?.status === "loading" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                    ) : (
+                        <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                    )}
+                    <span className="sr-only">Structurize note</span>
+                </Button>
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -240,6 +269,24 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     <span>Generating context suggestions...</span>
+                </div>
+            )}
+
+            {/* Structurization error state */}
+            {structurizeState?.status === "failed" && (
+                <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>Failed to structurize note: {structurizeState.error}</span>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={handleStructurize}
+                    >
+                        <RefreshCw className="h-3 w-3" />
+                    </Button>
                 </div>
             )}
 
