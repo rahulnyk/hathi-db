@@ -148,7 +148,9 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             {note.suggested_contexts && note.suggested_contexts.length > 0 && (
                 <div className="mt-3 flex items-center justify-between">
                     <div className="flex flex-wrap gap-1">
-                        {note.suggested_contexts.map((context, index) => (
+                        {note.suggested_contexts
+                            .filter(context => !note.contexts?.includes(context))
+                            .map((context, index) => (
                             <Button
                                 key={index}
                                 variant="outline"
