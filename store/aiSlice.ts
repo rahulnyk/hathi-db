@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { suggestContexts, generateEmbedding, structurizeNote } from "@/app/actions/ai";
-import { patchNote } from "@/app/actions/notes";
-import { Note, updateNoteWithSuggestedContexts } from "@/store/notesSlice";
+import { Note, updateNoteWithSuggestedContexts, patchNote, updateNoteContent } from "@/store/notesSlice";
 
 // Types for AI-generated data
 export interface SuggestedContexts {
@@ -88,7 +87,7 @@ export const structurizeNoteThunk = createAsyncThunk(
             noteId: string;
             content: string;
         },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
             const structuredContent = await structurizeNote({
@@ -97,6 +96,10 @@ export const structurizeNoteThunk = createAsyncThunk(
 
             // For now, just log the structured content as requested
             console.log("Structured note content:", structuredContent);
+
+            // Update the note content in Redux store with the structured content
+            // We'll use a simple action to update the store without saving to DB
+            dispatch(updateNoteContent({ noteId, content: structuredContent }));
 
             return { noteId, structuredContent };
         } catch (error: any) {

@@ -247,6 +247,13 @@ const notesSlice = createSlice({
                 state.notes[noteIndex].suggested_contexts = suggestions;
             }
         },
+        updateNoteContent: (state, action: PayloadAction<{ noteId: string; content: string }>) => {
+            const { noteId, content } = action.payload;
+            const noteIndex = state.notes.findIndex((note) => note.id === noteId);
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].content = content;
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -341,6 +348,7 @@ export const {
     markNoteAsDeleting,
     setCurrentContext,
     updateNoteWithSuggestedContexts,
+    updateNoteContent,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
