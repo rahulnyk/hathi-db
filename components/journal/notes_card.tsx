@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
 import { generateSuggestedContexts } from "@/store/aiSlice";
@@ -27,6 +27,9 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     
     // Get AI state for this note
     const aiState = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
+    
+    // Track which suggested context is being added
+    const [addingContext, setAddingContext] = useState<string | null>(null);
 
     const handleDelete = () => {
         if (!user) return;
@@ -159,6 +162,9 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                 onClick={() => {
                                     if (!user) return;
                                     
+                                    // Set loading state for this context
+                                    setAddingContext(context);
+                                    
                                     // Add this context to the note's contexts
                                     const updatedContexts = [...(note.contexts || []), context];
                                     dispatch(
@@ -169,11 +175,21 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                             },
                                             userId: user.id,
                                         })
-                                    );
+                                    ).finally(() => {
+                                        // Clear loading state when request completes
+                                        setAddingContext(null);
+                                    });
                                 }}
+                                disabled={addingContext === context}
                             >
-                                {context}
-                                <Plus className="h-3 w-3" />
+                                {addingContext === context ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <>
+                                        {context}
+                                        <Plus className="h-3 w-3" />
+                                    </>
+                                )}
                             </Button>
                         ))}
                     </div>
