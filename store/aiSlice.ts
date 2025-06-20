@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { suggestContexts, generateEmbedding } from "@/app/actions/ai";
+import { patchNote } from "@/app/actions/notes";
 import { Note } from "@/store/notesSlice";
 
 // Types for AI-generated data
@@ -9,24 +10,14 @@ export interface SuggestedContexts {
     error?: string;
 }
 
-export interface Embedding {
-    embedding: number[];
-    status: "idle" | "loading" | "succeeded" | "failed";
-    error?: string;
-}
-
 interface AIState {
     suggestedContexts: {
         [noteId: string]: SuggestedContexts;
-    };
-    embeddings: {
-        [noteId: string]: Embedding;
     };
 }
 
 const initialState: AIState = {
     suggestedContexts: {},
-    embeddings: {},
 };
 
 // Async thunk for generating context suggestions
@@ -66,7 +57,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
         {
             noteId,
             content,
-            userId: _userId, // Keep for future use if needed
+            userId,
         }: {
             noteId: string;
             content: string;
@@ -78,6 +69,19 @@ export const generateEmbeddingThunk = createAsyncThunk(
             const embedding = await generateEmbedding({
                 content,
             });
+            
+            // Update the note directly in the database without triggering frontend updates
+            // since embeddings are not used in the UI
+            await patchNote({
+                noteId,
+                patches: {
+                    embedding: embedding,
+                    embedding_model: "text-embedding-3-small",
+                    embedding_created_at: new Date().toISOString(),
+                },
+                userId,
+            });
+            
             return { noteId, embedding };
         } catch (error: any) {
             return rejectWithValue({
@@ -96,13 +100,8 @@ const aiSlice = createSlice({
             const noteId = action.payload;
             delete state.suggestedContexts[noteId];
         },
-        clearEmbedding: (state, action: PayloadAction<string>) => {
-            const noteId = action.payload;
-            delete state.embeddings[noteId];
-        },
         clearAllAI: (state) => {
             state.suggestedContexts = {};
-            state.embeddings = {};
         },
     },
     extraReducers: (builder) => {
@@ -129,32 +128,10 @@ const aiSlice = createSlice({
                     status: "failed",
                     error,
                 };
-            })
-            // Embeddings
-            .addCase(generateEmbeddingThunk.pending, (state, action) => {
-                const noteId = action.meta.arg.noteId;
-                state.embeddings[noteId] = {
-                    embedding: [],
-                    status: "loading",
-                };
-            })
-            .addCase(generateEmbeddingThunk.fulfilled, (state, action) => {
-                const { noteId, embedding } = action.payload;
-                state.embeddings[noteId] = {
-                    embedding,
-                    status: "succeeded",
-                };
-            })
-            .addCase(generateEmbeddingThunk.rejected, (state, action) => {
-                const { noteId, error } = action.payload as { noteId: string; error: string };
-                state.embeddings[noteId] = {
-                    embedding: [],
-                    status: "failed",
-                    error,
-                };
             });
+            // Note: Embedding cases removed since embeddings are handled directly in database
     },
 });
 
-export const { clearSuggestedContexts, clearEmbedding, clearAllAI } = aiSlice.actions;
+export const { clearSuggestedContexts, clearAllAI } = aiSlice.actions;
 export default aiSlice.reducer;
