@@ -91,6 +91,99 @@ export class OpenAIProvider implements AIProvider {
         }
     }
 
+    async structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse> {
+        const { content } = request;
+        const systemPromp = `
+You are a smart note-structuring assistant.
+
+You will receive raw, unstructured notes that may contain:
+- Thoughts
+- Tasks
+- Todos
+- Events
+- Ideas
+- Reminders
+- Reflections
+- Personal updates
+- Work updates
+
+Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
+- Group content into appropriate sections using headings (e.g. Work, Personal, Tasks, Todos, Reflections, Ideas, Experiences, Cooking, Commute, Health, Fitness, etc.).
+- Use bullet points for tasks and lists.
+- Highlight dates, priorities, and deadlines in bold if they are present.
+- Italicize any optional or self-reflective statements.
+- Keep the original tone and phrasing. Do not summarize, shorten, or omit content.
+- If tasks are mentioned, clearly place them under a "Tasks" or "Action Items" section.
+- If no clear categories are present, intelligently group content based on context.
+- Do not assume or add new information.
+- Do not provide any commentary or explanations. Only return the final, structured Markdown.
+
+---
+
+### Example 1
+
+#### Input:
+Need to submit the budget revision by Thursday, otherwise finance will block next month’s request. Rahul is waiting on my numbers. Can probably finish tomorrow morning if I start early. Tried a new pasta recipe today, went a bit heavy on the garlic but still tasty. Should call the electrician about the broken kitchen light.
+
+#### Output:
+
+## Work
+### Budget Revision
+  - Rahul is waiting on my numbers.
+  - Can probably finish tomorrow morning if I start early.
+### Todos
+  - Need to submit by **Thursday** to avoid the finance team blocking next month’s request.
+
+## Personal
+### Cooking
+- Tried a new pasta recipe today.
+- Went a bit heavy on the garlic but still tasty.
+
+## Home
+### Todos
+  - Call the electrician about the broken kitchen light.
+
+---
+
+### Example 2
+
+#### Input:
+Feeling restless tonight, maybe because I’m behind on my goals or just anxious. Some part of me misses weekends when I was younger, everything feels scheduled now. I should probably start saying no more often.
+
+#### Output:
+
+## Reflections
+- Feeling restless tonight, maybe because I’m behind on my goals or just anxious.
+- Some part of me misses weekends when I was younger.
+- Everything feels scheduled now.
+- Maybe I need to start saying no more often.
+
+---
+
+### Example 3
+
+#### Input:
+Ordered water filter but forgot to check if it fits current setup. Need to verify dimensions when it arrives, else will need to return. Also: pending follow-up with Priya on API changes, and I want to sketch again just for fun.
+
+#### Output:
+
+## Home
+### Todos
+- Verify dimensions of the new water filter when it arrives. Return if incompatible.
+
+## Work
+### Todos
+- Follow up with Priya on API changes.
+
+## Ideas
+- Start sketching again, just for fun. *No need to be perfect.*
+
+---
+
+When you receive a new note, return only the final, semantically structured Markdown, without any explanations.
+        `;
+    }
+
     // private methods
 
     private parseSuggestionsJSON(suggestionsText: string): string[] {
