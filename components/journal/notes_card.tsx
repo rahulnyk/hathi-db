@@ -130,6 +130,20 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 </ReactMarkdown>
             </div>
 
+            {/* Actual contexts */}
+            {note.contexts && note.contexts.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1">
+                    {note.contexts.map((context, index) => (
+                        <span
+                            key={index}
+                            className="context-pill"
+                        >
+                            {context}
+                        </span>
+                    ))}
+                </div>
+            )}
+
             {/* Suggested contexts */}
             {note.suggested_contexts && note.suggested_contexts.length > 0 && (
                 <div className="mt-3 flex items-center justify-between">
