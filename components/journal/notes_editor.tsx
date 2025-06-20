@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
-import { addNote, addNoteOptimistically } from "@/store/notesSlice";
-import { generateSuggestedContexts } from "@/store/aiSlice";
+import { addNote, addNoteOptimistically, patchNote } from "@/store/notesSlice";
+import { generateSuggestedContexts, clearSuggestedContexts } from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -101,6 +101,30 @@ export function NotesEditor() {
     const currentContext = useAppSelector(
         (state) => state.notes.currentContext
     );
+
+    // Listen for successful context suggestions and update the note
+    const suggestedContexts = useAppSelector((state) => state.ai.suggestedContexts);
+    
+    useEffect(() => {
+        // Check for any notes that have successfully generated suggestions
+        Object.entries(suggestedContexts).forEach(([noteId, contextData]) => {
+            if (contextData.status === "succeeded" && contextData.suggestions.length > 0) {
+                // Update the note with suggested contexts
+                dispatch(
+                    patchNote({
+                        noteId,
+                        patches: {
+                            suggested_contexts: contextData.suggestions,
+                        },
+                        userId: user.id,
+                    })
+                );
+                
+                // Clear the suggestions from AI state to prevent duplicate updates
+                dispatch(clearSuggestedContexts(noteId));
+            }
+        });
+    }, [suggestedContexts, dispatch, user.id]);
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -238,21 +262,30 @@ export function NotesEditor() {
         setContent("");
 
         // Then try to persist to server
-        dispatch(
+        const addNoteResult = await dispatch(
             addNote({
                 userId: user.id,
                 tempId: optimisticNote.id,
                 key_context: currentContext, // Ensure key_context is set
                 ...optimisticNote,
             })
-        ).finally(() => {
-            setIsSubmitting(false);
-            dispatch(generateSuggestedContexts({
-                noteId: optimisticNote.id,
-                content: content,
-                userId: user.id,
-            }));
-        });
+        );
+
+        // If note was successfully added, generate context suggestions
+        if (addNote.fulfilled.match(addNoteResult)) {
+            const persistedNote = addNoteResult.payload.note;
+            
+            // Dispatch context suggestions generation
+            dispatch(
+                generateSuggestedContexts({
+                    noteId: persistedNote.id,
+                    content: persistedNote.content,
+                    userId: user.id,
+                })
+            );
+        }
+
+        setIsSubmitting(false);
     };
 
     return (
