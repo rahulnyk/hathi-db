@@ -1,9 +1,9 @@
 import OpenAI from "openai";
-import { 
-    AIProvider, 
-    SuggestContextsRequest, 
-    SuggestContextsResponse, 
-    EmbeddingRequest, 
+import {
+    AIProvider,
+    SuggestContextsRequest,
+    SuggestContextsResponse,
+    EmbeddingRequest,
     EmbeddingResponse,
     AIError,
     AIRateLimitError,
@@ -107,7 +107,7 @@ export class OpenAIProvider implements AIProvider {
             }
 
             // Validate each suggestion is a string
-            const suggestions = parsed.suggestions.filter((suggestion: unknown) => 
+            const suggestions = parsed.suggestions.filter((suggestion: unknown) =>
                 typeof suggestion === "string" && suggestion.trim().length > 0
             );
 

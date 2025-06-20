@@ -24,10 +24,10 @@ import { generateSuggestedContexts } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
-    
+
     // Get AI state for this note
     const aiState = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
-    
+
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
 
@@ -161,10 +161,10 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                                 className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
                                 onClick={() => {
                                     if (!user) return;
-                                    
+
                                     // Set loading state for this context
                                     setAddingContext(context);
-                                    
+
                                     // Add this context to the note's contexts
                                     const updatedContexts = [...(note.contexts || []), context];
                                     dispatch(
