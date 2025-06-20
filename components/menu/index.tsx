@@ -38,10 +38,12 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
 
         if (isOpen) {
             document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("touchstart", handleClickOutside); // Add touchstart listener
         }
 
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside); // Remove touchstart listener
         };
     }, [isOpen, onClose, deviceType]); // Add isOpen, onClose, and deviceType to dependency array
 
