@@ -1,10 +1,12 @@
 "use client";
 
+import { useRef, useEffect } from "react"; // Import useRef and useEffect
 // useState and useEffect removed as isDatePickerOpen state is removed
 // Button import removed as child components (ThemeSwitcher, LogoutButton) import it themselves.
 // CalendarIcon import removed
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
+import { useAppSelector } from "@/store"; // Import useAppSelector
 import { ThemeSwitcher } from "../theme-switcher";
 import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
@@ -19,12 +21,37 @@ interface RetractableMenuProps {
 }
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
+    const deviceType = useAppSelector((state) => state.ui.deviceType); // Get deviceType from Redux store
+    const menuRef = useRef<HTMLDivElement>(null); // Create menuRef
+
+    // useEffect for click outside functionality
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                deviceType === "mobile" && // Check if deviceType is "mobile"
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen, onClose, deviceType]); // Add isOpen, onClose, and deviceType to dependency array
+
     // isDatePickerOpen state and related useEffect/handleCalendarButtonClick removed
 
     // if (!isOpen) return null; // Using translate-x for animation, so always render
 
     return (
         <div
+            ref={menuRef} // Assign menuRef to the main div
             className={cn(
                 "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
                 "transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-80 z-[100]",
@@ -55,12 +82,17 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                         <DateContextPicker
                             isOpen={true} // DateContextPicker is always "open" when RetractableMenu is
                             onDateChangeHook={() => {
-                                // After a date is selected, close the main menu.
-                                onClose();
+                                // After a date is selected, close the main menu if on mobile.
+                                if (deviceType === "mobile") {
+                                    onClose();
+                                }
                             }}
                         />
                     </div>
-                    <ContextList />
+                    <ContextList
+                        onCloseMenu={onClose}
+                        deviceType={deviceType}
+                    />
                 </div>
                 {/* <div className="flex-grow overflow-y-auto border-t border-neutral-200 dark:border-neutral-800 mt-2 pt-2">
                     
