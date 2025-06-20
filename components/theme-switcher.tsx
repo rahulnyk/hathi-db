@@ -27,7 +27,7 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
                     variant="ghost"
                     size="default"
                     disabled
-                    className="w-full flex items-center justify-start gap-3 text-base py-6 hover:bg-muted"
+                    className="flex items-center justify-center gap-2 text-base py-2 hover:bg-muted w-full"
                 >
                     <Sun className="h-5 w-5 mr-0" />
                     <span>Loading Theme...</span>
@@ -63,7 +63,7 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
             className={cn(
                 "text-base hover:bg-muted", // Common classes
                 isExpanded
-                    ? "w-full flex items-center justify-start gap-3 py-6" // Expanded: full width, justify start, specific padding
+                    ? "flex items-center justify-center gap-2 py-2" // Expanded: full width, justify start, specific padding
                     : "h-12 w-12 justify-center" // Collapsed: fixed size, justify center
             )}
             aria-label={`Switch to ${targetThemeText.toLowerCase()}`}
