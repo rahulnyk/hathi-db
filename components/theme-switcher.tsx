@@ -27,7 +27,7 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
                     variant="ghost"
                     size="default"
                     disabled
-                    className="flex items-center justify-center gap-2 text-base py-2 hover:bg-muted"
+                    className="flex items-center justify-center gap-2 text-base py-2 hover:bg-muted w-full"
                 >
                     <Sun className="h-5 w-5 mr-0" />
                     <span>Loading Theme...</span>
