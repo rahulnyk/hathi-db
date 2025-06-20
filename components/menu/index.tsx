@@ -7,7 +7,6 @@ import { useRef, useEffect } from "react"; // Import useRef and useEffect
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
 import { useAppSelector } from "@/store"; // Import useAppSelector
-import { DeviceType } from "@/store/uiSlice"; // Import DeviceType
 import { ThemeSwitcher } from "../theme-switcher";
 import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
@@ -90,7 +89,10 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             }}
                         />
                     </div>
-                    <ContextList onCloseMenu={onClose} deviceType={deviceType} />
+                    <ContextList
+                        onCloseMenu={onClose}
+                        deviceType={deviceType}
+                    />
                 </div>
                 {/* <div className="flex-grow overflow-y-auto border-t border-neutral-200 dark:border-neutral-800 mt-2 pt-2">
                     
