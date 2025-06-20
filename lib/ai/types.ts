@@ -17,10 +17,20 @@ export interface EmbeddingResponse {
     embedding: number[];
 }
 
+export interface StructurizeNoteRequest {
+    content: string;
+    userContexts: string[];
+}
+
+export interface StructurizeNoteResponse {
+    structuredContent: string;
+}
+
 // AI Provider interface for abstraction
 export interface AIProvider {
     suggestContexts(request: SuggestContextsRequest): Promise<SuggestContextsResponse>;
     generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
+    structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse>;
 }
 
 // Error types

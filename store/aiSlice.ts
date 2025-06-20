@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { suggestContexts, generateEmbedding } from "@/app/actions/ai";
+import { suggestContexts, generateEmbedding, structurizeNote } from "@/app/actions/ai";
 import { patchNote } from "@/app/actions/notes";
 import { Note, updateNoteWithSuggestedContexts } from "@/store/notesSlice";
 
@@ -10,14 +10,24 @@ export interface SuggestedContexts {
     error?: string;
 }
 
+export interface StructurizeNoteState {
+    status: "idle" | "loading" | "succeeded" | "failed";
+    structuredContent?: string;
+    error?: string;
+}
+
 interface AIState {
     suggestedContexts: {
         [noteId: string]: SuggestedContexts;
+    };
+    structurizeNote: {
+        [noteId: string]: StructurizeNoteState;
     };
 }
 
 const initialState: AIState = {
     suggestedContexts: {},
+    structurizeNote: {},
 };
 
 // Async thunk for generating context suggestions
@@ -62,6 +72,37 @@ export const generateSuggestedContexts = createAsyncThunk(
             return rejectWithValue({
                 noteId,
                 error: error?.message || "Failed to generate context suggestions",
+            });
+        }
+    }
+);
+
+// Async thunk for structurizing notes
+export const structurizeNoteThunk = createAsyncThunk(
+    "ai/structurizeNote",
+    async (
+        {
+            noteId,
+            content,
+        }: {
+            noteId: string;
+            content: string;
+        },
+        { rejectWithValue }
+    ) => {
+        try {
+            const structuredContent = await structurizeNote({
+                content,
+            });
+
+            // For now, just log the structured content as requested
+            console.log("Structured note content:", structuredContent);
+
+            return { noteId, structuredContent };
+        } catch (error: any) {
+            return rejectWithValue({
+                noteId,
+                error: error?.message || "Failed to structurize note",
             });
         }
     }
@@ -117,8 +158,13 @@ const aiSlice = createSlice({
             const noteId = action.payload;
             delete state.suggestedContexts[noteId];
         },
+        clearStructurizeNote: (state, action: PayloadAction<string>) => {
+            const noteId = action.payload;
+            delete state.structurizeNote[noteId];
+        },
         clearAllAI: (state) => {
             state.suggestedContexts = {};
+            state.structurizeNote = {};
         },
     },
     extraReducers: (builder) => {
@@ -145,10 +191,31 @@ const aiSlice = createSlice({
                     status: "failed",
                     error,
                 };
+            })
+            // Structurize Note
+            .addCase(structurizeNoteThunk.pending, (state, action) => {
+                const noteId = action.meta.arg.noteId;
+                state.structurizeNote[noteId] = {
+                    status: "loading",
+                };
+            })
+            .addCase(structurizeNoteThunk.fulfilled, (state, action) => {
+                const { noteId, structuredContent } = action.payload;
+                state.structurizeNote[noteId] = {
+                    status: "succeeded",
+                    structuredContent,
+                };
+            })
+            .addCase(structurizeNoteThunk.rejected, (state, action) => {
+                const { noteId, error } = action.payload as { noteId: string; error: string };
+                state.structurizeNote[noteId] = {
+                    status: "failed",
+                    error,
+                };
             });
             // Note: Embedding cases removed since embeddings are handled directly in database
     },
 });
 
-export const { clearSuggestedContexts, clearAllAI } = aiSlice.actions;
+export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } = aiSlice.actions;
 export default aiSlice.reducer;

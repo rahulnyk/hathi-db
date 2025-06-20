@@ -37,6 +37,36 @@ export async function suggestContexts({
 }
 
 /**
+ * Structurizes a note using AI to organize and format the content
+ *
+ * @param content - The content of the note to structurize
+ * @returns Promise that resolves to the structured content
+ */
+export async function structurizeNote({
+    content,
+}: {
+    content: string;
+}): Promise<string> {
+    try {
+        // Fetch user's existing contexts for better structuring
+        const contextStats = await fetchContextStats();
+        const userContexts = contextStats.map(stat => stat.context);
+
+        // Generate structured content using AI
+        const response = await aiProvider.structurizeNote({
+            content,
+            userContexts,
+        });
+
+        return response.structuredContent;
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error structurizing note:", errorMessage);
+        throw new Error(`Failed to structurize note: ${errorMessage}`);
+    }
+}
+
+/**
  * Generates embeddings for a note (for future use)
  *
  * @param content - The content of the note
