@@ -13,6 +13,7 @@ export interface SuggestedContexts {
 export interface StructurizeNoteState {
     status: "idle" | "loading" | "succeeded" | "failed";
     structuredContent?: string;
+    originalContent?: string; // Store original content for undo functionality
     error?: string;
 }
 
@@ -87,21 +88,15 @@ export const structurizeNoteThunk = createAsyncThunk(
             noteId: string;
             content: string;
         },
-        { rejectWithValue, dispatch }
+        { rejectWithValue }
     ) => {
         try {
             const structuredContent = await structurizeNote({
                 content,
             });
 
-            // For now, just log the structured content as requested
-            console.log("Structured note content:", structuredContent);
-
-            // Update the note content in Redux store with the structured content
-            // We'll use a simple action to update the store without saving to DB
-            dispatch(updateNoteContent({ noteId, content: structuredContent }));
-
-            return { noteId, structuredContent };
+            // Return both original and structured content for preview mode
+            return { noteId, structuredContent, originalContent: content };
         } catch (error: any) {
             return rejectWithValue({
                 noteId,
@@ -148,6 +143,67 @@ export const generateEmbeddingThunk = createAsyncThunk(
             return rejectWithValue({
                 noteId,
                 error: error?.message || "Failed to generate embedding",
+            });
+        }
+    }
+);
+
+// Async thunk for accepting structured content
+export const acceptStructurizeNoteThunk = createAsyncThunk(
+    "ai/acceptStructurizeNote",
+    async (
+        {
+            noteId,
+            structuredContent,
+            userId,
+        }: {
+            noteId: string;
+            structuredContent: string;
+            userId: string;
+        },
+        { rejectWithValue, dispatch }
+    ) => {
+        try {
+            // Update the note content in the database
+            await patchNote({
+                noteId,
+                patches: {
+                    content: structuredContent,
+                },
+                userId,
+            });
+
+            // Update the note content in Redux store
+            dispatch(updateNoteContent({ noteId, content: structuredContent }));
+
+            return { noteId };
+        } catch (error: any) {
+            return rejectWithValue({
+                noteId,
+                error: error?.message || "Failed to save structured note",
+            });
+        }
+    }
+);
+
+// Async thunk for rejecting structured content (undo)
+export const rejectStructurizeNoteThunk = createAsyncThunk(
+    "ai/rejectStructurizeNote",
+    async (
+        {
+            noteId,
+        }: {
+            noteId: string;
+        },
+        { rejectWithValue }
+    ) => {
+        try {
+            // Just return success - no database update needed for undo
+            return { noteId };
+        } catch (error: any) {
+            return rejectWithValue({
+                noteId,
+                error: error?.message || "Failed to undo structurization",
             });
         }
     }
@@ -203,10 +259,11 @@ const aiSlice = createSlice({
                 };
             })
             .addCase(structurizeNoteThunk.fulfilled, (state, action) => {
-                const { noteId, structuredContent } = action.payload;
+                const { noteId, structuredContent, originalContent } = action.payload;
                 state.structurizeNote[noteId] = {
                     status: "succeeded",
                     structuredContent,
+                    originalContent,
                 };
             })
             .addCase(structurizeNoteThunk.rejected, (state, action) => {
@@ -215,8 +272,47 @@ const aiSlice = createSlice({
                     status: "failed",
                     error,
                 };
+            })
+            // Accept Structurize Note
+            .addCase(acceptStructurizeNoteThunk.pending, (state, action) => {
+                const noteId = action.meta.arg.noteId;
+                // Keep the current state but mark as processing
+                if (state.structurizeNote[noteId]) {
+                    state.structurizeNote[noteId].status = "loading";
+                }
+            })
+            .addCase(acceptStructurizeNoteThunk.fulfilled, (state, action) => {
+                const { noteId } = action.payload;
+                // Clear the structurize state since it's been accepted
+                delete state.structurizeNote[noteId];
+            })
+            .addCase(acceptStructurizeNoteThunk.rejected, (state, action) => {
+                const { noteId, error } = action.payload as { noteId: string; error: string };
+                if (state.structurizeNote[noteId]) {
+                    state.structurizeNote[noteId].status = "failed";
+                    state.structurizeNote[noteId].error = error;
+                }
+            })
+            // Reject Structurize Note
+            .addCase(rejectStructurizeNoteThunk.pending, (state, action) => {
+                const noteId = action.meta.arg.noteId;
+                // Keep the current state but mark as processing
+                if (state.structurizeNote[noteId]) {
+                    state.structurizeNote[noteId].status = "loading";
+                }
+            })
+            .addCase(rejectStructurizeNoteThunk.fulfilled, (state, action) => {
+                const { noteId } = action.payload;
+                // Clear the structurize state since it's been rejected
+                delete state.structurizeNote[noteId];
+            })
+            .addCase(rejectStructurizeNoteThunk.rejected, (state, action) => {
+                const { noteId, error } = action.payload as { noteId: string; error: string };
+                if (state.structurizeNote[noteId]) {
+                    state.structurizeNote[noteId].status = "failed";
+                    state.structurizeNote[noteId].error = error;
+                }
             });
-            // Note: Embedding cases removed since embeddings are handled directly in database
     },
 });
 

@@ -2,7 +2,7 @@
 
 import { Note, deleteNote, markNoteAsDeleting, patchNote } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw, Sparkles, Check, Undo } from "lucide-react";
 import remarkGfm from "remark-gfm";
 import { useAppDispatch, useAppSelector } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
-import { generateSuggestedContexts, structurizeNoteThunk } from "@/store/aiSlice";
+import { generateSuggestedContexts, structurizeNoteThunk, acceptStructurizeNoteThunk, rejectStructurizeNoteThunk } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
@@ -31,6 +31,11 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
 
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
+
+    // Determine which content to display
+    const displayContent = structurizeState?.status === "succeeded" && structurizeState.structuredContent
+        ? structurizeState.structuredContent
+        : note.content;
 
     const handleDelete = () => {
         if (!user) return;
@@ -54,6 +59,28 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
+            })
+        );
+    };
+
+    const handleAcceptStructurize = () => {
+        if (!user || !structurizeState?.structuredContent) return;
+
+        dispatch(
+            acceptStructurizeNoteThunk({
+                noteId: note.id,
+                structuredContent: structurizeState.structuredContent,
+                userId: user.id,
+            })
+        );
+    };
+
+    const handleRejectStructurize = () => {
+        if (!structurizeState) return;
+
+        dispatch(
+            rejectStructurizeNoteThunk({
+                noteId: note.id,
             })
         );
     };
@@ -95,22 +122,50 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
         >
             {/* More options dropdown in top right */}
             <div className="absolute top-2 right-2 flex items-center gap-1">
-                {/* Structurize button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                    onClick={handleStructurize}
-                    disabled={structurizeState?.status === "loading"}
-                    title="Structurize note with AI"
-                >
-                    {structurizeState?.status === "loading" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
-                    ) : (
-                        <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                    )}
-                    <span className="sr-only">Structurize note</span>
-                </Button>
+                {/* Structurize button - show when not in preview mode */}
+                {!(structurizeState?.status === "succeeded" && structurizeState.structuredContent) && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                        onClick={handleStructurize}
+                        disabled={structurizeState?.status === "loading"}
+                        title="Structurize note with AI"
+                    >
+                        {structurizeState?.status === "loading" ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                        ) : (
+                            <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                        )}
+                        <span className="sr-only">Structurize note</span>
+                    </Button>
+                )}
+
+                {/* Accept/Reject buttons - show when in preview mode */}
+                {structurizeState?.status === "succeeded" && structurizeState.structuredContent && (
+                    <>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100 text-green-600 dark:text-green-400"
+                            onClick={handleAcceptStructurize}
+                            title="Accept structured content"
+                        >
+                            <Check className="h-4 w-4" />
+                            <span className="sr-only">Accept structured content</span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100 text-red-600 dark:text-red-400"
+                            onClick={handleRejectStructurize}
+                            title="Revert to original content"
+                        >
+                            <Undo className="h-4 w-4" />
+                            <span className="sr-only">Revert to original content</span>
+                        </Button>
+                    </>
+                )}
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -150,6 +205,11 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
 
             {/* Note content */}
             <div className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base">
+                {structurizeState?.status === "succeeded" && structurizeState.structuredContent && (
+                    <div className="mb-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 px-2 py-1 rounded border border-blue-200 dark:border-blue-800">
+                        ✨ Showing structured preview - click ✓ to save or ↶ to revert
+                    </div>
+                )}
                 <ReactMarkdown
                     remarkPlugins={[
                         remarkGfm,
@@ -158,7 +218,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                     ]}
                     // components={components}
                 >
-                    {note.content}
+                    {displayContent}
                 </ReactMarkdown>
             </div>
 
