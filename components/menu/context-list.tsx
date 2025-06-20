@@ -4,10 +4,16 @@ import { useEffect, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsMetadata } from "@/store/notesMetadataSlice";
 import { setCurrentContext } from "@/store/notesSlice";
+import { DeviceType } from "@/store/uiSlice"; // Import DeviceType
 import { ContextStat } from "@/app/actions/notes";
 import { cn } from "@/lib/utils";
 
-export function ContextList() {
+interface ContextListProps {
+    onCloseMenu: () => void;
+    deviceType: DeviceType;
+}
+
+export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     const dispatch = useAppDispatch();
     const { contexts, status } = useAppSelector((state) => state.notesMetadata);
     const { currentContext } = useAppSelector((state) => state.notes);
@@ -26,6 +32,9 @@ export function ContextList() {
     }, [contexts]);
 
     const handleContextClick = (contextSlug: string) => {
+        if (deviceType === DeviceType.Mobile) { // Conditionally call onCloseMenu
+            onCloseMenu();
+        }
         dispatch(setCurrentContext(contextSlug));
     };
 
