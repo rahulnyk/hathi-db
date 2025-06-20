@@ -20,16 +20,35 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
-import { generateSuggestedContexts } from "@/store/aiSlice";
+import { generateSuggestedContexts, clearSuggestedContexts } from "@/store/aiSlice";
 
 export function NoteCard({ note, user }: { note: Note; user: User | null }) {
     const dispatch = useAppDispatch();
 
-    // Get AI state for this note
+    // Get AI state for this specific note only
     const aiState = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
 
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
+
+    // Handle AI state changes for this specific note
+    useEffect(() => {
+        if (aiState?.status === "succeeded" && aiState.suggestions.length > 0) {
+            // Update the note with suggested contexts
+            dispatch(
+                patchNote({
+                    noteId: note.id,
+                    patches: {
+                        suggested_contexts: aiState.suggestions,
+                    },
+                    userId: user?.id || "",
+                })
+            );
+            
+            // Clear the suggestions from AI state to prevent duplicate updates
+            dispatch(clearSuggestedContexts(note.id));
+        }
+    }, [aiState, dispatch, note.id, user?.id]);
 
     const handleDelete = () => {
         if (!user) return;
