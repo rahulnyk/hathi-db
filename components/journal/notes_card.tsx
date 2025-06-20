@@ -204,12 +204,7 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             </div>
 
             {/* Note content */}
-            <div className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base">
-                {structurizeState?.status === "succeeded" && structurizeState.structuredContent && (
-                    <div className="mb-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 px-2 py-1 rounded border border-blue-200 dark:border-blue-800">
-                        ✨ Showing structured preview - click ✓ to save or ↶ to revert
-                    </div>
-                )}
+            <div className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0">
                 <ReactMarkdown
                     remarkPlugins={[
                         remarkGfm,
