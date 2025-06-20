@@ -27,6 +27,9 @@ export type Note = {
     tags?: string[];
     note_type?: NoteType;
     suggested_contexts?: string[];
+    embedding?: number[];
+    embedding_model?: string;
+    embedding_created_at?: string;
 };
 
 interface NotesState {
@@ -175,7 +178,7 @@ export const patchNote = createAsyncThunk(
             userId,
         }: {
             noteId: string;
-            patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">>;
+            patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type" | "embedding" | "embedding_model" | "embedding_created_at">>;
             userId: string;
         },
         { rejectWithValue }

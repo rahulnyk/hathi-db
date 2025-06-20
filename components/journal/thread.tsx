@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { NoteCard } from "./notes_card";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes, patchNote } from "@/store/notesSlice";
-import { clearSuggestedContexts } from "@/store/aiSlice";
+import { clearSuggestedContexts, clearEmbedding } from "@/store/aiSlice";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 
@@ -17,7 +17,10 @@ export function Thread() {
 
     // Listen for successful context suggestions and update the note
     const suggestedContexts = useAppSelector((state) => state.ai.suggestedContexts);
-
+    
+    // Listen for successful embeddings and update the note
+    const embeddings = useAppSelector((state) => state.ai.embeddings);
+    
     useEffect(() => {
         // Check for any notes that have successfully generated suggestions
         Object.entries(suggestedContexts).forEach(([noteId, contextData]) => {
@@ -32,12 +35,35 @@ export function Thread() {
                         userId: user.id,
                     })
                 );
-
+                
                 // Clear the suggestions from AI state to prevent duplicate updates
                 dispatch(clearSuggestedContexts(noteId));
             }
         });
     }, [suggestedContexts, dispatch, user.id]);
+
+    useEffect(() => {
+        // Check for any notes that have successfully generated embeddings
+        Object.entries(embeddings).forEach(([noteId, embeddingData]) => {
+            if (embeddingData.status === "succeeded" && embeddingData.embedding.length > 0) {
+                // Update the note with embedding
+                dispatch(
+                    patchNote({
+                        noteId,
+                        patches: {
+                            embedding: embeddingData.embedding,
+                            embedding_model: "text-embedding-3-small",
+                            embedding_created_at: new Date().toISOString(),
+                        },
+                        userId: user.id,
+                    })
+                );
+                
+                // Clear the embedding from AI state to prevent duplicate updates
+                dispatch(clearEmbedding(noteId));
+            }
+        });
+    }, [embeddings, dispatch, user.id]);
 
     // Fetch notes on component mount
     useEffect(() => {

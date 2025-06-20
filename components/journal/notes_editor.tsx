@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically } from "@/store/notesSlice";
-import { generateSuggestedContexts } from "@/store/aiSlice";
+import { generateSuggestedContexts, generateEmbeddingThunk } from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -250,11 +250,21 @@ export function NotesEditor() {
         // If note was successfully added, generate context suggestions
         if (addNote.fulfilled.match(addNoteResult)) {
             const persistedNote = addNoteResult.payload.note;
-
+            
             // Fire-and-forget: Dispatch context suggestions generation
             // Thread component will handle the AI state management
             dispatch(
                 generateSuggestedContexts({
+                    noteId: persistedNote.id,
+                    content: persistedNote.content,
+                    userId: user.id,
+                })
+            );
+
+            // Fire-and-forget: Dispatch embedding generation
+            // Thread component will handle the AI state management
+            dispatch(
+                generateEmbeddingThunk({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
                     userId: user.id,
