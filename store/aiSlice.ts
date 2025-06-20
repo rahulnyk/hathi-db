@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { suggestContexts, generateEmbedding, structurizeNote } from "@/app/actions/ai";
-import { Note, updateNoteWithSuggestedContexts, patchNote, updateNoteContent } from "@/store/notesSlice";
+import { patchNote } from "@/app/actions/notes";
+import { updateNoteWithSuggestedContexts, updateNoteContent } from "@/store/notesSlice";
 
 // Types for AI-generated data
 export interface SuggestedContexts {
