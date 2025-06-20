@@ -29,7 +29,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                deviceType === DeviceType.Mobile && // Check if deviceType is "mobile"
+                deviceType === "mobile" && // Check if deviceType is "mobile"
                 menuRef.current &&
                 !menuRef.current.contains(event.target as Node)
             ) {
@@ -84,7 +84,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             isOpen={true} // DateContextPicker is always "open" when RetractableMenu is
                             onDateChangeHook={() => {
                                 // After a date is selected, close the main menu if on mobile.
-                                if (deviceType === DeviceType.Mobile) {
+                                if (deviceType === "mobile") {
                                     onClose();
                                 }
                             }}

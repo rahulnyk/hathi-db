@@ -32,7 +32,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     }, [contexts]);
 
     const handleContextClick = (contextSlug: string) => {
-        if (deviceType === DeviceType.Mobile) { // Conditionally call onCloseMenu
+        if (deviceType === "mobile") { // Conditionally call onCloseMenu
             onCloseMenu();
         }
         dispatch(setCurrentContext(contextSlug));
