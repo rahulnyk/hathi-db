@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically } from "@/store/notesSlice";
+import { generateSuggestedContexts } from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -246,6 +247,11 @@ export function NotesEditor() {
             })
         ).finally(() => {
             setIsSubmitting(false);
+            dispatch(generateSuggestedContexts({
+                noteId: optimisticNote.id,
+                content: content,
+                userId: user.id,
+            }));
         });
     };
 
