@@ -9,18 +9,18 @@ interface ElephantIconProps extends React.SVGProps<SVGSVGElement> {
     size?: number;
 }
 
-export const ElephantIcon = ({ ...props }: ElephantIconProps) => (
+export const ElephantIcon = ({ size = 100, ...rest }: ElephantIconProps) => (
     <svg
         viewBox="0 0 200 200"
-        width={props.size || 100}
-        height={props.size || 100}
+        width={size}
+        height={size}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         stroke="currentColor"
         strokeWidth={12}
         strokeLinecap="round"
         strokeLinejoin="round"
-        {...props}
+        {...rest}
     >
         {/* Back and body */}
         <path d="M40 120 Q40 60, 100 60 Q140 60, 140 120" />
