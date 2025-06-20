@@ -51,7 +51,6 @@ export const generateSuggestedContexts = createAsyncThunk(
 
         try {
             const suggestions = await suggestContexts({
-                noteId,
                 content,
             });
 
