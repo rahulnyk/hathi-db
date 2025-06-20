@@ -46,8 +46,8 @@ export function ContextList() {
     }
 
     return (
-        <div className="flex flex-col gap-1 p-2">
-            <h3 className="px-2 py-1 text-xs font-semibold tracking-wider text-neutral-400 uppercase">
+        <div className="flex flex-col gap-0.5 px-2 py-1">
+            <h3 className="px-2 py-0.5 text-xs font-semibold tracking-wider text-neutral-400 uppercase">
                 Contexts
             </h3>
             {sortedContexts.map((contextStat: ContextStat) => (
@@ -55,7 +55,7 @@ export function ContextList() {
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}
                     className={cn(
-                        "flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors duration-150",
+                        "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-colors duration-150",
                         currentContext === contextStat.context
                             ? "bg-cyan-100/50 dark:bg-cyan-900/50"
                             : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50"

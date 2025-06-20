@@ -89,12 +89,12 @@ export function DatePicker({
     return (
         <div
             className={cn(
-                "flex flex-col w-full min-w-[280px] max-w-sm mx-auto accent-font-active",
+                "flex flex-col w-full min-w-[280px] max-w-md mx-auto accent-font-active",
                 className
             )}
         >
             {/* Header with month/year and navigation */}
-            <div className="flex items-center justify-between px-6 py-2">
+            <div className="flex items-center justify-between px-6 py-1">
                 <Button
                     variant="ghost"
                     size="sm"
@@ -122,13 +122,13 @@ export function DatePicker({
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex flex-col items-center px-4 py-1">
+            <div className="flex flex-col items-center px-4 py-0">
                 {/* Weekday headers */}
-                <div className="grid grid-cols-7 gap-1 mb-2 w-full max-w-[224px]">
+                <div className="grid grid-cols-7 gap-1 mb-1 w-full max-w-[260px]">
                     {weekDays.map((day) => (
                         <div
                             key={day}
-                            className="h-8 w-8 flex items-center justify-center text-xs font-medium text-muted-foreground"
+                            className="h-7 w-9 flex items-center justify-center text-xs font-medium text-muted-foreground"
                         >
                             {day}
                         </div>
@@ -136,7 +136,7 @@ export function DatePicker({
                 </div>
 
                 {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-1 w-full max-w-[230px]">
+                <div className="grid grid-cols-7 gap-1 w-full max-w-[280px]">
                     {calendarDays.map((date, index) => {
                         const isCurrentMonth = isSameMonth(date, currentMonth);
                         const isSelected =
@@ -150,7 +150,7 @@ export function DatePicker({
                                 size="sm"
                                 onClick={() => handleDateClick(date)}
                                 className={cn(
-                                    "h-8 w-8 p-0 text-xs font-normal",
+                                    "h-7 w-9 p-0 text-xs font-normal",
                                     "hover:bg-accent hover:text-accent-foreground",
                                     "flex items-center justify-center",
                                     !isCurrentMonth &&
@@ -171,12 +171,12 @@ export function DatePicker({
             </div>
 
             {/* Footer with Today button */}
-            <div className="px-2 py-2 border-t">
+            <div className="px-2 py-1 border-t">
                 <Button
                     variant="default"
                     size="sm"
                     onClick={handleTodayClick}
-                    className="w-full h-9 text-sm"
+                    className="w-full h-8 text-sm"
                 >
                     Today
                 </Button>
