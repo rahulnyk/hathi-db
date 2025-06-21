@@ -13,7 +13,7 @@ import { DateContextPicker } from "../journal/date_context_picker";
 import { ContextList } from "./context-list"; // Import ContextList component
 // Unused imports related to dispatch and dateToSlug are now fully removed.
 import { cn } from "@/lib/utils";
-import { ElephantIcon } from "../icon";
+import { HathiIcon } from "../icon";
 
 interface RetractableMenuProps {
     isOpen: boolean;
@@ -59,10 +59,17 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}
         >
-            <div className="flex items-center justify-between pt-2 pr-4 pl-6 border-b border-border/20">
+            <div className="flex items-baseline justify-between pt-4 pr-4 pl-6 border-b border-border/20">
                 <div className="flex flex-row items-center space-x-2 text-foreground/50">
-                    <ElephantIcon size={40} aria-hidden="true" />
-                    <span className="text-xl font-bold">hathi</span>
+                    <HathiIcon
+                        size={26}
+                        aria-hidden="true"
+                        strokeWidth={10}
+                        className="text-foreground"
+                    />
+                    <span className="text-xl font-semibold align-bottom text-foreground">
+                        hathi
+                    </span>
                 </div>
                 <button
                     onClick={onClose}
