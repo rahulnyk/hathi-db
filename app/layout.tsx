@@ -11,8 +11,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
     metadataBase: new URL(defaultUrl),
-    title: "Next.js and Supabase Starter Kit",
-    description: "The fastest way to build apps with Next.js and Supabase",
+    title: "Hathi - Your AI-Powered Second Brain",
+    description:
+        "Forget Remembering Everything. Hathi is your AI-powered second brain, seamlessly managing your notes, files, todos, and contexts across your personal and professional life.",
 };
 
 const lexend = Lexend({
