@@ -247,12 +247,12 @@ export function NotesEditor() {
             })
         );
 
-        // If note was successfully added, generate context suggestions
+        // If note was successfully added, generate context suggestions and embedding
         if (addNote.fulfilled.match(addNoteResult)) {
             const persistedNote = addNoteResult.payload.note;
 
             // Fire-and-forget: Dispatch context suggestions generation
-            // Thread component will handle the AI state management
+            // NoteCard will handle the AI state management
             dispatch(
                 generateSuggestedContexts({
                     noteId: persistedNote.id,
@@ -262,7 +262,7 @@ export function NotesEditor() {
             );
 
             // Fire-and-forget: Dispatch embedding generation
-            // Thread component will handle the AI state management
+            // NoteCard will handle the AI state management
             dispatch(
                 generateEmbeddingThunk({
                     noteId: persistedNote.id,
