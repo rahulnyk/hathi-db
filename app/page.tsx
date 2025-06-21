@@ -18,7 +18,7 @@ export default function Home() {
                 <div className="max-w-7xl w-full mx-auto">
                     <div className="flex items-center justify-center mb-6 gap-4">
                         <HathiIcon className="h-14 w-14 text-primary mr-2" />
-                        <h1 className="text-4xl md:text-5xl text-bold">
+                        <h1 className="text-4xl md:text-5xl font-bold">
                             Hathi
                         </h1>
                     </div>
