@@ -8,6 +8,7 @@ import {
     Folder,
     Sparkles,
 } from "lucide-react";
+import { HathiIcon } from "@/components/icon";
 
 export default function Home() {
     return (
@@ -15,9 +16,9 @@ export default function Home() {
             {/* Hero Section */}
             <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-16 md:py-24 w-full">
                 <div className="max-w-7xl w-full mx-auto">
-                    <div className="flex items-center justify-center mb-6">
-                        <Brain className="h-12 w-12 text-primary mr-2" />
-                        <h1 className="text-4xl md:text-5xl font-bold">
+                    <div className="flex items-center justify-center mb-6 gap-4">
+                        <HathiIcon className="h-14 w-14 text-primary mr-2" />
+                        <h1 className="text-4xl md:text-5xl text-bold">
                             Hathi
                         </h1>
                     </div>
