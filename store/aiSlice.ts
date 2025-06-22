@@ -1,8 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { suggestContexts, generateEmbedding, structurizeNote } from "@/app/actions/ai";
+import {
+    suggestContexts,
+    generateEmbedding,
+    structurizeNote,
+} from "@/app/actions/ai";
 import { patchNote } from "@/app/actions/notes";
-import { updateNoteWithSuggestedContexts, updateNoteContent } from "@/store/notesSlice";
-
+import {
+    updateNoteWithSuggestedContexts,
+    updateNoteContent,
+} from "@/store/notesSlice";
+import { sentenceCaseToSlug } from "@/lib/utils";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
@@ -46,17 +53,26 @@ export const generateSuggestedContexts = createAsyncThunk(
         },
         { rejectWithValue, dispatch }
     ) => {
-
         // Clear any existing suggestions for this note
         dispatch(clearSuggestedContexts(noteId));
 
         try {
-            const suggestions = await suggestContexts({
+            const suggestionsResponse = await suggestContexts({
                 content,
             });
 
+            // Slugify each suggestion using sentenceCaseToSlug
+            const suggestions = suggestionsResponse.map((ctx) =>
+                sentenceCaseToSlug(ctx)
+            );
+
             // Dispatch action to update the note in Redux store immediately
-            dispatch(updateNoteWithSuggestedContexts({ noteId, suggestions }));
+            dispatch(
+                updateNoteWithSuggestedContexts({
+                    noteId,
+                    suggestions,
+                })
+            );
 
             // Update the note optimistically in the database
             await patchNote({
@@ -71,7 +87,8 @@ export const generateSuggestedContexts = createAsyncThunk(
         } catch (error: any) {
             return rejectWithValue({
                 noteId,
-                error: error?.message || "Failed to generate context suggestions",
+                error:
+                    error?.message || "Failed to generate context suggestions",
             });
         }
     }
@@ -244,7 +261,10 @@ const aiSlice = createSlice({
                 };
             })
             .addCase(generateSuggestedContexts.rejected, (state, action) => {
-                const { noteId, error } = action.payload as { noteId: string; error: string };
+                const { noteId, error } = action.payload as {
+                    noteId: string;
+                    error: string;
+                };
                 state.suggestedContexts[noteId] = {
                     suggestions: [],
                     status: "failed",
@@ -259,7 +279,8 @@ const aiSlice = createSlice({
                 };
             })
             .addCase(structurizeNoteThunk.fulfilled, (state, action) => {
-                const { noteId, structuredContent, originalContent } = action.payload;
+                const { noteId, structuredContent, originalContent } =
+                    action.payload;
                 state.structurizeNote[noteId] = {
                     status: "succeeded",
                     structuredContent,
@@ -267,7 +288,10 @@ const aiSlice = createSlice({
                 };
             })
             .addCase(structurizeNoteThunk.rejected, (state, action) => {
-                const { noteId, error } = action.payload as { noteId: string; error: string };
+                const { noteId, error } = action.payload as {
+                    noteId: string;
+                    error: string;
+                };
                 state.structurizeNote[noteId] = {
                     status: "failed",
                     error,
@@ -287,7 +311,10 @@ const aiSlice = createSlice({
                 delete state.structurizeNote[noteId];
             })
             .addCase(acceptStructurizeNoteThunk.rejected, (state, action) => {
-                const { noteId, error } = action.payload as { noteId: string; error: string };
+                const { noteId, error } = action.payload as {
+                    noteId: string;
+                    error: string;
+                };
                 if (state.structurizeNote[noteId]) {
                     state.structurizeNote[noteId].status = "failed";
                     state.structurizeNote[noteId].error = error;
@@ -307,7 +334,10 @@ const aiSlice = createSlice({
                 delete state.structurizeNote[noteId];
             })
             .addCase(rejectStructurizeNoteThunk.rejected, (state, action) => {
-                const { noteId, error } = action.payload as { noteId: string; error: string };
+                const { noteId, error } = action.payload as {
+                    noteId: string;
+                    error: string;
+                };
                 if (state.structurizeNote[noteId]) {
                     state.structurizeNote[noteId].status = "failed";
                     state.structurizeNote[noteId].error = error;
@@ -316,5 +346,6 @@ const aiSlice = createSlice({
     },
 });
 
-export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } = aiSlice.actions;
+export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } =
+    aiSlice.actions;
 export default aiSlice.reducer;

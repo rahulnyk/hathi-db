@@ -151,7 +151,12 @@ export async function patchNote({
     userId,
 }: {
     noteId: string;
-    patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type">> & {
+    patches: Partial<
+        Pick<
+            Note,
+            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type"
+        >
+    > & {
         embedding?: number[];
         embedding_model?: string;
         embedding_created_at?: string;
@@ -162,32 +167,29 @@ export async function patchNote({
 
     try {
         // First verify the note belongs to the user
-        const { error: fetchError } = await supabase
-            .from("notes")
-            .select("id")
-            .eq("id", noteId)
-            .eq("user_id", userId)
-            .single();
+        // const { error: fetchError } = await supabase
+        //     .from("notes")
+        //     .select("id")
+        //     .eq("id", noteId)
+        //     .eq("user_id", userId)
+        //     .single();
 
-        if (fetchError) {
-            if (fetchError.code === 'PGRST116') {
-                throw new Error("Note not found");
-            }
-            throw fetchError;
-        }
+        // if (fetchError) {
+        //     if (fetchError.code === "PGRST116") {
+        //         throw new Error("Note not found");
+        //     }
+        //     throw fetchError;
+        // }
 
         // Prepare the update object
         const updateData: Record<string, unknown> = {};
 
         // Only include fields that are actually being updated
-        if (patches.content !== undefined) updateData.content = patches.content;
-        if (patches.contexts !== undefined) updateData.contexts = patches.contexts;
-        if (patches.tags !== undefined) updateData.tags = patches.tags;
-        if (patches.suggested_contexts !== undefined) updateData.suggested_contexts = patches.suggested_contexts;
-        if (patches.note_type !== undefined) updateData.note_type = patches.note_type;
-        if (patches.embedding !== undefined) updateData.embedding = patches.embedding;
-        if (patches.embedding_model !== undefined) updateData.embedding_model = patches.embedding_model;
-        if (patches.embedding_created_at !== undefined) updateData.embedding_created_at = patches.embedding_created_at;
+        Object.entries(patches).forEach(([key, value]) => {
+            if (value !== undefined) {
+                updateData[key] = value;
+            }
+        });
 
         // Update the note
         const { data, error } = await supabase

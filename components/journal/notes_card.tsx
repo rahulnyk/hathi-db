@@ -1,8 +1,23 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting, patchNote } from "@/store/notesSlice";
+import {
+    Note,
+    deleteNote,
+    markNoteAsDeleting,
+    patchNote,
+} from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle, MoreVertical, Trash2, Loader2, Plus, RefreshCw, Sparkles, Check, Undo } from "lucide-react";
+import {
+    AlertCircle,
+    MoreVertical,
+    Trash2,
+    Loader2,
+    Plus,
+    RefreshCw,
+    Sparkles,
+    Check,
+    Undo,
+} from "lucide-react";
 import remarkGfm from "remark-gfm";
 import { useAppDispatch, useAppSelector } from "@/store";
 // import { useUser } from "@/components/auth/user-provider";
@@ -20,22 +35,34 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
-import { generateSuggestedContexts, structurizeNoteThunk, acceptStructurizeNoteThunk, rejectStructurizeNoteThunk } from "@/store/aiSlice";
+import {
+    generateSuggestedContexts,
+    structurizeNoteThunk,
+    acceptStructurizeNoteThunk,
+    rejectStructurizeNoteThunk,
+} from "@/store/aiSlice";
+import { slugToSentenceCase } from "@/lib/utils";
 
-export function NoteCard({ note, user }: { note: Note; user: User | null }) {
+export function NoteCard({ note, user }: { note: Note; user: User }) {
     const dispatch = useAppDispatch();
 
     // Get AI state for this specific note only
-    const aiSuggestedContexts = useAppSelector((state) => state.ai.suggestedContexts[note.id]);
-    const aiStructurizeState = useAppSelector((state) => state.ai.structurizeNote[note.id]);
+    const aiSuggestedContexts = useAppSelector(
+        (state) => state.ai.suggestedContexts[note.id]
+    );
+    const aiStructurizeState = useAppSelector(
+        (state) => state.ai.structurizeNote[note.id]
+    );
 
     // Track which suggested context is being added
     const [addingContext, setAddingContext] = useState<string | null>(null);
 
     // Determine which content to display
-    const displayContent = aiStructurizeState?.status === "succeeded" && aiStructurizeState.structuredContent
-        ? aiStructurizeState.structuredContent
-        : note.content;
+    const displayContent =
+        aiStructurizeState?.status === "succeeded" &&
+        aiStructurizeState.structuredContent
+            ? aiStructurizeState.structuredContent
+            : note.content;
 
     const handleDelete = () => {
         if (!user) return;
@@ -113,6 +140,25 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
         return () => document.removeEventListener("click", handleClick);
     }, [dispatch]);
 
+    const handleContextAdd = (context: string) => () => {
+        // Set loading state for this context
+        setAddingContext(context);
+        // Add this context to the note's contexts
+        const updatedContexts = [...(note.contexts || []), context];
+        dispatch(
+            patchNote({
+                noteId: note.id,
+                patches: {
+                    contexts: updatedContexts,
+                },
+                userId: user.id,
+            })
+        ).finally(() => {
+            // Clear loading state when request completes
+            setAddingContext(null);
+        });
+    };
+
     return (
         <div
             className={cn(
@@ -123,7 +169,10 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             {/* More options dropdown in top right */}
             <div className="absolute top-2 right-2 flex items-center gap-1">
                 {/* Structurize button - show when not in preview mode */}
-                {!(aiStructurizeState?.status === "succeeded" && aiStructurizeState.structuredContent) && (
+                {!(
+                    aiStructurizeState?.status === "succeeded" &&
+                    aiStructurizeState.structuredContent
+                ) && (
                     <Button
                         variant="ghost"
                         size="icon"
@@ -142,37 +191,42 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 )}
 
                 {/* Accept/Reject buttons - show when in preview mode */}
-                {aiStructurizeState?.status === "succeeded" && aiStructurizeState.structuredContent && (
-                    <>
-                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
-                            <span>✨ Structured preview - click</span>
-                            <Check className="h-3 w-3 inline" />
-                            <span>to save or</span>
-                            <Undo className="h-3 w-3 inline" />
-                            <span>to revert</span>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
-                            onClick={handleAcceptStructurize}
-                            title="Accept structured content"
-                        >
-                            <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
-                            <span className="sr-only">Accept structured content</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
-                            onClick={handleRejectStructurize}
-                            title="Revert to original content"
-                        >
-                            <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
-                            <span className="sr-only">Revert to original content</span>
-                        </Button>
-                    </>
-                )}
+                {aiStructurizeState?.status === "succeeded" &&
+                    aiStructurizeState.structuredContent && (
+                        <>
+                            <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
+                                <span>✨ Structured preview - click</span>
+                                <Check className="h-3 w-3 inline" />
+                                <span>to save or</span>
+                                <Undo className="h-3 w-3 inline" />
+                                <span>to revert</span>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                                onClick={handleAcceptStructurize}
+                                title="Accept structured content"
+                            >
+                                <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                                <span className="sr-only">
+                                    Accept structured content
+                                </span>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                                onClick={handleRejectStructurize}
+                                title="Revert to original content"
+                            >
+                                <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                                <span className="sr-only">
+                                    Revert to original content
+                                </span>
+                            </Button>
+                        </>
+                    )}
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -224,68 +278,53 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                 </ReactMarkdown>
             </div>
 
-            {/* Actual contexts */}
-            {note.contexts && note.contexts.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                    {note.contexts.map((context, index) => (
-                        <span
-                            key={index}
-                            className="context-pill"
-                        >
-                            {context}
-                        </span>
-                    ))}
-                </div>
-            )}
-
-            {/* Suggested contexts */}
-            {note.suggested_contexts && note.suggested_contexts.length > 0 && (
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1">
-                        {note.suggested_contexts
-                            .filter(context => !note.contexts?.includes(context))
-                            .map((context, index) => (
-                            <Button
-                                key={index}
-                                variant="outline"
-                                size="sm"
-                                className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
-                                onClick={() => {
-                                    if (!user) return;
-
-                                    // Set loading state for this context
-                                    setAddingContext(context);
-
-                                    // Add this context to the note's contexts
-                                    const updatedContexts = [...(note.contexts || []), context];
-                                    dispatch(
-                                        patchNote({
-                                            noteId: note.id,
-                                            patches: {
-                                                contexts: updatedContexts,
-                                            },
-                                            userId: user.id,
-                                        })
-                                    ).finally(() => {
-                                        // Clear loading state when request completes
-                                        setAddingContext(null);
-                                    });
-                                }}
-                                disabled={addingContext === context}
-                            >
-                                {addingContext === context ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                    <>
-                                        {context}
-                                        <Plus className="h-3 w-3" />
-                                    </>
-                                )}
-                            </Button>
+            {/* Contexts and suggested contexts */}
+            <div className="flex flex-row items-center gap-2 text-xs text-muted-foreground">
+                {/* Actual contexts */}
+                {note.contexts && note.contexts.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1">
+                        {note.contexts.map((context, index) => (
+                            <span key={index} className="context-pill">
+                                {slugToSentenceCase(context)}
+                            </span>
                         ))}
                     </div>
-                </div>
-            )}
+                )}
+                {/* Suggested contexts */}
+                {note.suggested_contexts &&
+                    note.suggested_contexts.length > 0 && (
+                        <div className="mt-3 flex items-center justify-between">
+                            <div className="flex flex-wrap gap-1">
+                                {note.suggested_contexts
+                                    .filter(
+                                        (context) =>
+                                            !note.contexts?.includes(context)
+                                    )
+                                    .map((context, index) => (
+                                        <Button
+                                            key={index}
+                                            variant="outline"
+                                            size="sm"
+                                            className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
+                                            onClick={handleContextAdd(context)}
+                                            disabled={addingContext === context}
+                                        >
+                                            {addingContext === context ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    {slugToSentenceCase(
+                                                        context
+                                                    )}
+                                                    <Plus className="h-3 w-3" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+            </div>
 
             {/* Context suggestions loading/error states and refresh button when no suggestions */}
             {aiSuggestedContexts && !note.suggested_contexts?.length && (
@@ -300,7 +339,10 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
                         {aiSuggestedContexts.status === "failed" && (
                             <>
                                 <AlertCircle className="h-3 w-3" />
-                                <span>Failed to generate suggestions: {aiSuggestedContexts.error}</span>
+                                <span>
+                                    Failed to generate suggestions:{" "}
+                                    {aiSuggestedContexts.error}
+                                </span>
                             </>
                         )}
                     </div>
@@ -327,19 +369,24 @@ export function NoteCard({ note, user }: { note: Note; user: User | null }) {
             )}
 
             {/* Show loading state for newly created notes that don't have AI state yet */}
-            {!aiSuggestedContexts && !note.suggested_contexts?.length && note.persistenceStatus === "persisted" && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>Generating context suggestions...</span>
-                </div>
-            )}
+            {!aiSuggestedContexts &&
+                !note.suggested_contexts?.length &&
+                note.persistenceStatus === "persisted" && (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Generating context suggestions...</span>
+                    </div>
+                )}
 
             {/* Structurization error state */}
             {aiStructurizeState?.status === "failed" && (
                 <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <AlertCircle className="h-3 w-3" />
-                        <span>Failed to structurize note: {aiStructurizeState.error}</span>
+                        <span>
+                            Failed to structurize note:{" "}
+                            {aiStructurizeState.error}
+                        </span>
                     </div>
                     <Button
                         variant="ghost"
