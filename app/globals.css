@@ -22,13 +22,16 @@
     @apply font-outfit font-black tracking-wider text-neutral-300; /* Added font-montserrat */
 }
 
-/* Add to your globals.css */
-.context-pill {
+.context-pill-inline {
     @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
 }
 
+.context-pill {
+    @apply inline-block bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md px-1 py-1 mx-0 tracking-normal text-xs;
+}
+
 .suggested-context-pill {
-    @apply bg-zinc-100 text-zinc-700 border-zinc-300 hover:bg-zinc-200 dark:bg-zinc-800/50 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-700/50;
+    @apply text-zinc-700 dark:text-zinc-200 border-dashed border-zinc-300 dark:border-zinc-600 bg-background hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md px-1 py-1 mx-0 tracking-normal text-xs;
 }
 
 .hashtag-pill {
