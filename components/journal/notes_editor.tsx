@@ -3,7 +3,10 @@
 import { useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically } from "@/store/notesSlice";
-import { generateSuggestedContexts, generateEmbeddingThunk } from "@/store/aiSlice";
+import {
+    generateSuggestedContexts,
+    generateEmbeddingThunk,
+} from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -240,7 +243,6 @@ export function NotesEditor() {
         // Then try to persist to server
         const addNoteResult = await dispatch(
             addNote({
-                userId: user.id,
                 tempId: optimisticNote.id,
                 key_context: currentContext, // Ensure key_context is set
                 ...optimisticNote,
@@ -257,7 +259,6 @@ export function NotesEditor() {
                 generateSuggestedContexts({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
-                    userId: user.id,
                 })
             );
 
