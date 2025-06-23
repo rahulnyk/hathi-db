@@ -1,6 +1,6 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting } from "@/store/notesSlice";
+import { Note, deleteNote, markNoteAsDeleting, enterEditMode } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
 import {
     AlertCircle,
@@ -36,6 +36,8 @@ import {
 } from "@/store/aiSlice";
 import { ContextContainer } from "@/components/journal/context-container";
 import { CodeBlock } from "./code-block";
+import { NotesEditor } from "./notes_editor";
+
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
 
@@ -96,6 +98,17 @@ export function NoteCard({ note }: { note: Note }) {
         );
     };
 
+    const handleDoubleClick = () => {
+        if (note.persistenceStatus === "pending" || note.persistenceStatus === "failed") {
+            return; // Don't allow editing of notes that haven't been saved yet
+        }
+        
+        dispatch(enterEditMode({ 
+            noteId: note.id, 
+            originalContent: note.content 
+        }));
+    };
+
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
@@ -127,17 +140,17 @@ export function NoteCard({ note }: { note: Note }) {
     return (
         <div
             className={cn(
-                "p-3 sm:p-4 py-2 rounded-lg relative"
-                // "bg-muted/40 dark:bg-muted/20"
+                "p-3 sm:p-4 py-2 rounded-lg relative",
+                note.isEditing && "ring-2 ring-blue-500/50 bg-blue-50/30 dark:bg-blue-950/20"
             )}
         >
             {/* More options dropdown in top right */}
             <div className="absolute top-2 right-2 flex items-center gap-1">
-                {/* Structurize button - show when not in preview mode */}
+                {/* Structurize button - show when not in preview mode and not editing */}
                 {!(
                     aiStructurizeState?.status === "succeeded" &&
                     aiStructurizeState.structuredContent
-                ) && (
+                ) && !note.isEditing && (
                     <Button
                         variant="ghost"
                         size="icon"
@@ -155,9 +168,9 @@ export function NoteCard({ note }: { note: Note }) {
                     </Button>
                 )}
 
-                {/* Accept/Reject buttons - show when in preview mode */}
+                {/* Accept/Reject buttons - show when in preview mode and not editing */}
                 {aiStructurizeState?.status === "succeeded" &&
-                    aiStructurizeState.structuredContent && (
+                    aiStructurizeState.structuredContent && !note.isEditing && (
                         <>
                             <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
                                 <span>✨ Structured preview - click</span>
@@ -199,6 +212,7 @@ export function NoteCard({ note }: { note: Note }) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                            disabled={note.isEditing}
                         >
                             <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
                             <span className="sr-only">More options</span>
@@ -229,27 +243,41 @@ export function NoteCard({ note }: { note: Note }) {
                 {new Date(note.created_at).toLocaleString()}
             </div>
 
-            {/* Note content */}
-            <div className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0">
-                <ReactMarkdown
-                    remarkPlugins={[
-                        remarkGfm,
-                        remarkContextPlugin,
-                        remarkHashtagPlugin,
-                    ]}
-                    components={{
-                        code: CodeBlock, // Use custom CodeBlock component
-                        // Add any other custom components here if needed
-                    }}
+            {/* Note content - show editor if editing, otherwise show markdown */}
+            {note.isEditing ? (
+                <div className="mb-2">
+                    <NotesEditor
+                        isEditMode={true}
+                        noteId={note.id}
+                        initialContent={note.content}
+                    />
+                </div>
+            ) : (
+                <div 
+                    className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
+                    onDoubleClick={handleDoubleClick}
+                    title="Double-click to edit"
                 >
-                    {displayContent}
-                </ReactMarkdown>
-            </div>
+                    <ReactMarkdown
+                        remarkPlugins={[
+                            remarkGfm,
+                            remarkContextPlugin,
+                            remarkHashtagPlugin,
+                        ]}
+                        components={{
+                            code: CodeBlock, // Use custom CodeBlock component
+                            // Add any other custom components here if needed
+                        }}
+                    >
+                        {displayContent}
+                    </ReactMarkdown>
+                </div>
+            )}
 
             <ContextContainer note={note} />
 
             {/* Context suggestions loading/error states and refresh button when no suggestions */}
-            {aiSuggestedContexts && !note.suggested_contexts?.length && (
+            {aiSuggestedContexts && !note.suggested_contexts?.length && !note.isEditing &&
                 <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         {aiSuggestedContexts.status === "loading" && (
@@ -286,12 +314,12 @@ export function NoteCard({ note }: { note: Note }) {
                         </Button>
                     )}
                 </div>
-            )}
+            }
 
             {/* Show loading state for newly created notes that don't have AI state yet */}
             {!aiSuggestedContexts &&
                 !note.suggested_contexts?.length &&
-                note.persistenceStatus === "persisted" && (
+                note.persistenceStatus === "persisted" && !note.isEditing && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         <span>Generating context suggestions...</span>
@@ -319,9 +347,9 @@ export function NoteCard({ note }: { note: Note }) {
                 </div>
             )}
 
-            {/* Status indicator pill at bottom */}
+            {/* Show persistence status for notes that failed to save or are being deleted */}
             {(note.persistenceStatus === "failed" ||
-                note.persistenceStatus === "deleting") && (
+                note.persistenceStatus === "deleting") && !note.isEditing && (
                 <div
                     className={`
                     mt-2 text-xs rounded-full px-2 py-1 inline-flex items-center gap-1
