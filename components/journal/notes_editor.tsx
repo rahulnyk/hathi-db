@@ -113,6 +113,11 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
         (state) => state.notes.currentContext
     );
 
+    // Get current note data for edit mode
+    const currentNote = useAppSelector((state) =>
+        noteId ? state.notes.notes.find(note => note.id === noteId) : null
+    );
+
     // Initialize content when entering edit mode
     useEffect(() => {
         if (isEditMode && initialContent !== undefined) {
@@ -318,29 +323,37 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     const handleSaveEdit = async () => {
         if (!noteId) return;
-        
+
         setIsSubmitting(true);
-        
+
         try {
-            // Extract contexts and tags from the updated content
-            const { contexts, tags } = extractMetadata(content);
-            
+            // Extract new contexts and tags from the updated content
+            const { contexts: newContexts, tags: newTags } = extractMetadata(content);
+
+            // Merge existing contexts with new ones, removing duplicates
+            const existingContexts = currentNote?.contexts || [];
+            const mergedContexts = [...new Set([...existingContexts, ...newContexts])];
+
+            // Merge existing tags with new ones, removing duplicates
+            const existingTags = currentNote?.tags || [];
+            const mergedTags = [...new Set([...existingTags, ...newTags])];
+
             // Optimistically exit edit mode
             dispatch(exitEditMode({ noteId }));
-            
+
             // Call onSave callback if provided
             if (onSave) {
                 onSave();
             }
-            
+
             // Send patch request to server
             await dispatch(
                 patchNote({
                     noteId,
                     patches: {
                         content,
-                        contexts,
-                        tags,
+                        contexts: mergedContexts,
+                        tags: mergedTags,
                     },
                 })
             );
@@ -353,10 +366,10 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     const handleCancelEdit = () => {
         if (!noteId) return;
-        
+
         // Reset content to original and exit edit mode
         dispatch(exitEditMode({ noteId, resetContent: true }));
-        
+
         // Call onCancel callback if provided
         if (onCancel) {
             onCancel();
@@ -373,7 +386,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
                     placeholder={
-                        isEditMode 
+                        isEditMode
                             ? "Edit your note content..."
                             : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
                     }
