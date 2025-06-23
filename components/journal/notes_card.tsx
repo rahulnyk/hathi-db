@@ -1,18 +1,12 @@
 "use client";
 
-import {
-    Note,
-    deleteNote,
-    markNoteAsDeleting,
-    patchNote,
-} from "@/store/notesSlice";
+import { Note, deleteNote, markNoteAsDeleting } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
 import {
     AlertCircle,
     MoreVertical,
     Trash2,
     Loader2,
-    Plus,
     RefreshCw,
     Sparkles,
     Check,
@@ -30,9 +24,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
 import {
@@ -41,9 +34,9 @@ import {
     acceptStructurizeNoteThunk,
     rejectStructurizeNoteThunk,
 } from "@/store/aiSlice";
-import { slugToSentenceCase } from "@/lib/utils";
+import { ContextContainer } from "@/components/journal/context-container";
 
-export function NoteCard({ note, user }: { note: Note; user: User }) {
+export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
 
     // Get AI state for this specific note only
@@ -54,9 +47,6 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
         (state) => state.ai.structurizeNote[note.id]
     );
 
-    // Track which suggested context is being added
-    const [addingContext, setAddingContext] = useState<string | null>(null);
-
     // Determine which content to display
     const displayContent =
         aiStructurizeState?.status === "succeeded" &&
@@ -65,8 +55,6 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
             : note.content;
 
     const handleDelete = () => {
-        if (!user) return;
-
         // Mark as deleting first (optimistic update)
         dispatch(markNoteAsDeleting(note.id));
 
@@ -74,14 +62,11 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
         dispatch(
             deleteNote({
                 noteId: note.id,
-                userId: user.id,
             })
         );
     };
 
     const handleStructurize = () => {
-        if (!user) return;
-
         dispatch(
             structurizeNoteThunk({
                 noteId: note.id,
@@ -91,13 +76,12 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
     };
 
     const handleAcceptStructurize = () => {
-        if (!user || !aiStructurizeState?.structuredContent) return;
+        if (!aiStructurizeState?.structuredContent) return;
 
         dispatch(
             acceptStructurizeNoteThunk({
                 noteId: note.id,
                 structuredContent: aiStructurizeState.structuredContent,
-                userId: user.id,
             })
         );
     };
@@ -116,7 +100,7 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
         const handleClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
 
-            if (target.classList.contains("context-pill")) {
+            if (target.classList.contains("context-pill-inline")) {
                 const content =
                     target.getAttribute("data-content") ||
                     target.textContent ||
@@ -139,25 +123,6 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
     }, [dispatch]);
-
-    const handleContextAdd = (context: string) => () => {
-        // Set loading state for this context
-        setAddingContext(context);
-        // Add this context to the note's contexts
-        const updatedContexts = [...(note.contexts || []), context];
-        dispatch(
-            patchNote({
-                noteId: note.id,
-                patches: {
-                    contexts: updatedContexts,
-                },
-                userId: user.id,
-            })
-        ).finally(() => {
-            // Clear loading state when request completes
-            setAddingContext(null);
-        });
-    };
 
     return (
         <div
@@ -278,53 +243,7 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
                 </ReactMarkdown>
             </div>
 
-            {/* Contexts and suggested contexts */}
-            <div className="flex flex-row items-center gap-2 text-xs text-muted-foreground">
-                {/* Actual contexts */}
-                {note.contexts && note.contexts.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                        {note.contexts.map((context, index) => (
-                            <span key={index} className="context-pill">
-                                {slugToSentenceCase(context)}
-                            </span>
-                        ))}
-                    </div>
-                )}
-                {/* Suggested contexts */}
-                {note.suggested_contexts &&
-                    note.suggested_contexts.length > 0 && (
-                        <div className="mt-3 flex items-center justify-between">
-                            <div className="flex flex-wrap gap-1">
-                                {note.suggested_contexts
-                                    .filter(
-                                        (context) =>
-                                            !note.contexts?.includes(context)
-                                    )
-                                    .map((context, index) => (
-                                        <Button
-                                            key={index}
-                                            variant="outline"
-                                            size="sm"
-                                            className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
-                                            onClick={handleContextAdd(context)}
-                                            disabled={addingContext === context}
-                                        >
-                                            {addingContext === context ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    {slugToSentenceCase(
-                                                        context
-                                                    )}
-                                                    <Plus className="h-3 w-3" />
-                                                </>
-                                            )}
-                                        </Button>
-                                    ))}
-                            </div>
-                        </div>
-                    )}
-            </div>
+            <ContextContainer note={note} />
 
             {/* Context suggestions loading/error states and refresh button when no suggestions */}
             {aiSuggestedContexts && !note.suggested_contexts?.length && (
@@ -352,12 +271,10 @@ export function NoteCard({ note, user }: { note: Note; user: User }) {
                             size="sm"
                             className="h-6 px-2 text-xs"
                             onClick={() => {
-                                if (!user) return;
                                 dispatch(
                                     generateSuggestedContexts({
                                         noteId: note.id,
                                         content: note.content,
-                                        userId: user.id,
                                     })
                                 );
                             }}

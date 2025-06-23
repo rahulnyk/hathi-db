@@ -45,11 +45,9 @@ export const generateSuggestedContexts = createAsyncThunk(
         {
             noteId,
             content,
-            userId,
         }: {
             noteId: string;
             content: string;
-            userId: string;
         },
         { rejectWithValue, dispatch }
     ) => {
@@ -80,7 +78,6 @@ export const generateSuggestedContexts = createAsyncThunk(
                 patches: {
                     suggested_contexts: suggestions,
                 },
-                userId,
             });
 
             return { noteId, suggestions };
@@ -152,7 +149,6 @@ export const generateEmbeddingThunk = createAsyncThunk(
                     embedding_model: "text-embedding-3-small",
                     embedding_created_at: new Date().toISOString(),
                 },
-                userId,
             });
 
             return { noteId, embedding };
@@ -172,11 +168,9 @@ export const acceptStructurizeNoteThunk = createAsyncThunk(
         {
             noteId,
             structuredContent,
-            userId,
         }: {
             noteId: string;
             structuredContent: string;
-            userId: string;
         },
         { rejectWithValue, dispatch }
     ) => {
@@ -187,7 +181,6 @@ export const acceptStructurizeNoteThunk = createAsyncThunk(
                 patches: {
                     content: structuredContent,
                 },
-                userId,
             });
 
             // Update the note content in Redux store

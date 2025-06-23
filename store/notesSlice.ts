@@ -53,7 +53,6 @@ const initialState: NotesState = {
 
 /**
  * Fetches notes for a specific user with the given contexts.
- * @param userId - The user ID to fetch notes for
  * @param contexts - Non-empty array of context strings to filter notes by
  * @throws Will reject with an error message if contexts is empty or if the fetch fails
  * @returns Array of Note objects that match the contexts
@@ -62,10 +61,8 @@ export const fetchNotes = createAsyncThunk(
     "notes/fetchNotes",
     async (
         {
-            userId,
             contexts,
         }: {
-            userId: string;
             contexts: [string, ...string[]]; // Non-empty array type
         },
         { rejectWithValue }
@@ -76,7 +73,7 @@ export const fetchNotes = createAsyncThunk(
                 return rejectWithValue("Context array cannot be empty");
             }
 
-            const notes = await fetchNotesAction(userId, {
+            const notes = await fetchNotesAction({
                 contexts,
                 method: "OR",
             });
@@ -86,33 +83,14 @@ export const fetchNotes = createAsyncThunk(
         }
     }
 );
-// export const fetchNotes = createAsyncThunk(
-//     "notes/fetchNotes",
-//     async (
-//         { userId, contexts }: { userId: string; contexts: string[] },
-//         { rejectWithValue }
-//     ) => {
-//         try {
-//             const notes = await fetchNotesAction(userId, {
-//                 contexts,
-//                 method: "OR",
-//             });
-//             return notes;
-//         } catch (error: any) {
-//             return rejectWithValue(error?.message || "Failed to fetch notes");
-//         }
-//     }
-// );
 
 export const addNote = createAsyncThunk(
     "notes/addNote",
     async (
         {
-            userId,
             tempId,
             ...noteData
         }: {
-            userId: string;
             tempId: string;
             content: string;
             key_context: string;
@@ -124,7 +102,6 @@ export const addNote = createAsyncThunk(
     ) => {
         try {
             const newNote = await addNoteAction({
-                userId,
                 ...noteData,
             });
 
@@ -143,13 +120,10 @@ export const addNote = createAsyncThunk(
 
 export const deleteNote = createAsyncThunk(
     "notes/deleteNote",
-    async (
-        { noteId, userId }: { noteId: string; userId: string },
-        { rejectWithValue, dispatch }
-    ) => {
+    async ({ noteId }: { noteId: string }, { rejectWithValue, dispatch }) => {
         try {
             // Call the server action
-            const result = await deleteNoteAction({ noteId, userId });
+            const result = await deleteNoteAction({ noteId });
 
             // Refresh context metadata since deleting a note might affect context statistics
             dispatch(refreshContextsMetadata());
@@ -171,11 +145,21 @@ export const patchNote = createAsyncThunk(
         {
             noteId,
             patches,
-            userId,
         }: {
             noteId: string;
-            patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "suggested_contexts" | "note_type" | "embedding" | "embedding_model" | "embedding_created_at">>;
-            userId: string;
+            patches: Partial<
+                Pick<
+                    Note,
+                    | "content"
+                    | "contexts"
+                    | "tags"
+                    | "suggested_contexts"
+                    | "note_type"
+                    | "embedding"
+                    | "embedding_model"
+                    | "embedding_created_at"
+                >
+            >;
         },
         { rejectWithValue, dispatch }
     ) => {
@@ -183,7 +167,6 @@ export const patchNote = createAsyncThunk(
             const updatedNote = await patchNoteAction({
                 noteId,
                 patches,
-                userId,
             });
 
             // Refresh context metadata since contexts might have been modified
@@ -240,16 +223,26 @@ const notesSlice = createSlice({
         setCurrentContext: (state, action: PayloadAction<string>) => {
             state.currentContext = action.payload;
         },
-        updateNoteWithSuggestedContexts: (state, action: PayloadAction<{ noteId: string; suggestions: string[] }>) => {
+        updateNoteWithSuggestedContexts: (
+            state,
+            action: PayloadAction<{ noteId: string; suggestions: string[] }>
+        ) => {
             const { noteId, suggestions } = action.payload;
-            const noteIndex = state.notes.findIndex((note) => note.id === noteId);
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
             if (noteIndex !== -1) {
                 state.notes[noteIndex].suggested_contexts = suggestions;
             }
         },
-        updateNoteContent: (state, action: PayloadAction<{ noteId: string; content: string }>) => {
+        updateNoteContent: (
+            state,
+            action: PayloadAction<{ noteId: string; content: string }>
+        ) => {
             const { noteId, content } = action.payload;
-            const noteIndex = state.notes.findIndex((note) => note.id === noteId);
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
             if (noteIndex !== -1) {
                 state.notes[noteIndex].content = content;
             }
