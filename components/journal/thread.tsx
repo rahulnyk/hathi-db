@@ -5,8 +5,6 @@ import { useEffect } from "react";
 import { NoteCard } from "./notes_card";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes } from "@/store/notesSlice";
-import { useContext } from "react";
-import { UserContext } from "@/components/journal";
 
 export function Thread() {
     // const user = useContext(UserContext);
