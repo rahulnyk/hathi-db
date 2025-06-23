@@ -102,10 +102,10 @@ export function NoteCard({ note }: { note: Note }) {
         if (note.persistenceStatus === "pending" || note.persistenceStatus === "failed") {
             return; // Don't allow editing of notes that haven't been saved yet
         }
-        
-        dispatch(enterEditMode({ 
-            noteId: note.id, 
-            originalContent: note.content 
+
+        dispatch(enterEditMode({
+            noteId: note.id,
+            originalContent: note.content
         }));
     };
 
@@ -253,7 +253,7 @@ export function NoteCard({ note }: { note: Note }) {
                     />
                 </div>
             ) : (
-                <div 
+                <div
                     className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
                     onDoubleClick={handleDoubleClick}
                     title="Double-click to edit"
