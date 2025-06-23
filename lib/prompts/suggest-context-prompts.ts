@@ -29,7 +29,7 @@ export function suggestContextUserPrompt(
                 "suggestions": ["work", "meeting-notes", "project-alpha", "ideas", "personal", "health", "finance", "family", "travel", "learn", "entertainment", "personal-development", "self-learning", "actionable-todos", "someday-todos", "upskill", "self-notes", "fitness"]
             }
         `;
-    console.log("Suggest Context User Prompt:", prompt);
+    // console.log("Suggest Context User Prompt:", prompt);
     return prompt.trim();
 }
 

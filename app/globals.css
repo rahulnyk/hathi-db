@@ -27,11 +27,11 @@
 }
 
 .context-pill {
-    @apply inline-block bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md px-1 py-1 mx-0 tracking-normal text-xs;
+    @apply font-outfit text-xs inline-block bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md px-2 py-1 mx-0;
 }
 
 .suggested-context-pill {
-    @apply text-zinc-700 dark:text-zinc-200 border-dashed border-zinc-300 dark:border-zinc-600 bg-background hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md px-1 py-1 mx-0 tracking-normal text-xs;
+    @apply font-outfit text-xs text-zinc-700 dark:text-zinc-200 border-dashed border-zinc-300 dark:border-zinc-600 bg-background hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md px-1 py-1 mx-0;
 }
 
 .hashtag-pill {
