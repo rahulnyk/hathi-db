@@ -35,7 +35,7 @@ import {
     rejectStructurizeNoteThunk,
 } from "@/store/aiSlice";
 import { ContextContainer } from "@/components/journal/context-container";
-
+import { CodeBlock } from "./code-block";
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
 
@@ -237,7 +237,10 @@ export function NoteCard({ note }: { note: Note }) {
                         remarkContextPlugin,
                         remarkHashtagPlugin,
                     ]}
-                    // components={components}
+                    components={{
+                        code: CodeBlock, // Use custom CodeBlock component
+                        // Add any other custom components here if needed
+                    }}
                 >
                     {displayContent}
                 </ReactMarkdown>

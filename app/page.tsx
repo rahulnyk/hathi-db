@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
     ArrowRight,
-    Brain,
     FileText,
     CheckSquare,
     Folder,
@@ -142,7 +141,7 @@ export default function Home() {
             <footer className="bg-muted py-8 px-4 w-full">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
                     <div className="flex items-center mb-4 md:mb-0">
-                        <Brain className="h-6 w-6 text-primary mr-2" />
+                        <HathiIcon className="size-6 text-primary mr-2" />
                         <span className="font-bold">Hathi</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
