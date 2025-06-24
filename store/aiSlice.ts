@@ -130,7 +130,6 @@ export const generateEmbeddingThunk = createAsyncThunk(
         }: {
             noteId: string;
             content: string;
-            userId: string;
         },
         { rejectWithValue }
     ) => {

@@ -227,7 +227,7 @@ export function NotesEditor() {
         // Create optimistic note with "pending" status, passing currentContext
         const optimisticNote = createOptimisticNote(
             content,
-            user.id,
+            user.id, // TODO Remove this and have server action automatically add user id.
             currentContext,
             "note",
             contexts,
@@ -268,7 +268,6 @@ export function NotesEditor() {
                 generateEmbeddingThunk({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
-                    userId: user.id,
                 })
             );
         }
