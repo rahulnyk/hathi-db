@@ -59,7 +59,10 @@ const remarkContextPlugin: Plugin = () => (tree: Node) => {
                     data: {
                         hName: "span",
                         hProperties: {
-                            className: ["context-pill", "cursor-pointer"],
+                            className: [
+                                "context-pill-inline",
+                                "cursor-pointer",
+                            ],
                             "data-content": match[1],
                         },
                     },

@@ -23,8 +23,8 @@ export function JournalComponent({ user }: { user: User }) {
     }, [params.keyContext, dispatch]);
 
     return (
-        <UserContext.Provider value={user}> {/* Corrected: UserContext.Provider */}
-            <div className="flex justify-center w-full min-h-screen"> {/* Changed classes for centering */}
+        <UserContext.Provider value={user}>
+            <div className="flex justify-center w-full min-h-screen">
                 <NotesPanel />
             </div>
         </UserContext.Provider>

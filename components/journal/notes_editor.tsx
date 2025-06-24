@@ -3,6 +3,10 @@
 import { useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically } from "@/store/notesSlice";
+import {
+    generateSuggestedContexts,
+    generateEmbeddingThunk,
+} from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -223,7 +227,7 @@ export function NotesEditor() {
         // Create optimistic note with "pending" status, passing currentContext
         const optimisticNote = createOptimisticNote(
             content,
-            user.id,
+            user.id, // TODO Remove this and have server action automatically add user id.
             currentContext,
             "note",
             contexts,
@@ -237,16 +241,38 @@ export function NotesEditor() {
         setContent("");
 
         // Then try to persist to server
-        dispatch(
+        const addNoteResult = await dispatch(
             addNote({
-                userId: user.id,
                 tempId: optimisticNote.id,
                 key_context: currentContext, // Ensure key_context is set
                 ...optimisticNote,
             })
-        ).finally(() => {
-            setIsSubmitting(false);
-        });
+        );
+
+        // If note was successfully added, generate context suggestions and embedding
+        if (addNote.fulfilled.match(addNoteResult)) {
+            const persistedNote = addNoteResult.payload.note;
+
+            // Fire-and-forget: Dispatch context suggestions generation
+            // NoteCard will handle the AI state management
+            dispatch(
+                generateSuggestedContexts({
+                    noteId: persistedNote.id,
+                    content: persistedNote.content,
+                })
+            );
+
+            // Fire-and-forget: Dispatch embedding generation
+            // NoteCard will handle the AI state management
+            dispatch(
+                generateEmbeddingThunk({
+                    noteId: persistedNote.id,
+                    content: persistedNote.content,
+                })
+            );
+        }
+
+        setIsSubmitting(false);
     };
 
     return (

@@ -6,7 +6,9 @@ import {
     fetchNotes as fetchNotesAction,
     addNote as addNoteAction,
     deleteNote as deleteNoteAction,
+    patchNote as patchNoteAction,
 } from "@/app/actions/notes"; // Import server actions
+import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
@@ -25,6 +27,10 @@ export type Note = {
     contexts?: string[];
     tags?: string[];
     note_type?: NoteType;
+    suggested_contexts?: string[];
+    embedding?: number[];
+    embedding_model?: string;
+    embedding_created_at?: string;
 };
 
 interface NotesState {
@@ -47,7 +53,6 @@ const initialState: NotesState = {
 
 /**
  * Fetches notes for a specific user with the given contexts.
- * @param userId - The user ID to fetch notes for
  * @param contexts - Non-empty array of context strings to filter notes by
  * @throws Will reject with an error message if contexts is empty or if the fetch fails
  * @returns Array of Note objects that match the contexts
@@ -56,10 +61,8 @@ export const fetchNotes = createAsyncThunk(
     "notes/fetchNotes",
     async (
         {
-            userId,
             contexts,
         }: {
-            userId: string;
             contexts: [string, ...string[]]; // Non-empty array type
         },
         { rejectWithValue }
@@ -70,7 +73,7 @@ export const fetchNotes = createAsyncThunk(
                 return rejectWithValue("Context array cannot be empty");
             }
 
-            const notes = await fetchNotesAction(userId, {
+            const notes = await fetchNotesAction({
                 contexts,
                 method: "OR",
             });
@@ -80,65 +83,36 @@ export const fetchNotes = createAsyncThunk(
         }
     }
 );
-// export const fetchNotes = createAsyncThunk(
-//     "notes/fetchNotes",
-//     async (
-//         { userId, contexts }: { userId: string; contexts: string[] },
-//         { rejectWithValue }
-//     ) => {
-//         try {
-//             const notes = await fetchNotesAction(userId, {
-//                 contexts,
-//                 method: "OR",
-//             });
-//             return notes;
-//         } catch (error: any) {
-//             return rejectWithValue(error?.message || "Failed to fetch notes");
-//         }
-//     }
-// );
 
 export const addNote = createAsyncThunk(
     "notes/addNote",
     async (
         {
-            content,
-            userId,
-            tempId, // tempId is used for optimistic updates, not passed to server action directly
-            key_context,
-            contexts,
-            tags,
-            note_type = "note",
+            tempId,
+            ...noteData
         }: {
-            content: string;
-            userId: string;
             tempId: string;
+            content: string;
             key_context: string;
             contexts?: string[];
             tags?: string[];
             note_type?: NoteType;
         },
-        { rejectWithValue }
+        { rejectWithValue, dispatch }
     ) => {
         try {
-            // Call the server action
             const newNote = await addNoteAction({
-                content,
-                userId,
-                key_context,
-                contexts,
-                tags,
-                note_type,
+                ...noteData,
             });
-            // The server action returns the persisted note with its actual ID
-            return {
-                tempId, // Return tempId to update the optimistic note
-                note: newNote, // newNote already has persistenceStatus: "persisted"
-            };
+
+            // Refresh context metadata since new contexts might have been created
+            dispatch(refreshContextsMetadata());
+
+            return { tempId, note: newNote };
         } catch (error: any) {
             return rejectWithValue({
                 error: error?.message || "Failed to add note",
-                tempId, // Pass tempId back for error handling in reducer
+                tempId,
             });
         }
     }
@@ -146,19 +120,63 @@ export const addNote = createAsyncThunk(
 
 export const deleteNote = createAsyncThunk(
     "notes/deleteNote",
-    async (
-        { noteId, userId }: { noteId: string; userId: string },
-        { rejectWithValue }
-    ) => {
+    async ({ noteId }: { noteId: string }, { rejectWithValue, dispatch }) => {
         try {
             // Call the server action
-            const result = await deleteNoteAction({ noteId, userId });
+            const result = await deleteNoteAction({ noteId });
+
+            // Refresh context metadata since deleting a note might affect context statistics
+            dispatch(refreshContextsMetadata());
+
             // Server action returns { noteId } on success
             return result; // This will be { noteId: string }
         } catch (error: any) {
             return rejectWithValue({
                 error: error?.message || "Failed to delete note",
                 noteId, // Pass noteId back for error handling in reducer
+            });
+        }
+    }
+);
+
+export const patchNote = createAsyncThunk(
+    "notes/patchNote",
+    async (
+        {
+            noteId,
+            patches,
+        }: {
+            noteId: string;
+            patches: Partial<
+                Pick<
+                    Note,
+                    | "content"
+                    | "contexts"
+                    | "tags"
+                    | "suggested_contexts"
+                    | "note_type"
+                    | "embedding"
+                    | "embedding_model"
+                    | "embedding_created_at"
+                >
+            >;
+        },
+        { rejectWithValue, dispatch }
+    ) => {
+        try {
+            const updatedNote = await patchNoteAction({
+                noteId,
+                patches,
+            });
+
+            // Refresh context metadata since contexts might have been modified
+            dispatch(refreshContextsMetadata());
+
+            return updatedNote;
+        } catch (error: any) {
+            return rejectWithValue({
+                error: error?.message || "Failed to patch note",
+                noteId,
             });
         }
     }
@@ -204,6 +222,30 @@ const notesSlice = createSlice({
         },
         setCurrentContext: (state, action: PayloadAction<string>) => {
             state.currentContext = action.payload;
+        },
+        updateNoteWithSuggestedContexts: (
+            state,
+            action: PayloadAction<{ noteId: string; suggestions: string[] }>
+        ) => {
+            const { noteId, suggestions } = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].suggested_contexts = suggestions;
+            }
+        },
+        updateNoteContent: (
+            state,
+            action: PayloadAction<{ noteId: string; content: string }>
+        ) => {
+            const { noteId, content } = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].content = content;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -264,6 +306,30 @@ const notesSlice = createSlice({
                     state.notes[noteIndex].persistenceStatus = "persisted";
                     state.notes[noteIndex].errorMessage = error;
                 }
+            })
+            .addCase(patchNote.fulfilled, (state, action) => {
+                const updatedNote = action.payload;
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === updatedNote.id
+                );
+                if (noteIndex !== -1) {
+                    // Update the note with the new data from server
+                    state.notes[noteIndex] = {
+                        ...state.notes[noteIndex],
+                        ...updatedNote,
+                        persistenceStatus: "persisted",
+                    };
+                }
+            })
+            .addCase(patchNote.rejected, (state, action: any) => {
+                const { noteId, error } = action.payload;
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === noteId
+                );
+                if (noteIndex !== -1) {
+                    state.notes[noteIndex].persistenceStatus = "failed";
+                    state.notes[noteIndex].errorMessage = error;
+                }
             });
     },
 });
@@ -274,6 +340,8 @@ export const {
     updateNotePersistenceStatus,
     markNoteAsDeleting,
     setCurrentContext,
+    updateNoteWithSuggestedContexts,
+    updateNoteContent,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
