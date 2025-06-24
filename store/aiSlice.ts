@@ -127,7 +127,6 @@ export const generateEmbeddingThunk = createAsyncThunk(
         {
             noteId,
             content,
-            userId,
         }: {
             noteId: string;
             content: string;
