@@ -3,12 +3,14 @@ import { useDispatch, TypedUseSelectorHook, useSelector } from "react-redux";
 import notesReducer from "./notesSlice";
 import uiReducer from "./uiSlice";
 import notesMetadataReducer from "./notesMetadataSlice";
+import aiReducer from "./aiSlice";
 
 export const store = configureStore({
     reducer: {
         notes: notesReducer,
         ui: uiReducer,
         notesMetadata: notesMetadataReducer,
+        ai: aiReducer,
     },
 });
 

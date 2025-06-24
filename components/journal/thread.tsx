@@ -5,19 +5,17 @@ import { useEffect } from "react";
 import { NoteCard } from "./notes_card";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes } from "@/store/notesSlice";
-import { useContext } from "react";
-import { UserContext } from "@/components/journal";
 
 export function Thread() {
-    const user = useContext(UserContext);
+    // const user = useContext(UserContext);
     const dispatch = useAppDispatch();
     const { notes, collectionStatus, collectionError, currentContext } =
         useAppSelector((state) => state.notes);
 
     // Fetch notes on component mount
     useEffect(() => {
-        dispatch(fetchNotes({ userId: user.id, contexts: [currentContext] }));
-    }, [dispatch, user.id, currentContext]);
+        dispatch(fetchNotes({ contexts: [currentContext] }));
+    }, [dispatch, currentContext]);
 
     // Show loading state
     if (collectionStatus === "loading" && notes.length === 0) {
@@ -55,7 +53,7 @@ export function Thread() {
             ) : (
                 <div className="flex flex-col gap-4">
                     {reversedNotes.map((note) => (
-                        <NoteCard key={note.id} note={note} user={user} />
+                        <NoteCard key={note.id} note={note} />
                     ))}
                 </div>
             )}

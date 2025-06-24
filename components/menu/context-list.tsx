@@ -6,7 +6,7 @@ import { fetchContextsMetadata } from "@/store/notesMetadataSlice";
 import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType } from "@/store/uiSlice"; // Import DeviceType
 import { ContextStat } from "@/app/actions/notes";
-import { cn } from "@/lib/utils";
+import { cn, slugToSentenceCase } from "@/lib/utils";
 
 interface ContextListProps {
     onCloseMenu: () => void;
@@ -32,7 +32,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     }, [contexts]);
 
     const handleContextClick = (contextSlug: string) => {
-        if (deviceType === "mobile") { // Conditionally call onCloseMenu
+        if (deviceType === "mobile") {
+            // Conditionally call onCloseMenu
             onCloseMenu();
         }
         dispatch(setCurrentContext(contextSlug));
@@ -76,7 +77,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                         )}
                         title={contextStat.context}
                     >
-                        {contextStat.context}
+                        {slugToSentenceCase(contextStat.context)}
                     </span>
                     <span
                         className={cn(

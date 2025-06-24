@@ -2,27 +2,61 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+/**
+ * Retrieves the currently authenticated user from Supabase.
+ *
+ * @param client - The Supabase client instance
+ * @returns Promise that resolves to the authenticated user object
+ * @throws Error if no user is authenticated
+ */
+async function getAuthUser(client: SupabaseClient): Promise<User> {
+    const {
+        data: { user },
+        error,
+    } = await client.auth.getUser();
+
+    if (!user) {
+        const errorMessage =
+            error?.message || "No user authenticated. Please log in.";
+        console.error("Authentication error:", errorMessage);
+        throw new Error(errorMessage);
+    }
+
+    return user;
+}
+
+/**
+ * Adds a new note to the database.
+ *
+ * @param content - The content of the note
+ * @param key_context - The primary context for the note
+ * @param contexts - Optional array of additional contexts
+ * @param tags - Optional array of tags for the note
+ * @param note_type - Type of the note (default is "note")
+ * @returns Promise that resolves to the created Note object
+ */
 export async function addNote({
     content,
-    userId,
     key_context,
     contexts,
     tags,
     note_type = "note",
 }: {
     content: string;
-    userId: string;
     key_context: string;
     contexts?: string[];
     tags?: string[];
     note_type?: NoteType;
 }): Promise<Note> {
     const supabase = await createClient();
+    const user = await getAuthUser(supabase);
+
     try {
         const noteToInsert = {
             content,
-            user_id: userId,
+            user_id: user.id,
             key_context,
             contexts: contexts || [],
             tags: tags || [],
@@ -49,20 +83,27 @@ export async function addNote({
     }
 }
 
+/**
+ * Deletes a note by its ID.
+ *
+ * @param noteId - The ID of the note to delete
+ * @returns Promise that resolves to an object containing the deleted note ID
+ * @throws Error if the deletion fails
+ */
 export async function deleteNote({
     noteId,
-    userId,
 }: {
     noteId: string;
-    userId: string;
 }): Promise<{ noteId: string }> {
     const supabase = await createClient();
+    const user = await getAuthUser(supabase);
+
     try {
         const { error } = await supabase
             .from("notes")
             .delete()
             .eq("id", noteId)
-            .eq("user_id", userId);
+            .eq("user_id", user.id);
 
         if (error) throw error;
 
@@ -88,36 +129,33 @@ export async function deleteNote({
  *
  * @returns Promise that resolves with filtered notes array
  */
-export async function fetchNotes(
-    userId: string,
-    payload?: {
-        keyContext?: string;
-        contexts?: string[];
-        method?: "AND" | "OR";
+export async function fetchNotes({
+    keyContext,
+    contexts,
+    method,
+}: {
+    keyContext?: string;
+    contexts?: string[];
+    method?: "AND" | "OR";
+}): Promise<Note[]> {
+    if (!keyContext && (!contexts || contexts.length === 0)) {
+        throw new Error(
+            "At least one filtering parameter (keyContext or contexts) must be provided"
+        );
     }
-) {
     const supabase = await createClient();
-
+    const user = await getAuthUser(supabase);
     try {
         // Start query with user filtering using the provided userId
+
         let query = supabase
             .from("notes")
             .select("*")
-            .eq("user_id", userId) // Filter by provided user ID
+            .eq("user_id", user.id) // Filter by provided user ID
             .order("created_at", { ascending: false });
 
-        // If no filtering parameters provided, return all notes for the user
-        if (!payload) {
-            const { data, error } = await query;
-            if (error) throw error;
-            return data || [];
-        }
-
-        const { keyContext, contexts, method = "OR" } = payload;
-
-        // Context array filtering takes precedence over keyContext
         if (contexts && contexts.length > 0) {
-            query = applyContextsArrayFilter(query, contexts, method);
+            query = applyContextsArrayFilter(query, contexts, method || "OR");
         } else if (keyContext) {
             // Fallback to single keyContext filtering (existing functionality)
             query = query.contains("contexts", [keyContext]);
@@ -134,6 +172,68 @@ export async function fetchNotes(
     } catch (error) {
         console.error("Error fetching notes:", error);
         throw error;
+    }
+}
+
+/**
+ * Patches a note with the provided updates
+ *
+ * @param noteId - The ID of the note to update
+ * @param patches - Partial note object with fields to update
+ * @param userId - The user ID for authorization
+ * @returns Promise that resolves to the updated note
+ */
+export async function patchNote({
+    noteId,
+    patches,
+}: {
+    noteId: string;
+    patches: Partial<
+        Pick<
+            Note,
+            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type"
+        >
+    > & {
+        embedding?: number[];
+        embedding_model?: string;
+        embedding_created_at?: string;
+    };
+}): Promise<Note> {
+    const supabase = await createClient();
+    const user = await getAuthUser(supabase);
+
+    try {
+        // Prepare the update object
+        const updateData: Record<string, unknown> = {};
+
+        // Only include fields that are actually being updated
+        Object.entries(patches).forEach(([key, value]) => {
+            if (value !== undefined) {
+                updateData[key] = value;
+            }
+        });
+
+        // Update the note
+        const { data, error } = await supabase
+            .from("notes")
+            .update(updateData)
+            .eq("id", noteId)
+            .eq("user_id", user.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        if (!data) throw new Error("No data returned after update");
+
+        return {
+            ...data,
+            persistenceStatus: "persisted",
+        } as Note;
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : "Unknown error occurred";
+        console.error("Error patching note:", errorMessage);
+        throw new Error(`Failed to patch note: ${errorMessage}`);
     }
 }
 
@@ -186,19 +286,9 @@ export interface ContextStat {
  */
 export async function fetchContextStats(): Promise<ContextStat[]> {
     const supabase = await createClient();
+    const user = await getAuthUser(supabase);
 
     try {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-            console.warn(
-                "User not authenticated. Returning empty context stats."
-            );
-            return [];
-        }
-
         // Call the database function `get_user_context_stats` with the user's ID.
         // The function performs all the complex aggregation on the database side.
         const { data, error } = await supabase.rpc("get_user_context_stats", {
@@ -213,7 +303,11 @@ export async function fetchContextStats(): Promise<ContextStat[]> {
         // The RPC call returns data in the exact shape of the ContextStat interface.
         return data || [];
     } catch (error) {
-        console.error("Error in fetchContextStats:", error);
-        throw new Error("Could not fetch context statistics.");
+        const errorMessage =
+            error instanceof Error
+                ? error.message
+                : "Could not fetch context statistics.";
+        console.error("Error in fetchContextStats:", errorMessage);
+        throw new Error(errorMessage);
     }
 }
