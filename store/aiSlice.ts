@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
-    suggestContexts,
-    generateEmbedding,
-    structurizeNote,
+    suggestContexts as suggestContextsAction,
+    generateEmbedding as generateEmbeddingAction,
+    structurizeNote as structurizeNoteAction,
 } from "@/app/actions/ai";
 import { patchNote } from "@/app/actions/notes";
 import {
@@ -17,7 +17,7 @@ export interface SuggestedContexts {
     error?: string;
 }
 
-export interface StructurizeNoteState {
+export interface StructurizedNoteState {
     status: "idle" | "loading" | "succeeded" | "failed";
     structuredContent?: string;
     originalContent?: string; // Store original content for undo functionality
@@ -28,14 +28,14 @@ interface AIState {
     suggestedContexts: {
         [noteId: string]: SuggestedContexts;
     };
-    structurizeNote: {
-        [noteId: string]: StructurizeNoteState;
+    structurizedNote: {
+        [noteId: string]: StructurizedNoteState;
     };
 }
 
 const initialState: AIState = {
     suggestedContexts: {},
-    structurizeNote: {},
+    structurizedNote: {},
 };
 
 // Async thunk for generating context suggestions
@@ -55,7 +55,7 @@ export const generateSuggestedContexts = createAsyncThunk(
         dispatch(clearSuggestedContexts(noteId));
 
         try {
-            const suggestionsResponse = await suggestContexts({
+            const suggestionsResponse = await suggestContextsAction({
                 content,
             });
 
@@ -105,7 +105,7 @@ export const structurizeNoteThunk = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const structuredContent = await structurizeNote({
+            const structuredContent = await structurizeNoteAction({
                 content,
             });
 
@@ -134,7 +134,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const embedding = await generateEmbedding({
+            const embedding = await generateEmbeddingAction({
                 content,
             });
 
@@ -160,8 +160,8 @@ export const generateEmbeddingThunk = createAsyncThunk(
 );
 
 // Async thunk for accepting structured content
-export const acceptStructurizeNoteThunk = createAsyncThunk(
-    "ai/acceptStructurizeNote",
+export const acceptStructurizedNoteThunk = createAsyncThunk(
+    "ai/acceptStructurizedNote",
     async (
         {
             noteId,
@@ -195,8 +195,8 @@ export const acceptStructurizeNoteThunk = createAsyncThunk(
 );
 
 // Async thunk for rejecting structured content (undo)
-export const rejectStructurizeNoteThunk = createAsyncThunk(
-    "ai/rejectStructurizeNote",
+export const rejectStructurizedNoteThunk = createAsyncThunk(
+    "ai/rejectStructurizedNote",
     async (
         {
             noteId,
@@ -227,11 +227,11 @@ const aiSlice = createSlice({
         },
         clearStructurizeNote: (state, action: PayloadAction<string>) => {
             const noteId = action.payload;
-            delete state.structurizeNote[noteId];
+            delete state.structurizedNote[noteId];
         },
         clearAllAI: (state) => {
             state.suggestedContexts = {};
-            state.structurizeNote = {};
+            state.structurizedNote = {};
         },
     },
     extraReducers: (builder) => {
@@ -265,14 +265,14 @@ const aiSlice = createSlice({
             // Structurize Note
             .addCase(structurizeNoteThunk.pending, (state, action) => {
                 const noteId = action.meta.arg.noteId;
-                state.structurizeNote[noteId] = {
+                state.structurizedNote[noteId] = {
                     status: "loading",
                 };
             })
             .addCase(structurizeNoteThunk.fulfilled, (state, action) => {
                 const { noteId, structuredContent, originalContent } =
                     action.payload;
-                state.structurizeNote[noteId] = {
+                state.structurizedNote[noteId] = {
                     status: "succeeded",
                     structuredContent,
                     originalContent,
@@ -283,55 +283,55 @@ const aiSlice = createSlice({
                     noteId: string;
                     error: string;
                 };
-                state.structurizeNote[noteId] = {
+                state.structurizedNote[noteId] = {
                     status: "failed",
                     error,
                 };
             })
             // Accept Structurize Note
-            .addCase(acceptStructurizeNoteThunk.pending, (state, action) => {
+            .addCase(acceptStructurizedNoteThunk.pending, (state, action) => {
                 const noteId = action.meta.arg.noteId;
                 // Keep the current state but mark as processing
-                if (state.structurizeNote[noteId]) {
-                    state.structurizeNote[noteId].status = "loading";
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "loading";
                 }
             })
-            .addCase(acceptStructurizeNoteThunk.fulfilled, (state, action) => {
+            .addCase(acceptStructurizedNoteThunk.fulfilled, (state, action) => {
                 const { noteId } = action.payload;
                 // Clear the structurize state since it's been accepted
-                delete state.structurizeNote[noteId];
+                delete state.structurizedNote[noteId];
             })
-            .addCase(acceptStructurizeNoteThunk.rejected, (state, action) => {
+            .addCase(acceptStructurizedNoteThunk.rejected, (state, action) => {
                 const { noteId, error } = action.payload as {
                     noteId: string;
                     error: string;
                 };
-                if (state.structurizeNote[noteId]) {
-                    state.structurizeNote[noteId].status = "failed";
-                    state.structurizeNote[noteId].error = error;
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "failed";
+                    state.structurizedNote[noteId].error = error;
                 }
             })
             // Reject Structurize Note
-            .addCase(rejectStructurizeNoteThunk.pending, (state, action) => {
+            .addCase(rejectStructurizedNoteThunk.pending, (state, action) => {
                 const noteId = action.meta.arg.noteId;
                 // Keep the current state but mark as processing
-                if (state.structurizeNote[noteId]) {
-                    state.structurizeNote[noteId].status = "loading";
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "loading";
                 }
             })
-            .addCase(rejectStructurizeNoteThunk.fulfilled, (state, action) => {
+            .addCase(rejectStructurizedNoteThunk.fulfilled, (state, action) => {
                 const { noteId } = action.payload;
                 // Clear the structurize state since it's been rejected
-                delete state.structurizeNote[noteId];
+                delete state.structurizedNote[noteId];
             })
-            .addCase(rejectStructurizeNoteThunk.rejected, (state, action) => {
+            .addCase(rejectStructurizedNoteThunk.rejected, (state, action) => {
                 const { noteId, error } = action.payload as {
                     noteId: string;
                     error: string;
                 };
-                if (state.structurizeNote[noteId]) {
-                    state.structurizeNote[noteId].status = "failed";
-                    state.structurizeNote[noteId].error = error;
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "failed";
+                    state.structurizedNote[noteId].error = error;
                 }
             });
     },
