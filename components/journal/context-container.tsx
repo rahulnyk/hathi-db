@@ -39,9 +39,9 @@ export function ContextContainer({ note }: contextContainerProps) {
 
     const handleCustomContextSubmit = async () => {
         if (!customContext.trim()) return;
-        
+
         const contextSlug = sentenceCaseToSlug(customContext.trim());
-        
+
         // Check if context already exists
         if (note.contexts?.includes(contextSlug)) {
             setCustomContext("");
@@ -50,7 +50,7 @@ export function ContextContainer({ note }: contextContainerProps) {
         }
 
         setIsAddingCustom(true);
-        
+
         try {
             const updatedContexts = [...(note.contexts || []), contextSlug];
             await dispatch(
@@ -61,7 +61,7 @@ export function ContextContainer({ note }: contextContainerProps) {
                     },
                 })
             ).unwrap();
-            
+
             // Clear form and hide input
             setCustomContext("");
             setShowCustomInput(false);
@@ -89,7 +89,7 @@ export function ContextContainer({ note }: contextContainerProps) {
     return (
         <div className="mt-3 flex flex-wrap items-center gap-1">
             {/* Actual contexts */}
-            {note.contexts && note.contexts.length > 0 && 
+            {note.contexts && note.contexts.length > 0 &&
                 note.contexts.map((context, index) => (
                     <span key={index} className="context-pill">
                         {slugToSentenceCase(context)}
@@ -97,7 +97,7 @@ export function ContextContainer({ note }: contextContainerProps) {
                 ))
             }
             {/* Suggested contexts */}
-            {note.suggested_contexts && note.suggested_contexts.length > 0 && 
+            {note.suggested_contexts && note.suggested_contexts.length > 0 &&
                 note.suggested_contexts
                     .filter(
                         (context) => !note.contexts?.includes(context)
@@ -171,7 +171,7 @@ export function ContextContainer({ note }: contextContainerProps) {
 
                     </div>
                 </>
-            )}            
+            )}
         </div>
     );
 }
