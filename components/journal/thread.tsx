@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 // import clsx from "clsx";
-import { NoteCard } from "./notes_card";
+import { NoteCard } from "./note_card/notes-card";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes } from "@/store/notesSlice";
 

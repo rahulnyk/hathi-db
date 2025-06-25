@@ -3,11 +3,9 @@
 import { Note, deleteNote, markNoteAsDeleting, enterEditMode } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
 import {
-    AlertCircle,
     MoreVertical,
     Trash2,
     Loader2,
-    RefreshCw,
     Sparkles,
     Check,
     Undo,
@@ -31,22 +29,19 @@ import { setCurrentContext } from "@/store/notesSlice";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
-    acceptStructurizeNoteThunk,
-    rejectStructurizeNoteThunk,
+    acceptStructurizedNoteThunk,
+    rejectStructurizedNoteThunk,
 } from "@/store/aiSlice";
-import { ContextContainer } from "@/components/journal/context-container";
+import { ContextContainer } from "./context-container";
 import { CodeBlock } from "./code-block";
-import { NotesEditor } from "./notes_editor";
+import { NotesEditor } from "../notes_editor";
+import { NoteStatusIndicator } from "./note-status-indicator"; // Import the new component
 
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
 
-    // Get AI state for this specific note only
-    const aiSuggestedContexts = useAppSelector(
-        (state) => state.ai.suggestedContexts[note.id]
-    );
     const aiStructurizeState = useAppSelector(
-        (state) => state.ai.structurizeNote[note.id]
+        (state) => state.ai.structurizedNote[note.id]
     );
 
     // Determine which content to display
@@ -81,7 +76,7 @@ export function NoteCard({ note }: { note: Note }) {
         if (!aiStructurizeState?.structuredContent) return;
 
         dispatch(
-            acceptStructurizeNoteThunk({
+            acceptStructurizedNoteThunk({
                 noteId: note.id,
                 structuredContent: aiStructurizeState.structuredContent,
             })
@@ -92,7 +87,7 @@ export function NoteCard({ note }: { note: Note }) {
         if (!aiStructurizeState) return;
 
         dispatch(
-            rejectStructurizeNoteThunk({
+            rejectStructurizedNoteThunk({
                 noteId: note.id,
             })
         );
@@ -276,111 +271,18 @@ export function NoteCard({ note }: { note: Note }) {
 
             <ContextContainer note={note} />
 
-            {/* Context suggestions loading/error states and refresh button when no suggestions */}
-            {aiSuggestedContexts && !note.suggested_contexts?.length && !note.isEditing &&
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {aiSuggestedContexts.status === "loading" && (
-                            <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                <span>Generating context suggestions...</span>
-                            </>
-                        )}
-                        {aiSuggestedContexts.status === "failed" && (
-                            <>
-                                <AlertCircle className="h-3 w-3" />
-                                <span>
-                                    Failed to generate suggestions:{" "}
-                                    {aiSuggestedContexts.error}
-                                </span>
-                            </>
-                        )}
-                    </div>
-                    {aiSuggestedContexts.status === "failed" && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                                dispatch(
-                                    generateSuggestedContexts({
-                                        noteId: note.id,
-                                        content: note.content,
-                                    })
-                                );
-                            }}
-                        >
-                            <RefreshCw className="h-3 w-3" />
-                        </Button>
-                    )}
-                </div>
-            }
-
-            {/* Show loading state for newly created notes that don't have AI state yet */}
-            {!aiSuggestedContexts &&
-                !note.suggested_contexts?.length &&
-                note.persistenceStatus === "persisted" && !note.isEditing && (
-                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Generating context suggestions...</span>
-                    </div>
-                )}
-
-            {/* Structurization error state */}
-            {aiStructurizeState?.status === "failed" && (
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <AlertCircle className="h-3 w-3" />
-                        <span>
-                            Failed to structurize note:{" "}
-                            {aiStructurizeState.error}
-                        </span>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={handleStructurize}
-                    >
-                        <RefreshCw className="h-3 w-3" />
-                    </Button>
-                </div>
-            )}
-
-            {/* Show persistence status for notes that failed to save or are being deleted */}
-            {(note.persistenceStatus === "failed" ||
-                note.persistenceStatus === "deleting") && !note.isEditing && (
-                <div
-                    className={`
-                    mt-2 text-xs rounded-full px-2 py-1 inline-flex items-center gap-1
-                    ${
-                        note.persistenceStatus === "failed"
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            : ""
-                    }
-                    ${
-                        note.persistenceStatus === "deleting"
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                            : ""
-                    }
-                `}
-                >
-                    {note.persistenceStatus === "failed" && (
-                        <>
-                            <AlertCircle className="h-3 w-3" />
-                            <span>
-                                {note.errorMessage || "Failed to save note"}
-                            </span>
-                        </>
-                    )}
-                    {note.persistenceStatus === "deleting" && (
-                        <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            <span>Deleting note...</span>
-                        </>
-                    )}
-                </div>
-            )}
+            <NoteStatusIndicator
+                note={note}
+                onRefreshContextSuggestions={() => {
+                    dispatch(
+                        generateSuggestedContexts({
+                            noteId: note.id,
+                            content: note.content,
+                        })
+                    );
+                }}
+                onRefreshStructurize={handleStructurize}
+            />
         </div>
     );
 }
