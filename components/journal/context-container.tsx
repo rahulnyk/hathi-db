@@ -87,100 +87,91 @@ export function ContextContainer({ note }: contextContainerProps) {
     };
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-1">
             {/* Actual contexts */}
-            {note.contexts && note.contexts.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                    {note.contexts.map((context, index) => (
-                        <span key={index} className="context-pill">
-                            {slugToSentenceCase(context)}
-                        </span>
-                    ))}
-                </div>
-            )}
-            
-            {/* Custom context input */}
-            {showCustomInput && (
-                <div className="mt-3 flex items-center gap-2">
-                    <Input
-                        value={customContext}
-                        onChange={(e) => setCustomContext(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Enter custom context..."
-                        className="h-8 text-sm"
-                        autoFocus
-                        disabled={isAddingCustom}
-                    />
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleCustomContextSubmit}
-                        disabled={!customContext.trim() || isAddingCustom}
-                        className="h-8 w-8 p-0"
-                    >
-                        {isAddingCustom ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                            <Check className="h-3 w-3" />
-                        )}
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleCustomContextCancel}
-                        disabled={isAddingCustom}
-                        className="h-8 w-8 p-0"
-                    >
-                        <X className="h-3 w-3" />
-                    </Button>
-                </div>
-            )}
-
+            {note.contexts && note.contexts.length > 0 && 
+                note.contexts.map((context, index) => (
+                    <span key={index} className="context-pill">
+                        {slugToSentenceCase(context)}
+                    </span>
+                ))
+            }
+            {/* Suggested contexts */}
+            {note.suggested_contexts && note.suggested_contexts.length > 0 && 
+                note.suggested_contexts
+                    .filter(
+                        (context) => !note.contexts?.includes(context)
+                    )
+                    .map((context, index) => (
+                        <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
+                            onClick={handleContextAdd(context)}
+                            disabled={contextToBeAdded === context}
+                        >
+                            {contextToBeAdded === context ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                <>
+                                    {slugToSentenceCase(context)}
+                                    <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                                </>
+                            )}
+                        </Button>
+                    ))
+            }
             {/* Add custom context button */}
             {!showCustomInput && (
-                <div className="mt-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-xs rounded-lg"
-                        onClick={() => setShowCustomInput(true)}
-                    >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Context
-                    </Button>
-                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs rounded-lg text-xs"
+                    onClick={() => setShowCustomInput(true)}
+                >
+                    <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                </Button>
             )}
+            {/* Custom context input */}
+            {showCustomInput && (
+                <>
+                    <div className="flex items-center gap-1">
+                        <Input
+                            value={customContext}
+                            onChange={(e) => setCustomContext(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Add custom context"
+                            className="h-6 w-18 text-xs px-2 py-0 border-zinc-300 dark:border-zinc-600"
+                            autoFocus
+                            disabled={isAddingCustom}
+                        />
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCustomContextSubmit}
+                            disabled={!customContext.trim() || isAddingCustom}
+                            className="h-6 w-6 p-0"
+                        >
+                            {isAddingCustom ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                <Check className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                            )}
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCustomContextCancel}
+                            disabled={isAddingCustom}
+                            className="h-6 w-6 p-0"
+                        >
+                            <X className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                        </Button>
 
-            {/* Suggested contexts */}
-            {note.suggested_contexts && note.suggested_contexts.length > 0 && (
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1">
-                        {note.suggested_contexts
-                            .filter(
-                                (context) => !note.contexts?.includes(context)
-                            )
-                            .map((context, index) => (
-                                <Button
-                                    key={index}
-                                    variant="outline"
-                                    size="sm"
-                                    className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
-                                    onClick={handleContextAdd(context)}
-                                    disabled={contextToBeAdded === context}
-                                >
-                                    {contextToBeAdded === context ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                        <>
-                                            {slugToSentenceCase(context)}
-                                            <Plus className="h-3 w-3" />
-                                        </>
-                                    )}
-                                </Button>
-                            ))}
                     </div>
-                </div>
-            )}
+                </>
+            )}            
         </div>
     );
 }

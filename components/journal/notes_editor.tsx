@@ -108,6 +108,8 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
         start: 0,
         end: 0,
     });
+    const [hasModifications, setHasModifications] = useState(false);
+    const [originalContexts, setOriginalContexts] = useState<string[]>([]);
     const dispatch = useAppDispatch();
     const currentContext = useAppSelector(
         (state) => state.notes.currentContext
@@ -122,8 +124,20 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     useEffect(() => {
         if (isEditMode && initialContent !== undefined) {
             setContent(initialContent);
+            setHasModifications(false);
+            // Store original contexts when entering edit mode
+            setOriginalContexts(currentNote?.contexts || []);
         }
     }, [isEditMode, initialContent]);
+
+    // Check for modifications when content or contexts change
+    useEffect(() => {
+        if (isEditMode && initialContent !== undefined) {
+            const contentModified = content !== initialContent;
+            const contextsModified = JSON.stringify(currentNote?.contexts || []) !== JSON.stringify(originalContexts);
+            setHasModifications(contentModified || contextsModified);
+        }
+    }, [content, initialContent, isEditMode, currentNote?.contexts, originalContexts]);
 
     // Focus textarea when entering edit mode
     useEffect(() => {
@@ -133,7 +147,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
             const length = content.length;
             textareaRef.current.setSelectionRange(length, length);
         }
-    }, [isEditMode, content.length]);
+    }, [isEditMode]);
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -390,7 +404,11 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                             ? "Edit your note content..."
                             : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
                     }
-                    className="w-full" // Ensure it takes full width
+                    className={
+                        isEditMode
+                            ? "w-full border border-zinc-300 dark:border-zinc-600 focus:ring-0 focus:border-zinc-400 dark:focus:border-zinc-400 bg-transparent"
+                            : "w-full"
+                    }
                 />
                 <div className="flex justify-end m-0 mb-1 gap-2">
                     {isEditMode ? (
@@ -400,24 +418,32 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                                 variant="outline"
                                 onClick={handleCancelEdit}
                                 disabled={isSubmitting}
-                                className="flex items-center gap-2 rounded-xl"
+                                className={`flex items-center gap-2 rounded-xl ${
+                                    hasModifications
+                                        ? "text-zinc-700 dark:text-zinc-100"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-100"
+                                }`}
                                 size="sm"
                             >
-                                <X className="h-4 w-4" />
-                                Cancel
+                                <X strokeWidth={3} className="h-4 w-4" />
+                                <span>Cancel</span>
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !content.trim()}
-                                className="flex items-center gap-2 rounded-xl"
+                                className={`flex items-center gap-2 rounded-xl ${
+                                    hasModifications
+                                        ? "bg-zinc-600 dark:bg-zinc-100"
+                                        : "bg-zinc-500 hover:bg-zinc-600 dark:bg-zinc-500 dark:hover:bg-zinc-100"
+                                }`}
                                 size="sm"
                             >
                                 {isSubmitting ? (
                                     <HashLoader size={16} />
                                 ) : (
                                     <>
-                                        <Check className="h-4 w-4" />
-                                        Save
+                                        <Check strokeWidth={3} className="h-4 w-4" />
+                                        <span>Save</span>
                                     </>
                                 )}
                             </Button>
