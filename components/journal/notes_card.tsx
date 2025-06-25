@@ -141,7 +141,7 @@ export function NoteCard({ note }: { note: Note }) {
         <div
             className={cn(
                 "p-3 sm:p-4 py-2 rounded-lg relative",
-                note.isEditing && "ring-2 ring-blue-500/50 bg-blue-50/30 dark:bg-blue-950/20"
+                note.isEditing && "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30"
             )}
         >
             {/* More options dropdown in top right */}
