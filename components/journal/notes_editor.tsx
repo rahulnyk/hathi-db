@@ -110,6 +110,8 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     });
     const [hasModifications, setHasModifications] = useState(false);
     const [originalContexts, setOriginalContexts] = useState<string[]>([]);
+    const hasInitializedRef = useRef(false);
+    const initialContentLengthRef = useRef(initialContent?.length || 0);
     const dispatch = useAppDispatch();
     const currentContext = useAppSelector(
         (state) => state.notes.currentContext
@@ -122,13 +124,17 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     // Initialize content when entering edit mode
     useEffect(() => {
-        if (isEditMode && initialContent !== undefined) {
+        if (isEditMode && initialContent !== undefined && !hasInitializedRef.current) {
             setContent(initialContent);
             setHasModifications(false);
             // Store original contexts when entering edit mode
             setOriginalContexts(currentNote?.contexts || []);
+            initialContentLengthRef.current = initialContent.length;
+            hasInitializedRef.current = true;
+        } else if (!isEditMode) {
+            hasInitializedRef.current = false;
         }
-    }, [isEditMode, initialContent]);
+    }, [isEditMode, initialContent, currentNote?.contexts]);
 
     // Check for modifications when content or contexts change
     useEffect(() => {
@@ -144,7 +150,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
         if (isEditMode && textareaRef.current) {
             textareaRef.current.focus();
             // Set cursor to end of content
-            const length = content.length;
+            const length = initialContentLengthRef.current;
             textareaRef.current.setSelectionRange(length, length);
         }
     }, [isEditMode]);
