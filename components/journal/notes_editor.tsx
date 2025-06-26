@@ -18,6 +18,7 @@ import { HashLoader } from "react-spinners";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 import { extractMetadata } from "@/lib/noteUtils";
+import { areArraysEqual } from "@/lib/utils";
 
 interface NotesEditorProps {
     isEditMode?: boolean;
