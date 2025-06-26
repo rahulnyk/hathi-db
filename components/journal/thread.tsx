@@ -51,7 +51,7 @@ export function Thread() {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
                     {reversedNotes.map((note) => (
                         <NoteCard key={note.id} note={note} />
                     ))}
