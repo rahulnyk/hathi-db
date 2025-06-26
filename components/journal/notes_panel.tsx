@@ -2,7 +2,7 @@
 
 import { Thread } from "./thread";
 import { InputPanel } from "./input_panel";
-import { NotesPanelHeader } from "./notes_panel_header"; // Import NotesPanelHeader
+import { NotesPanelHeader } from "./notes-panel-header"; // Import NotesPanelHeader
 import { cn } from "@/lib/utils";
 
 export function NotesPanel() {
