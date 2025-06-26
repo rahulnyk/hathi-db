@@ -140,7 +140,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     useEffect(() => {
         if (isEditMode && initialContent !== undefined) {
             const contentModified = content !== initialContent;
-            const contextsModified = JSON.stringify(currentNote?.contexts || []) !== JSON.stringify(originalContexts);
+            const contextsModified = !areArraysEqual(currentNote?.contexts || [], originalContexts);
             setHasModifications(contentModified || contextsModified);
         }
     }, [content, initialContent, isEditMode, currentNote?.contexts, originalContexts]);
