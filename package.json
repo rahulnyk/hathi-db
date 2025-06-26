@@ -4,7 +4,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate": "./scripts/migrate.sh up",
+    "migrate:create": "./scripts/migrate.sh create",
+    "migrate:reset": "./scripts/migrate.sh reset"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",
