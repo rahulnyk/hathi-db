@@ -1,7 +1,6 @@
 "use client";
 
 import { NotesEditor } from "./notes_editor";
-import { NotesPanelHeader } from "./notes_panel_header";
 import { cn } from "@/lib/utils";
 
 export function InputPanel() {
@@ -18,7 +17,7 @@ export function InputPanel() {
             )}
         >
             <div className="flex flex-col gap-1">
-                <NotesPanelHeader />
+                {/* <NotesPanelHeader /> */}
                 <NotesEditor />
             </div>
         </div>
