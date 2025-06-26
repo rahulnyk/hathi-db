@@ -2,9 +2,11 @@
 
 import { Thread } from "./thread";
 import { InputPanel } from "./input_panel";
+import { NotesPanelHeader } from "./notes_panel_header"; // Import NotesPanelHeader
 import { cn } from "@/lib/utils";
 
-export function NotesPanel() { // Removed hidden prop
+export function NotesPanel() {
+    // Removed hidden prop
     return (
         <div
             className={cn(
@@ -13,6 +15,7 @@ export function NotesPanel() { // Removed hidden prop
                 // Removed hidden logic
             )}
         >
+            <NotesPanelHeader /> {/* Add NotesPanelHeader here */}
             <Thread />
             <InputPanel />
         </div>

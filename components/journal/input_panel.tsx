@@ -18,7 +18,7 @@ export function InputPanel() {
             )}
         >
             <div className="flex flex-col gap-1">
-                <NotesPanelHeader />
+                {/* <NotesPanelHeader /> */}
                 <NotesEditor />
             </div>
         </div>
