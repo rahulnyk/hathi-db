@@ -9,6 +9,7 @@ import {
     patchNote as patchNoteAction,
 } from "@/app/actions/notes"; // Import server actions
 import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
+import { setActiveNoteId } from "./uiSlice"; // Import setActiveNoteId
 
 // Enhanced persistence status
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
@@ -109,6 +110,11 @@ export const addNote = createAsyncThunk(
 
             // Refresh context metadata since new contexts might have been created
             dispatch(refreshContextsMetadata());
+
+            // Set the new note as active
+            if (newNote && newNote.id) {
+                dispatch(setActiveNoteId(newNote.id));
+            }
 
             return { tempId, note: newNote };
         } catch (error: any) {
@@ -273,7 +279,8 @@ const notesSlice = createSlice({
             if (noteIndex !== -1) {
                 state.notes[noteIndex].isEditing = false;
                 if (resetContent && state.notes[noteIndex].originalContent) {
-                    state.notes[noteIndex].content = state.notes[noteIndex].originalContent;
+                    state.notes[noteIndex].content =
+                        state.notes[noteIndex].originalContent;
                 }
                 state.notes[noteIndex].originalContent = undefined;
             }

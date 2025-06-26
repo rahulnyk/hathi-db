@@ -21,86 +21,22 @@ Each note may also contain Hash tags like #example, which indicates a tag for th
 The [[contexts]] and #tags convention is also useful to style them at the front end. Please retain them as they are in your final output.
 
 Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
-- Group content into appropriate sections using headings (e.g. Work, Personal, Tasks, Todos, Reflections, Ideas, Experiences, Cooking, Commute, Health, Fitness, etc.).
-- Use the user's existing contexts if relevant for headings/sections, but only use them if they are strictly relevant as section headings.
-- Don't create a section of a context just because there is context attached to the note.
-- Don't create a section heading of a context just because there is context attached to the note.
+- Use **Markdown** syntax for formatting, but use [[This Bold]] syntax for bold text.
+- DO NOT use large headings or titles.
+- Use [[bold]] for important points, or key information. Use [[This Bold]] syntax instead of the markdown **bold**.
 - Use bullet points for tasks and lists.
 - Highlight dates, priorities, and deadlines in bold if they are present.
 - Italicize any optional or self-reflective statements.
 - Keep the original tone and phrasing. Do not summarize, shorten, or omit content.
-- Use ### or smaller headings for sections.
 - If tasks are mentioned, clearly place them under a "Todos" section.
 - If no clear categories are present, intelligently group content based on context.
 - Do not assume or add new information.
 - Do not provide any commentary or explanations. Only return the final, structured Markdown.
+- Wrap any inline names, named entitieds, important words, or phrase in double square brackets [[like this]] to indicate it is a context. Contexts are important for the user to understand the note's relevance. They are also useful for styling at the front end.
 
-Ensure to retain the [[contexts]] and #tags that are included in the original note.
-
----
-
-### Example 1
-
-#### Input:
-Need to submit the budget revision by Thursday, otherwise finance will block next month's request. Rahul is waiting on my numbers. Can probably finish tomorrow morning if I start early. Tried a new pasta recipe today, went a bit heavy on the garlic but still tasty. Should call the electrician about the broken kitchen light.
-
-#### Output:
-
-### Work
-#### Budget Revision
-  - Rahul is waiting on my numbers.
-  - Can probably finish tomorrow morning if I start early.
-#### Todos
-  - Need to submit by **Thursday** to avoid the finance team blocking next month's request.
-
-### Personal
-#### Cooking
-- Tried a new pasta recipe today.
-- Went a bit heavy on the garlic but still tasty.
-
-### Home
-#### Todos
-  - Call the electrician about the broken kitchen light.
-
----
-
-### Example 2
-
-#### Input:
-Feeling restless tonight, maybe because I'm behind on my goals or just anxious. Some part of me misses weekends when I was younger, everything feels scheduled now. I should probably start saying no more often.
-
-#### Output:
-
-### Reflections
-- Feeling restless tonight, maybe because I'm behind on my goals or just anxious.
-- Some part of me misses weekends when I was younger.
-- Everything feels scheduled now.
-- Maybe I need to start saying no more often.
-
----
-
-### Example 3
-
-#### Input:
-Ordered water filter but forgot to check if it fits current setup. Need to verify dimensions when it arrives, else will need to return. Also: pending follow-up with Priya on API changes, and I want to sketch again just for fun.
-
-#### Output:
-
-### Home
-#### Todos
-- Verify dimensions of the new water filter when it arrives. Return if incompatible.
-
-### Work
-#### Todos
-- Follow up with Priya on API changes.
-
-### Ideas
-- Start sketching again, just for fun. *No need to be perfect.*
-
----
-
-When you receive a new note, return only the final, semantically structured Markdown, without any explanations.
-        `;
+When you receive a new note, return only the final, semantically structured Markdown, without any explanations. 
+If the note is empty or contains no meaningful content, return an empty string.
+`;
 }
 
 export function structurizeUserPrompt(
@@ -108,7 +44,10 @@ export function structurizeUserPrompt(
     userContexts: string[]
 ): string {
     return `
-Please structurize this note content: "${content}"
+Please structurize this note content: 
+---
+${content}
+---
 
 User's existing contexts that might be relevant: ${
         userContexts.join(", ") || "None"

@@ -1,6 +1,7 @@
 "use client";
 
 import { Note, enterEditMode } from "@/store/notesSlice";
+import { setActiveNoteId } from "@/store/uiSlice"; // Import setActiveNoteId
 import ReactMarkdown from "react-markdown";
 
 import remarkGfm from "remark-gfm";
@@ -24,10 +25,18 @@ import { CardHeader } from "./card-header";
 
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
+    const activeNoteId = useAppSelector((state) => state.ui.activeNoteId);
 
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
+
+    // Determine if the current note is active
+    const isNoteActive = note.id === activeNoteId;
+    // Determine if the ContextContainer should be visible
+    const showContextContainer = isNoteActive || note.isEditing;
+    // Determine if the CardHeader should be visible
+    const showCardHeader = isNoteActive && !note.isEditing;
 
     // Determine which content to display
     const displayContent =
@@ -89,8 +98,15 @@ export function NoteCard({ note }: { note: Note }) {
         return () => document.removeEventListener("click", handleClick);
     }, [dispatch]);
 
+    const handleCardClick = () => {
+        if (note.id !== activeNoteId) {
+            dispatch(setActiveNoteId(note.id));
+        }
+    };
+
     return (
         <div
+            onClick={handleCardClick}
             className={cn(
                 "p-2 sm:p-4 py-0 rounded-lg relative",
                 note.isEditing &&
@@ -98,7 +114,7 @@ export function NoteCard({ note }: { note: Note }) {
             )}
         >
             {/* Top right buttons */}
-            {!note.isEditing && <CardHeader note={note} />}
+            {showCardHeader && <CardHeader note={note} />}
 
             {/* Note content - show editor if editing, otherwise show markdown */}
             {note.isEditing ? (
@@ -131,7 +147,7 @@ export function NoteCard({ note }: { note: Note }) {
                 </div>
             )}
 
-            <ContextContainer note={note} />
+            {showContextContainer && <ContextContainer note={note} />}
 
             <NoteStatusIndicator
                 note={note}
