@@ -7,11 +7,11 @@
 @tailwind utilities;
 /* Custom accent font styles */
 .accent-font {
-    @apply font-outfit font-black tracking-wider text-neutral-900; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-zinc-400; /* Added font-montserrat */
 }
 
 .dark .accent-font {
-    @apply font-outfit font-black tracking-wider text-neutral-600; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-zinc-500; /* Added font-montserrat */
 }
 
 .accent-font-active {
