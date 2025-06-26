@@ -2,7 +2,6 @@
 
 import { cn, slugToSentenceCase } from "@/lib/utils"; // Added slugToSentenceCase
 import { useAppSelector } from "@/store";
-import { Target } from "lucide-react"; // Importing Target icon
 export function NotesPanelHeader() {
     const { currentContext } = useAppSelector((state) => state.notes);
 
