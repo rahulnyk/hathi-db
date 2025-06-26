@@ -16,8 +16,8 @@ You will receive raw, unstructured notes that may contain:
 - Reflections
 - Personal updates
 - Work updates
-Each note may contain some text wrapped in double square brackets like [[example]], which indicates a context that note belongs to. 
-Each note may also contain Hash tags like #example, which indicates a tag for that note. 
+Each note may contain some text wrapped in double square brackets like [[example]], which indicates a context that note belongs to.
+Each note may also contain Hash tags like #example, which indicates a tag for that note.
 The [[contexts]] and #tags convention is also useful to style them at the front end. Please retain them as they are in your final output.
 
 Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
@@ -35,7 +35,7 @@ Your task is to convert the note into **clean, semantically structured, well-org
 - Do not assume or add new information.
 - Do not provide any commentary or explanations. Only return the final, structured Markdown.
 
-Ensure to retain the [[contexts]] and #tags that are included in the original note. 
+Ensure to retain the [[contexts]] and #tags that are included in the original note.
 
 ---
 
