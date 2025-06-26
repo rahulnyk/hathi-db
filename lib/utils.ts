@@ -96,3 +96,57 @@ export function sentenceCaseToSlug(sentence: string): string {
         .replace(/\s+/g, "-") // Replace spaces with hyphens
         .replace(/[^\w-]+/g, ""); // Remove non-alphanumeric characters except hyphens
 }
+/**
+ * Checks if two arrays are equal.
+ * @param a The first array.
+ * @param b The second array.
+ * @returns True if the arrays are equal, false otherwise.
+ */
+export function areArraysEqual<T>(a: T[], b: T[]): boolean {
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) {
+        return false;
+      }
+    }
+
+    return true;
+}
+
+/**
+ * Checks if two objects are equal.
+ * @param a The first object.
+ * @param b The second object.
+ * @returns True if the objects are equal, false otherwise.
+ */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function deepEqual(a: any, b: any): boolean {
+    if (a === b) return true;
+
+    if (typeof a !== typeof b) return false;
+
+    if (a && b && typeof a === 'object') {
+      if (Array.isArray(a)) {
+        if (!Array.isArray(b) || a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+          if (!deepEqual(a[i], b[i])) return false;
+        }
+        return true;
+      }
+
+      const aKeys = Object.keys(a);
+      const bKeys = Object.keys(b);
+      if (aKeys.length !== bKeys.length) return false;
+
+      for (const key of aKeys) {
+        if (!b.hasOwnProperty(key) || !deepEqual(a[key], b[key])) return false;
+      }
+
+      return true;
+    }
+
+    return false;
+}

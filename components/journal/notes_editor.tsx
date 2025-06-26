@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
-import { addNote, addNoteOptimistically } from "@/store/notesSlice";
+import { addNote, addNoteOptimistically, patchNote, exitEditMode, updateEditingContent } from "@/store/notesSlice";
 import {
     generateSuggestedContexts,
     generateEmbeddingThunk,
@@ -12,12 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 // import { ArrowDownToLine } from "lucide-react";
 // import { ArrowUpToLine } from "lucide-react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, X, Check } from "lucide-react";
 import { HashLoader } from "react-spinners";
 
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 import { extractMetadata } from "@/lib/noteUtils";
+import { areArraysEqual } from "@/lib/utils";
+
+interface NotesEditorProps {
+    isEditMode?: boolean;
+    noteId?: string;
+    initialContent?: string;
+    onCancel?: () => void;
+    onSave?: () => void;
+}
 
 const BRACKET_PAIRS: Record<string, string> = {
     "[": "]",
@@ -91,19 +100,61 @@ function handleAutoDeleteBracketPair(
     return null;
 }
 
-export function NotesEditor() {
+export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSave }: NotesEditorProps) {
     const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [content, setContent] = useState(""); // This is the source of truth for the textarea's value
+    const [content, setContent] = useState(initialContent || ""); // This is the source of truth for the textarea's value
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeSelection, setActiveSelection] = useState({
         start: 0,
         end: 0,
     });
+    const [hasModifications, setHasModifications] = useState(false);
+    const [originalContexts, setOriginalContexts] = useState<string[]>([]);
+    const hasInitializedRef = useRef(false);
+    const initialContentLengthRef = useRef(initialContent?.length || 0);
     const dispatch = useAppDispatch();
     const currentContext = useAppSelector(
         (state) => state.notes.currentContext
     );
+
+    // Get current note data for edit mode
+    const currentNote = useAppSelector((state) =>
+        noteId ? state.notes.notes.find(note => note.id === noteId) : null
+    );
+
+    // Initialize content when entering edit mode
+    useEffect(() => {
+        if (isEditMode && initialContent !== undefined && !hasInitializedRef.current) {
+            setContent(initialContent);
+            setHasModifications(false);
+            // Store original contexts when entering edit mode
+            setOriginalContexts(currentNote?.contexts || []);
+            initialContentLengthRef.current = initialContent.length;
+            hasInitializedRef.current = true;
+        } else if (!isEditMode) {
+            hasInitializedRef.current = false;
+        }
+    }, [isEditMode, initialContent, currentNote?.contexts]);
+
+    // Check for modifications when content or contexts change
+    useEffect(() => {
+        if (isEditMode && initialContent !== undefined) {
+            const contentModified = content !== initialContent;
+            const contextsModified = !areArraysEqual(currentNote?.contexts || [], originalContexts);
+            setHasModifications(contentModified || contextsModified);
+        }
+    }, [content, initialContent, isEditMode, currentNote?.contexts, originalContexts]);
+
+    // Focus textarea when entering edit mode
+    useEffect(() => {
+        if (isEditMode && textareaRef.current) {
+            textareaRef.current.focus();
+            // Set cursor to end of content
+            const length = initialContentLengthRef.current;
+            textareaRef.current.setSelectionRange(length, length);
+        }
+    }, [isEditMode]);
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -119,6 +170,14 @@ export function NotesEditor() {
         const newSelectionStart = event.target.selectionStart;
         const newSelectionEnd = event.target.selectionEnd;
 
+        // Update local state
+        setContent(newFullValue);
+
+        // If in edit mode, also update the Redux store
+        if (isEditMode && noteId) {
+            dispatch(updateEditingContent({ noteId, content: newFullValue }));
+        }
+
         // This function is now simpler.
         // Bracket insertion (enclosing or empty pair) is handled in onKeyDown.
         // Bracket pair deletion is handled in onKeyDown.
@@ -131,7 +190,6 @@ export function NotesEditor() {
 
         if (newFullValue.length < content.length) {
             // Handles deletions
-            setContent(newFullValue);
             setActiveSelection({
                 start: newSelectionStart,
                 end: newSelectionEnd,
@@ -141,7 +199,6 @@ export function NotesEditor() {
 
         // For any other change (additions, modifications not handled by onKeyDown)
         if (newFullValue !== content) {
-            setContent(newFullValue);
             // activeSelection will be updated by the onSelect handler naturally.
         }
     };
@@ -220,6 +277,16 @@ export function NotesEditor() {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
+        if (isEditMode && noteId) {
+            // Handle edit mode save
+            await handleSaveEdit();
+        } else {
+            // Handle create mode
+            await handleCreateNote();
+        }
+    };
+
+    const handleCreateNote = async () => {
         setIsSubmitting(true);
         // extract contexts and tags from the note content
         const { contexts, tags } = extractMetadata(content);
@@ -275,6 +342,61 @@ export function NotesEditor() {
         setIsSubmitting(false);
     };
 
+    const handleSaveEdit = async () => {
+        if (!noteId) return;
+
+        setIsSubmitting(true);
+
+        try {
+            // Extract new contexts and tags from the updated content
+            const { contexts: newContexts, tags: newTags } = extractMetadata(content);
+
+            // Merge existing contexts with new ones, removing duplicates
+            const existingContexts = currentNote?.contexts || [];
+            const mergedContexts = [...new Set([...existingContexts, ...newContexts])];
+
+            // Merge existing tags with new ones, removing duplicates
+            const existingTags = currentNote?.tags || [];
+            const mergedTags = [...new Set([...existingTags, ...newTags])];
+
+            // Optimistically exit edit mode
+            dispatch(exitEditMode({ noteId }));
+
+            // Call onSave callback if provided
+            if (onSave) {
+                onSave();
+            }
+
+            // Send patch request to server
+            await dispatch(
+                patchNote({
+                    noteId,
+                    patches: {
+                        content,
+                        contexts: mergedContexts,
+                        tags: mergedTags,
+                    },
+                })
+            );
+        } catch (error) {
+            console.error("Error saving note:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        if (!noteId) return;
+
+        // Reset content to original and exit edit mode
+        dispatch(exitEditMode({ noteId, resetContent: true }));
+
+        // Call onCancel callback if provided
+        if (onCancel) {
+            onCancel();
+        }
+    };
+
     return (
         <div className="p-0">
             <form onSubmit={handleSubmit}>
@@ -284,30 +406,74 @@ export function NotesEditor() {
                     onChange={handleContentChange}
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
-                    placeholder="Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
-                    className="w-full" // Ensure it takes full width
+                    placeholder={
+                        isEditMode
+                            ? "Edit your note content..."
+                            : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
+                    }
+                    className={
+                        isEditMode
+                            ? "w-full border border-zinc-300 dark:border-zinc-600 focus:ring-0 focus:border-zinc-400 dark:focus:border-zinc-400 bg-transparent"
+                            : "w-full"
+                    }
                 />
-                <div className="flex justify-end m-0 mb-1">
-                    <Button
-                        type="submit"
-                        disabled={isSubmitting || !content.trim()}
-                        className="flex items-center gap-2 rounded-xl"
-                        size="icon"
-                    >
-                        {isSubmitting ? (
-                            <HashLoader size={16} />
-                        ) : (
-                            <>
-                                {/* <ArrowDownToLine className="h-4 w-4 mr-1" /> */}
-                                {/* <ArrowUpToLine className="h-4 w-4 mr-1" /> */}
-                                <ArrowUp
-                                    // className="h-4 w-4"
-                                    strokeWidth={3}
-                                    size={16}
-                                />
-                            </>
-                        )}
-                    </Button>
+                <div className="flex justify-end m-0 mb-1 gap-2">
+                    {isEditMode ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSubmitting}
+                                className={`flex items-center gap-2 rounded-xl ${
+                                    hasModifications
+                                        ? "text-zinc-700 dark:text-zinc-100"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-100"
+                                }`}
+                                size="sm"
+                            >
+                                <X strokeWidth={3} className="h-4 w-4" />
+                                <span>Cancel</span>
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting || !content.trim()}
+                                className={`flex items-center gap-2 rounded-xl ${
+                                    hasModifications
+                                        ? "bg-zinc-600 dark:bg-zinc-100"
+                                        : "bg-zinc-500 hover:bg-zinc-600 dark:bg-zinc-500 dark:hover:bg-zinc-100"
+                                }`}
+                                size="sm"
+                            >
+                                {isSubmitting ? (
+                                    <HashLoader size={16} />
+                                ) : (
+                                    <>
+                                        <Check strokeWidth={3} className="h-4 w-4" />
+                                        <span>Save</span>
+                                    </>
+                                )}
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting || !content.trim()}
+                            className="flex items-center gap-2 rounded-xl"
+                            size="icon"
+                        >
+                            {isSubmitting ? (
+                                <HashLoader size={16} />
+                            ) : (
+                                <>
+                                    <ArrowUp
+                                        strokeWidth={3}
+                                        size={16}
+                                    />
+                                </>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </form>
         </div>
