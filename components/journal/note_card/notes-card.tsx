@@ -1,6 +1,11 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting, enterEditMode } from "@/store/notesSlice";
+import {
+    Note,
+    deleteNote,
+    markNoteAsDeleting,
+    enterEditMode,
+} from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
 import {
     MoreVertical,
@@ -40,15 +45,15 @@ import { NoteStatusIndicator } from "./note-status-indicator"; // Import the new
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
 
-    const aiStructurizeState = useAppSelector(
+    const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
 
     // Determine which content to display
     const displayContent =
-        aiStructurizeState?.status === "succeeded" &&
-        aiStructurizeState.structuredContent
-            ? aiStructurizeState.structuredContent
+        aiStructurizedState?.status === "succeeded" &&
+        aiStructurizedState.structuredContent
+            ? aiStructurizedState.structuredContent
             : note.content;
 
     const handleDelete = () => {
@@ -73,18 +78,18 @@ export function NoteCard({ note }: { note: Note }) {
     };
 
     const handleAcceptStructurize = () => {
-        if (!aiStructurizeState?.structuredContent) return;
+        if (!aiStructurizedState?.structuredContent) return;
 
         dispatch(
             acceptStructurizedNoteThunk({
                 noteId: note.id,
-                structuredContent: aiStructurizeState.structuredContent,
+                structuredContent: aiStructurizedState.structuredContent,
             })
         );
     };
 
     const handleRejectStructurize = () => {
-        if (!aiStructurizeState) return;
+        if (!aiStructurizedState) return;
 
         dispatch(
             rejectStructurizedNoteThunk({
@@ -94,14 +99,19 @@ export function NoteCard({ note }: { note: Note }) {
     };
 
     const handleDoubleClick = () => {
-        if (note.persistenceStatus === "pending" || note.persistenceStatus === "failed") {
+        if (
+            note.persistenceStatus === "pending" ||
+            note.persistenceStatus === "failed"
+        ) {
             return; // Don't allow editing of notes that haven't been saved yet
         }
 
-        dispatch(enterEditMode({
-            noteId: note.id,
-            originalContent: note.content
-        }));
+        dispatch(
+            enterEditMode({
+                noteId: note.id,
+                originalContent: note.content,
+            })
+        );
     };
 
     useEffect(() => {
@@ -136,36 +146,39 @@ export function NoteCard({ note }: { note: Note }) {
         <div
             className={cn(
                 "p-3 sm:p-4 py-2 rounded-lg relative",
-                note.isEditing && "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30"
+                note.isEditing &&
+                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30"
             )}
         >
-            {/* More options dropdown in top right */}
+            {/* Top right buttons */}
             <div className="absolute top-2 right-2 flex items-center gap-1">
                 {/* Structurize button - show when not in preview mode and not editing */}
                 {!(
-                    aiStructurizeState?.status === "succeeded" &&
-                    aiStructurizeState.structuredContent
-                ) && !note.isEditing && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                        onClick={handleStructurize}
-                        disabled={aiStructurizeState?.status === "loading"}
-                        title="Structurize note with AI"
-                    >
-                        {aiStructurizeState?.status === "loading" ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
-                        ) : (
-                            <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                        )}
-                        <span className="sr-only">Structurize note</span>
-                    </Button>
-                )}
+                    aiStructurizedState?.status === "succeeded" &&
+                    aiStructurizedState.structuredContent
+                ) &&
+                    !note.isEditing && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                            onClick={handleStructurize}
+                            disabled={aiStructurizedState?.status === "loading"}
+                            title="Structurize note with AI"
+                        >
+                            {aiStructurizedState?.status === "loading" ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                            ) : (
+                                <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                            )}
+                            <span className="sr-only">Structurize note</span>
+                        </Button>
+                    )}
 
                 {/* Accept/Reject buttons - show when in preview mode and not editing */}
-                {aiStructurizeState?.status === "succeeded" &&
-                    aiStructurizeState.structuredContent && !note.isEditing && (
+                {aiStructurizedState?.status === "succeeded" &&
+                    aiStructurizedState.structuredContent &&
+                    !note.isEditing && (
                         <>
                             <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
                                 <span>✨ Structured preview - click</span>
@@ -201,36 +214,39 @@ export function NoteCard({ note }: { note: Note }) {
                         </>
                     )}
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                            disabled={note.isEditing}
-                        >
-                            <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                            <span className="sr-only">More options</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                            onClick={handleDelete}
-                            className="text-destructive flex items-center cursor-pointer"
-                            disabled={note.persistenceStatus === "deleting"}
-                        >
-                            {note.persistenceStatus === "deleting" ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Trash2 className="h-4 w-4 mr-2" />
-                            )}
-                            {note.persistenceStatus === "deleting"
-                                ? "Deleting..."
-                                : "Delete Note"}
-                        </DropdownMenuItem>
-                        {/* Additional actions can be added here in the future */}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {/* More options dropdown in top right */}
+                {!note.isEditing && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                                disabled={note.isEditing}
+                            >
+                                <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                                <span className="sr-only">More options</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                                onClick={handleDelete}
+                                className="text-destructive flex items-center cursor-pointer"
+                                disabled={note.persistenceStatus === "deleting"}
+                            >
+                                {note.persistenceStatus === "deleting" ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                )}
+                                {note.persistenceStatus === "deleting"
+                                    ? "Deleting..."
+                                    : "Delete Note"}
+                            </DropdownMenuItem>
+                            {/* Additional actions can be added here in the future */}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
 
             {/* Date display */}
@@ -283,6 +299,126 @@ export function NoteCard({ note }: { note: Note }) {
                 }}
                 onRefreshStructurize={handleStructurize}
             />
+        </div>
+    );
+}
+
+interface NoteCardProps {
+    note: Note;
+}
+
+export function EmptyComponent({ note }: { note: Note }) {
+    const dispatch = useAppDispatch();
+    const aiStructurizedState = useAppSelector(
+        (state) => state.ai.structurizedNote[note.id]
+    );
+    const handleAcceptStructurize = () => {
+        if (!aiStructurizedState?.structuredContent) return;
+
+        dispatch(
+            acceptStructurizedNoteThunk({
+                noteId: note.id,
+                structuredContent: aiStructurizedState.structuredContent,
+            })
+        );
+    };
+    return (
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+            {/* Structurize button - show when not in preview mode and not editing */}
+            {!(
+                aiStructurizedState?.status === "succeeded" &&
+                aiStructurizedState.structuredContent
+            ) &&
+                !note.isEditing && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                        onClick={handleStructurize}
+                        disabled={aiStructurizedState?.status === "loading"}
+                        title="Structurize note with AI"
+                    >
+                        {aiStructurizedState?.status === "loading" ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                        ) : (
+                            <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                        )}
+                        <span className="sr-only">Structurize note</span>
+                    </Button>
+                )}
+
+            {/* Accept/Reject buttons - show when in preview mode and not editing */}
+            {aiStructurizedState?.status === "succeeded" &&
+                aiStructurizedState.structuredContent &&
+                !note.isEditing && (
+                    <>
+                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
+                            <span>✨ Structured preview - click</span>
+                            <Check className="h-3 w-3 inline" />
+                            <span>to save or</span>
+                            <Undo className="h-3 w-3 inline" />
+                            <span>to revert</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                            onClick={handleAcceptStructurize}
+                            title="Accept structured content"
+                        >
+                            <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                            <span className="sr-only">
+                                Accept structured content
+                            </span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                            onClick={handleRejectStructurize}
+                            title="Revert to original content"
+                        >
+                            <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                            <span className="sr-only">
+                                Revert to original content
+                            </span>
+                        </Button>
+                    </>
+                )}
+
+            {/* More options dropdown in top right */}
+            {!note.isEditing && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                            disabled={note.isEditing}
+                        >
+                            <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                            <span className="sr-only">More options</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                            onClick={handleDelete}
+                            className="text-destructive flex items-center cursor-pointer"
+                            disabled={note.persistenceStatus === "deleting"}
+                        >
+                            {note.persistenceStatus === "deleting" ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Trash2 className="h-4 w-4 mr-2" />
+                            )}
+                            {note.persistenceStatus === "deleting"
+                                ? "Deleting..."
+                                : "Delete Note"}
+                        </DropdownMenuItem>
+                        {/* Additional actions can be added here in the future */}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </div>
     );
 }
