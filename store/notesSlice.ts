@@ -31,6 +31,8 @@ export type Note = {
     embedding?: number[];
     embedding_model?: string;
     embedding_created_at?: string;
+    isEditing?: boolean;
+    originalContent?: string;
 };
 
 interface NotesState {
@@ -247,6 +249,47 @@ const notesSlice = createSlice({
                 state.notes[noteIndex].content = content;
             }
         },
+        enterEditMode: (
+            state,
+            action: PayloadAction<{ noteId: string; originalContent: string }>
+        ) => {
+            const { noteId, originalContent } = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].isEditing = true;
+                state.notes[noteIndex].originalContent = originalContent;
+            }
+        },
+        exitEditMode: (
+            state,
+            action: PayloadAction<{ noteId: string; resetContent?: boolean }>
+        ) => {
+            const { noteId, resetContent = false } = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (noteIndex !== -1) {
+                state.notes[noteIndex].isEditing = false;
+                if (resetContent && state.notes[noteIndex].originalContent) {
+                    state.notes[noteIndex].content = state.notes[noteIndex].originalContent;
+                }
+                state.notes[noteIndex].originalContent = undefined;
+            }
+        },
+        updateEditingContent: (
+            state,
+            action: PayloadAction<{ noteId: string; content: string }>
+        ) => {
+            const { noteId, content } = action.payload;
+            const noteIndex = state.notes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (noteIndex !== -1 && state.notes[noteIndex].isEditing) {
+                state.notes[noteIndex].content = content;
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -342,6 +385,9 @@ export const {
     setCurrentContext,
     updateNoteWithSuggestedContexts,
     updateNoteContent,
+    enterEditMode,
+    exitEditMode,
+    updateEditingContent,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
