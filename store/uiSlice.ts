@@ -6,12 +6,14 @@ interface UIState {
     deviceType: DeviceType;
     datePickerSelectedDate: string; // Store as ISO string to ensure serialization
     activeNoteId: string | null;
+    editingNoteId: string | null; // Added for tracking the note being edited
 }
 
 const initialState: UIState = {
     deviceType: "desktop", // default
     datePickerSelectedDate: new Date().toISOString(),
     activeNoteId: null,
+    editingNoteId: null, // Initialize editingNoteId
 };
 
 const uiSlice = createSlice({
@@ -29,6 +31,17 @@ const uiSlice = createSlice({
         },
         setActiveNoteId: (state, action: PayloadAction<string | null>) => {
             state.activeNoteId = action.payload;
+            // If a note is being activated, ensure no note is in editing mode.
+            if (action.payload !== null) {
+                state.editingNoteId = null;
+            }
+        },
+        setEditingNoteId: (state, action: PayloadAction<string | null>) => {
+            state.editingNoteId = action.payload;
+            // If a note is being set to editing mode, ensure no note is active.
+            if (action.payload !== null) {
+                state.activeNoteId = null;
+            }
         },
     },
 });
@@ -38,5 +51,6 @@ export const {
     setDatePickerSelectedDate,
     resetDatePickerToToday,
     setActiveNoteId,
+    setEditingNoteId, // Export the new action
 } = uiSlice.actions;
 export default uiSlice.reducer;

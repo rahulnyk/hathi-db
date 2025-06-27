@@ -1,7 +1,7 @@
 "use client";
 
-import { Note, enterEditMode } from "@/store/notesSlice";
-import { setActiveNoteId } from "@/store/uiSlice"; // Import setActiveNoteId
+import { Note } from "@/store/notesSlice"; // Removed enterEditMode
+import { setActiveNoteId, setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
 import ReactMarkdown from "react-markdown";
 
 import remarkGfm from "remark-gfm";
@@ -26,17 +26,23 @@ import { CardHeader } from "./card-header";
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
     const activeNoteId = useAppSelector((state) => state.ui.activeNoteId);
+    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
 
+    // Determine if note is of type 'ai-note'
+    const isAiNote = note.note_type === "ai-note";
     // Determine if the current note is active
     const isNoteActive = note.id === activeNoteId;
+    // Determine if the current note is being edited
+    const isNoteEditing = note.id === editingNoteId;
+
     // Determine if the ContextContainer should be visible
-    const showContextContainer = isNoteActive || note.isEditing;
+    const showContextContainer = isNoteActive || isNoteEditing;
     // Determine if the CardHeader should be visible
-    const showCardHeader = isNoteActive && !note.isEditing;
+    const showCardHeader = isNoteActive && !isNoteEditing;
 
     // Determine which content to display
     const displayContent =
@@ -54,20 +60,27 @@ export function NoteCard({ note }: { note: Note }) {
         );
     };
 
+    const handleCardClick = () => {
+        if (isAiNote) {
+            return; // Don't allow interaction with AI-generated notes
+        }
+        if (note.id !== activeNoteId) {
+            dispatch(setActiveNoteId(note.id));
+        }
+    };
+
     const handleDoubleClick = () => {
+        if (isAiNote) {
+            return; // Don't allow editing of AI-generated notes
+        }
         if (
             note.persistenceStatus === "pending" ||
             note.persistenceStatus === "failed"
         ) {
             return; // Don't allow editing of notes that haven't been saved yet
         }
-
-        dispatch(
-            enterEditMode({
-                noteId: note.id,
-                originalContent: note.content,
-            })
-        );
+        // Dispatch setEditingNoteId instead of enterEditMode
+        dispatch(setEditingNoteId(note.id));
     };
 
     useEffect(() => {
@@ -98,31 +111,27 @@ export function NoteCard({ note }: { note: Note }) {
         return () => document.removeEventListener("click", handleClick);
     }, [dispatch]);
 
-    const handleCardClick = () => {
-        if (note.id !== activeNoteId) {
-            dispatch(setActiveNoteId(note.id));
-        }
-    };
-
     return (
         <div
             onClick={handleCardClick}
             className={cn(
-                "p-2 sm:p-4 py-0 rounded-lg relative",
-                note.isEditing &&
-                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30"
+                "px-2 sm:px-4 my-2 rounded-lg relative",
+                isNoteEditing && // Use isNoteEditing here
+                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
+                isNoteActive &&
+                    "border-l-4 border-zinc-200 dark:border-zinc-800 rounded-none my-0"
             )}
         >
             {/* Top right buttons */}
             {showCardHeader && <CardHeader note={note} />}
 
             {/* Note content - show editor if editing, otherwise show markdown */}
-            {note.isEditing ? (
+            {isNoteEditing ? ( // Use isNoteEditing here
                 <div className="mb-2">
                     <NotesEditor
-                        isEditMode={true}
+                        isEditMode={true} // This prop might be redundant now or could signify a specific UI variant
                         noteId={note.id}
-                        initialContent={note.content}
+                        initialContent={note.content} // Pass initial content for the editor
                     />
                 </div>
             ) : (

@@ -29,9 +29,12 @@ interface CardHeaderProps {
 
 export function CardHeader({ note }: CardHeaderProps) {
     const dispatch = useAppDispatch();
+    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
+
+    const isNoteEditing = note.id === editingNoteId; // Determine if this note is being edited
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -91,7 +94,7 @@ export function CardHeader({ note }: CardHeaderProps) {
     return (
         <>
             {/* Header row with date and button group */}
-            <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="flex items-center justify-between mb-0 gap-2">
                 {/* Date */}
                 <div className="text-xs text-muted-foreground/50 flex-shrink-0">
                     {formatDate(note.created_at)}
@@ -128,7 +131,7 @@ export function CardHeader({ note }: CardHeaderProps) {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                                disabled={note.isEditing}
+                                disabled={isNoteEditing} // Use isNoteEditing here
                             >
                                 <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
                                 <span className="sr-only">More options</span>

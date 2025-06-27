@@ -37,7 +37,7 @@ export function NotesPanelHeader() {
                         "accent-font"
                     )}
                 >
-                    <Target size={15} className="hidden md:block" />
+                    <Target size={22} className="hidden md:block" />
                     <h2
                         className={cn(
                             "text-2xl",
@@ -46,7 +46,6 @@ export function NotesPanelHeader() {
                     >
                         {slugToSentenceCase(currentContext)}
                     </h2>
-                    <Target size={15} className="hidden md:block" />
                 </div>
 
                 {/* Home button */}
