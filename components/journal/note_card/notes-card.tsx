@@ -119,7 +119,7 @@ export function NoteCard({ note }: { note: Note }) {
                 isNoteEditing && // Use isNoteEditing here
                     "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
                 isNoteActive &&
-                    "border-l-4 border-zinc-200 dark:border-zinc-800 rounded-none my-0"
+                    "border-l-4 border-zinc-300 dark:border-zinc-600 rounded-none my-0"
             )}
         >
             {/* Top right buttons */}
