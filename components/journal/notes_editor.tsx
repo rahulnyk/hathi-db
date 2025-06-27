@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
-import { addNote, addNoteOptimistically, patchNote, exitEditMode, updateEditingContent } from "@/store/notesSlice";
+import { addNote, addNoteOptimistically, patchNote } from "@/store/notesSlice"; // Removed exitEditMode, updateEditingContent
+import { setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
 import {
     generateSuggestedContexts,
     generateEmbeddingThunk,
@@ -100,7 +101,13 @@ function handleAutoDeleteBracketPair(
     return null;
 }
 
-export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSave }: NotesEditorProps) {
+export function NotesEditor({
+    isEditMode,
+    noteId,
+    initialContent,
+    onCancel,
+    onSave,
+}: NotesEditorProps) {
     const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [content, setContent] = useState(initialContent || ""); // This is the source of truth for the textarea's value
@@ -120,12 +127,16 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     // Get current note data for edit mode
     const currentNote = useAppSelector((state) =>
-        noteId ? state.notes.notes.find(note => note.id === noteId) : null
+        noteId ? state.notes.notes.find((note) => note.id === noteId) : null
     );
 
     // Initialize content when entering edit mode
     useEffect(() => {
-        if (isEditMode && initialContent !== undefined && !hasInitializedRef.current) {
+        if (
+            isEditMode &&
+            initialContent !== undefined &&
+            !hasInitializedRef.current
+        ) {
             setContent(initialContent);
             setHasModifications(false);
             // Store original contexts when entering edit mode
@@ -141,10 +152,19 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     useEffect(() => {
         if (isEditMode && initialContent !== undefined) {
             const contentModified = content !== initialContent;
-            const contextsModified = !areArraysEqual(currentNote?.contexts || [], originalContexts);
+            const contextsModified = !areArraysEqual(
+                currentNote?.contexts || [],
+                originalContexts
+            );
             setHasModifications(contentModified || contextsModified);
         }
-    }, [content, initialContent, isEditMode, currentNote?.contexts, originalContexts]);
+    }, [
+        content,
+        initialContent,
+        isEditMode,
+        currentNote?.contexts,
+        originalContexts,
+    ]);
 
     // Focus textarea when entering edit mode
     useEffect(() => {
@@ -172,21 +192,6 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
         // Update local state
         setContent(newFullValue);
-
-        // If in edit mode, also update the Redux store
-        if (isEditMode && noteId) {
-            dispatch(updateEditingContent({ noteId, content: newFullValue }));
-        }
-
-        // This function is now simpler.
-        // Bracket insertion (enclosing or empty pair) is handled in onKeyDown.
-        // Bracket pair deletion is handled in onKeyDown.
-
-        // This handles text changes from:
-        // 1. Deletions not caught by onKeyDown (e.g., Delete key, cut, Backspace not on a pair).
-        // 2. Normal character typing (non-brackets).
-        // 3. Pasting text.
-        // 4. IME composition.
 
         if (newFullValue.length < content.length) {
             // Handles deletions
@@ -349,18 +354,21 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
         try {
             // Extract new contexts and tags from the updated content
-            const { contexts: newContexts, tags: newTags } = extractMetadata(content);
+            const { contexts: newContexts, tags: newTags } =
+                extractMetadata(content);
 
             // Merge existing contexts with new ones, removing duplicates
             const existingContexts = currentNote?.contexts || [];
-            const mergedContexts = [...new Set([...existingContexts, ...newContexts])];
+            const mergedContexts = [
+                ...new Set([...existingContexts, ...newContexts]),
+            ];
 
             // Merge existing tags with new ones, removing duplicates
             const existingTags = currentNote?.tags || [];
             const mergedTags = [...new Set([...existingTags, ...newTags])];
 
-            // Optimistically exit edit mode
-            dispatch(exitEditMode({ noteId }));
+            // Dispatch setEditingNoteId(null) to exit edit mode
+            dispatch(setEditingNoteId(null));
 
             // Call onSave callback if provided
             if (onSave) {
@@ -388,8 +396,12 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     const handleCancelEdit = () => {
         if (!noteId) return;
 
-        // Reset content to original and exit edit mode
-        dispatch(exitEditMode({ noteId, resetContent: true }));
+        // Reset content to original (initialContent prop)
+        if (initialContent !== undefined) {
+            setContent(initialContent);
+        }
+        // Dispatch setEditingNoteId(null) to exit edit mode
+        dispatch(setEditingNoteId(null));
 
         // Call onCancel callback if provided
         if (onCancel) {
@@ -449,7 +461,10 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                                     <HashLoader size={16} />
                                 ) : (
                                     <>
-                                        <Check strokeWidth={3} className="h-4 w-4" />
+                                        <Check
+                                            strokeWidth={3}
+                                            className="h-4 w-4"
+                                        />
                                         <span>Save</span>
                                     </>
                                 )}
@@ -466,10 +481,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                                 <HashLoader size={16} />
                             ) : (
                                 <>
-                                    <ArrowUp
-                                        strokeWidth={3}
-                                        size={16}
-                                    />
+                                    <ArrowUp strokeWidth={3} size={16} />
                                 </>
                             )}
                         </Button>
