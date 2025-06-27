@@ -21,9 +21,10 @@ Each note may also contain Hash tags like #example, which indicates a tag for th
 The [[contexts]] and #tags convention is also useful to style them at the front end. Please retain them as they are in your final output.
 
 Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
+- NEVEER use # or ## Headings in the output.
 - Use **Markdown** syntax for formatting, but use [[This Bold]] syntax for bold text.
 - DO NOT use large headings or titles.
-- Use [[bold]] for important points, or key information. Use [[This Bold]] syntax instead of the markdown **bold**.
+- Use **bold** for important points, or key information. 
 - Use bullet points for tasks and lists.
 - Highlight dates, priorities, and deadlines in bold if they are present.
 - Italicize any optional or self-reflective statements.
@@ -32,7 +33,6 @@ Your task is to convert the note into **clean, semantically structured, well-org
 - If no clear categories are present, intelligently group content based on context.
 - Do not assume or add new information.
 - Do not provide any commentary or explanations. Only return the final, structured Markdown.
-- Wrap any inline names, named entitieds, important words, or phrase in double square brackets [[like this]] to indicate it is a context. Contexts are important for the user to understand the note's relevance. They are also useful for styling at the front end.
 
 When you receive a new note, return only the final, semantically structured Markdown, without any explanations. 
 If the note is empty or contains no meaningful content, return an empty string.
