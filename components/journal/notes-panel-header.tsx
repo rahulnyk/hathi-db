@@ -4,7 +4,6 @@ import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugT
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
 import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentContext
 import { Target, Home } from "lucide-react"; // Added Home icon
-import { Button } from "@/components/ui/button"; // Added Button component
 
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
