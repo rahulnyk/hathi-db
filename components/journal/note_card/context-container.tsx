@@ -87,21 +87,20 @@ export function ContextContainer({ note }: contextContainerProps) {
     };
 
     return (
-        <div className="mt-3 flex flex-wrap items-center gap-1">
+        <div className="mt-3 flex flex-wrap items-center gap-1 pb-2">
             {/* Actual contexts */}
-            {note.contexts && note.contexts.length > 0 &&
+            {note.contexts &&
+                note.contexts.length > 0 &&
                 note.contexts.map((context, index) => (
                     <span key={index} className="context-pill">
                         {slugToSentenceCase(context)}
                     </span>
-                ))
-            }
+                ))}
             {/* Suggested contexts */}
-            {note.suggested_contexts && note.suggested_contexts.length > 0 &&
+            {note.suggested_contexts &&
+                note.suggested_contexts.length > 0 &&
                 note.suggested_contexts
-                    .filter(
-                        (context) => !note.contexts?.includes(context)
-                    )
+                    .filter((context) => !note.contexts?.includes(context))
                     .map((context, index) => (
                         <Button
                             key={index}
@@ -120,14 +119,13 @@ export function ContextContainer({ note }: contextContainerProps) {
                                 </>
                             )}
                         </Button>
-                    ))
-            }
+                    ))}
             {/* Add custom context button */}
             {!showCustomInput && (
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 px-2 text-xs rounded-lg text-xs"
+                    className="h-6 px-2 text-xs rounded-lg"
                     onClick={() => setShowCustomInput(true)}
                 >
                     <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
@@ -168,7 +166,6 @@ export function ContextContainer({ note }: contextContainerProps) {
                         >
                             <X className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
                         </Button>
-
                     </div>
                 </>
             )}
