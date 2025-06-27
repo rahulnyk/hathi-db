@@ -21,7 +21,7 @@ Each note may also contain Hash tags like #example, which indicates a tag for th
 The [[contexts]] and #tags convention is also useful to style them at the front end. Please retain them as they are in your final output.
 
 Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
-- NEVEER use # or ## Headings in the output.
+- NEVER use # or ## Headings in the output.
 - Use **Markdown** syntax for formatting, but use [[This Bold]] syntax for bold text.
 - DO NOT use large headings or titles.
 - Use **bold** for important points, or key information. 
