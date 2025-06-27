@@ -1,21 +1,8 @@
 "use client";
 
 import { Note } from "@/store/notesSlice"; // Removed deleteNote, markNoteAsDeleting
-import {
-    MoreVertical,
-    // Trash2, // No longer directly used here
-    Loader2,
-    Sparkles,
-    Check,
-    Undo,
-} from "lucide-react";
+import { Loader2, Sparkles, Check, Undo } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem, // Keep for "No other actions" or future items
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { DeleteNoteButton } from "./delete-note-button"; // Import DeleteNoteButton
 import {
@@ -30,12 +17,9 @@ interface CardHeaderProps {
 
 export function CardHeader({ note }: CardHeaderProps) {
     const dispatch = useAppDispatch();
-    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
-
-    const isNoteEditing = note.id === editingNoteId; // Determine if this note is being edited
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
