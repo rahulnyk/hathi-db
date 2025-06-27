@@ -32,6 +32,20 @@ export function CardHeader({ note }: CardHeaderProps) {
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const options: Intl.DateTimeFormatOptions = {
+            weekday: "short",
+            day: "numeric",
+            month: "long",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        };
+        return date.toLocaleDateString("en-US", options);
+    };
+
     const handleDelete = () => {
         // Mark as deleting first (optimistic update)
         dispatch(markNoteAsDeleting(note.id));
@@ -73,45 +87,89 @@ export function CardHeader({ note }: CardHeaderProps) {
             })
         );
     };
+
     return (
         <>
-            <div className="text-xs text-muted-foreground/50 mb-2">
-                {new Date(note.created_at).toLocaleString()}
+            {/* Header row with date and button group */}
+            <div className="flex items-center justify-between mb-2 gap-2">
+                {/* Date */}
+                <div className="text-xs text-muted-foreground/50 flex-shrink-0">
+                    {formatDate(note.created_at)}
+                </div>
+
+                {/* Button Group */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Structurize button - show when not in preview mode and not editing */}
+                    {!(
+                        aiStructurizedState?.status === "succeeded" &&
+                        aiStructurizedState.structuredContent
+                    ) && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                            onClick={handleStructurize}
+                            disabled={aiStructurizedState?.status === "loading"}
+                            title="Structurize note with AI"
+                        >
+                            {aiStructurizedState?.status === "loading" ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                            ) : (
+                                <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                            )}
+                            <span className="sr-only">Structurize note</span>
+                        </Button>
+                    )}
+
+                    {/* More options dropdown */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                                disabled={note.isEditing}
+                            >
+                                <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                                <span className="sr-only">More options</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                                onClick={handleDelete}
+                                className="text-destructive flex items-center cursor-pointer"
+                                disabled={note.persistenceStatus === "deleting"}
+                            >
+                                {note.persistenceStatus === "deleting" ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                )}
+                                {note.persistenceStatus === "deleting"
+                                    ? "Deleting..."
+                                    : "Delete Note"}
+                            </DropdownMenuItem>
+                            {/* Additional actions can be added here in the future */}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
-            <div className="absolute top-2 right-2 flex items-center gap-1">
-                {/* Date display */}
-                {/* Structurize button - show when not in preview mode and not editing */}
-                {!(
-                    aiStructurizedState?.status === "succeeded" &&
-                    aiStructurizedState.structuredContent
-                ) && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                        onClick={handleStructurize}
-                        disabled={aiStructurizedState?.status === "loading"}
-                        title="Structurize note with AI"
-                    >
-                        {aiStructurizedState?.status === "loading" ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
-                        ) : (
-                            <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                        )}
-                        <span className="sr-only">Structurize note</span>
-                    </Button>
-                )}
-                {/* Accept/Reject buttons - show when in preview mode and not editing */}
-                {aiStructurizedState?.status === "succeeded" &&
-                    aiStructurizedState.structuredContent && (
-                        <>
-                            <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
-                                <span>✨ Structured preview - click</span>
-                                <Check className="h-3 w-3 inline" />
-                                <span>to save or</span>
-                                <Undo className="h-3 w-3 inline" />
-                                <span>to revert</span>
-                            </div>
+
+            {/* Accept/Reject buttons row - show when in preview mode */}
+            {aiStructurizedState?.status === "succeeded" &&
+                aiStructurizedState.structuredContent && (
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1 flex-1 min-w-0">
+                            <span className="hidden sm:inline">
+                                ✨ Structured preview - click
+                            </span>
+                            <span className="sm:hidden">✨ Preview</span>
+                            <Check className="h-3 w-3 inline flex-shrink-0" />
+                            <span className="hidden sm:inline">to save or</span>
+                            <Undo className="h-3 w-3 inline flex-shrink-0" />
+                            <span className="hidden sm:inline">to revert</span>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -136,40 +194,9 @@ export function CardHeader({ note }: CardHeaderProps) {
                                     Revert to original content
                                 </span>
                             </Button>
-                        </>
-                    )}
-                {/* More options dropdown in top right */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                            disabled={note.isEditing}
-                        >
-                            <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                            <span className="sr-only">More options</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                            onClick={handleDelete}
-                            className="text-destructive flex items-center cursor-pointer"
-                            disabled={note.persistenceStatus === "deleting"}
-                        >
-                            {note.persistenceStatus === "deleting" ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Trash2 className="h-4 w-4 mr-2" />
-                            )}
-                            {note.persistenceStatus === "deleting"
-                                ? "Deleting..."
-                                : "Delete Note"}
-                        </DropdownMenuItem>
-                        {/* Additional actions can be added here in the future */}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+                        </div>
+                    </div>
+                )}
         </>
     );
 }

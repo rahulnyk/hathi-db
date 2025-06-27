@@ -81,7 +81,7 @@ const remarkContextPlugin: Plugin = () => (tree: Node) => {
             }
 
             // Replace the node if we found matches
-            if (elements.length > 1) {
+            if (lastIndex > 0) {
                 parent.children.splice(index, 1, ...elements);
                 return SKIP;
             }
