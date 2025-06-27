@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 // import clsx from "clsx";
 import { NoteCard } from "./note_card/notes-card";
+import { AiNoteCard } from "./note_card/ai-note-card"; // Import AiNoteCard
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes } from "@/store/notesSlice";
 
@@ -52,9 +53,13 @@ export function Thread() {
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {reversedNotes.map((note) => (
-                        <NoteCard key={note.id} note={note} />
-                    ))}
+                    {reversedNotes.map((note) =>
+                        note.note_type === "ai-note" ? (
+                            <AiNoteCard key={note.id} note={note} />
+                        ) : (
+                            <NoteCard key={note.id} note={note} />
+                        )
+                    )}
                 </div>
             )}
         </div>

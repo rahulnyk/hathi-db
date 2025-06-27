@@ -1,9 +1,9 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting } from "@/store/notesSlice";
+import { Note } from "@/store/notesSlice"; // Removed deleteNote, markNoteAsDeleting
 import {
     MoreVertical,
-    Trash2,
+    // Trash2, // No longer directly used here
     Loader2,
     Sparkles,
     Check,
@@ -13,10 +13,11 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
+    DropdownMenuItem, // Keep for "No other actions" or future items
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { DeleteNoteButton } from "./delete-note-button"; // Import DeleteNoteButton
 import {
     structurizeNoteThunk,
     acceptStructurizedNoteThunk,
@@ -47,18 +48,6 @@ export function CardHeader({ note }: CardHeaderProps) {
             hour12: true,
         };
         return date.toLocaleDateString("en-US", options);
-    };
-
-    const handleDelete = () => {
-        // Mark as deleting first (optimistic update)
-        dispatch(markNoteAsDeleting(note.id));
-
-        // Then try to actually delete it
-        dispatch(
-            deleteNote({
-                noteId: note.id,
-            })
-        );
     };
 
     const handleStructurize = () => {
@@ -102,6 +91,8 @@ export function CardHeader({ note }: CardHeaderProps) {
 
                 {/* Button Group */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Direct Delete Button */}
+                    <DeleteNoteButton note={note} />
                     {/* Structurize button - show when not in preview mode and not editing */}
                     {!(
                         aiStructurizedState?.status === "succeeded" &&
@@ -123,38 +114,6 @@ export function CardHeader({ note }: CardHeaderProps) {
                             <span className="sr-only">Structurize note</span>
                         </Button>
                     )}
-
-                    {/* More options dropdown */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                                disabled={isNoteEditing} // Use isNoteEditing here
-                            >
-                                <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                                <span className="sr-only">More options</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                                onClick={handleDelete}
-                                className="text-destructive flex items-center cursor-pointer"
-                                disabled={note.persistenceStatus === "deleting"}
-                            >
-                                {note.persistenceStatus === "deleting" ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                )}
-                                {note.persistenceStatus === "deleting"
-                                    ? "Deleting..."
-                                    : "Delete Note"}
-                            </DropdownMenuItem>
-                            {/* Additional actions can be added here in the future */}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             </div>
 
