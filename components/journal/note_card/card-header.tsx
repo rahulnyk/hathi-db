@@ -101,7 +101,7 @@ export function CardHeader({ note }: CardHeaderProps) {
                     {/* Accept/Reject buttons - show when in preview mode and not editing */}
                     {aiStructurizedState?.status === "succeeded" &&
                         aiStructurizedState.structuredContent && (
-                            <>
+                            <div className="hidden md:flex items-center gap-1">
                                 <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
                                     <span>✨ Structured preview - click</span>
                                     <Check className="h-3 w-3 inline" />
@@ -133,10 +133,44 @@ export function CardHeader({ note }: CardHeaderProps) {
                                         Revert to original content
                                     </span>
                                 </Button>
-                            </>
+                            </div>
                         )}
                 </div>
             </div>
+
+            {/* Accept/Reject buttons for mobile - shown on a new row */}
+            {aiStructurizedState?.status === "succeeded" &&
+                aiStructurizedState.structuredContent && (
+                    <div className="md:hidden flex items-center justify-start gap-2 w-full">
+                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
+                            <span>✨ AI preview</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                            onClick={handleAcceptStructurize}
+                            title="Accept structured content"
+                        >
+                            <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                            <span className="sr-only">
+                                Accept structured content
+                            </span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                            onClick={handleRejectStructurize}
+                            title="Revert to original content"
+                        >
+                            <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                            <span className="sr-only">
+                                Revert to original content
+                            </span>
+                        </Button>
+                    </div>
+                )}
         </>
     );
 }
