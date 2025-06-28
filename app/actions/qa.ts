@@ -104,34 +104,64 @@ export async function answerQuestion(question: string): Promise<QAResult> {
  * Fallback to basic keyword search when semantic search fails or returns no results
  */
 async function fallbackToBasicSearch(question: string, userId: string, supabase: SupabaseClient): Promise<QAResult> {
+    // First, try to get ANY notes for this user to see if they exist
+    const { data: allNotes, error: notesError } = await supabase
+        .from("notes")
+        .select("id, content, contexts, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+    
+    if (notesError) {
+        console.error("Error fetching notes:", notesError);
+    }
+
+    if (!allNotes || allNotes.length === 0) {
+        return {
+            answer: "I don't see any notes in your knowledge base yet. Try adding some notes first!",
+            relevantSources: []
+        };
+    }
+
     // Extract keywords from question for basic search
     const keywords = question.toLowerCase()
         .split(/\s+/)
         .filter(word => word.length > 2 && !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'not', 'had'].includes(word));
     
     if (keywords.length === 0) {
-        // If no good keywords, fetch recent notes
-        const { data: recentNotes } = await supabase
+        return await generateAnswer(question, (allNotes.slice(0, 20) as NoteWithSimilarity[]) || [], userId, supabase);
+    }
+
+    // Try simple content matching first (case-insensitive)
+    const matchingNotes = allNotes.filter(note => {
+        const content = note.content.toLowerCase();
+        return keywords.some(keyword => content.includes(keyword));
+    });
+
+    if (matchingNotes.length > 0) {
+        return await generateAnswer(question, (matchingNotes.slice(0, 15) as NoteWithSimilarity[]) || [], userId, supabase);
+    }
+
+    // If no keyword matches, try PostgreSQL text search as last resort
+    try {
+        const searchTerm = keywords.join(' | '); // OR search
+        
+        const { data: keywordNotes } = await supabase
             .from("notes")
             .select("id, content, contexts, created_at")
             .eq("user_id", userId)
-            .order("created_at", { ascending: false })
-            .limit(20);
-            
-        return await generateAnswer(question, (recentNotes as NoteWithSimilarity[]) || [], userId, supabase);
+            .textSearch('content', searchTerm, { type: 'websearch' })
+            .limit(15);
+        
+        if (keywordNotes && keywordNotes.length > 0) {
+            return await generateAnswer(question, (keywordNotes as NoteWithSimilarity[]) || [], userId, supabase);
+        }
+    } catch (searchError) {
+        console.error("PostgreSQL text search failed:", searchError);
     }
 
-    // Build search query using keywords
-    const searchTerm = keywords.join(' | '); // OR search
-    
-    const { data: keywordNotes } = await supabase
-        .from("notes")
-        .select("id, content, contexts, created_at")
-        .eq("user_id", userId)
-        .textSearch('content', searchTerm, { type: 'websearch' })
-        .limit(15);
-
-    return await generateAnswer(question, (keywordNotes as NoteWithSimilarity[]) || [], userId, supabase);
+    // Final fallback: use most recent notes
+    return await generateAnswer(question, (allNotes.slice(0, 20) as NoteWithSimilarity[]) || [], userId, supabase);
 }
 
 /**

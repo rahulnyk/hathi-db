@@ -29,6 +29,9 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
+    // Check if this is an AI answer note
+    const isAiAnswer = note.tags?.includes("ai-answer");
+
     // Determine which content to display
     const displayContent =
         aiStructurizedState?.status === "succeeded" &&
@@ -48,9 +51,10 @@ export function NoteCard({ note }: { note: Note }) {
     const handleDoubleClick = () => {
         if (
             note.persistenceStatus === "pending" ||
-            note.persistenceStatus === "failed"
+            note.persistenceStatus === "failed" ||
+            isAiAnswer // Don't allow editing AI answer notes
         ) {
-            return; // Don't allow editing of notes that haven't been saved yet
+            return; // Don't allow editing of notes that haven't been saved yet or AI answers
         }
 
         dispatch(
@@ -94,7 +98,9 @@ export function NoteCard({ note }: { note: Note }) {
             className={cn(
                 "p-2 sm:p-4 py-0 rounded-lg relative",
                 note.isEditing &&
-                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30"
+                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30",
+                isAiAnswer &&
+                    "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-400 dark:border-blue-500"
             )}
         >
             {/* Top right buttons */}
@@ -111,9 +117,12 @@ export function NoteCard({ note }: { note: Note }) {
                 </div>
             ) : (
                 <div
-                    className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
+                    className={cn(
+                        "prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0",
+                        !isAiAnswer && "cursor-pointer"
+                    )}
                     onDoubleClick={handleDoubleClick}
-                    title="Double-click to edit"
+                    title={isAiAnswer ? "AI Answer" : "Double-click to edit"}
                 >
                     <ReactMarkdown
                         remarkPlugins={[
