@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 // import clsx from "clsx";
 import { NoteCard } from "./note_card/notes-card";
 import { AiNoteCard } from "./note_card/ai-note-card"; // Import AiNoteCard
@@ -12,11 +12,24 @@ export function Thread() {
     const dispatch = useAppDispatch();
     const { notes, collectionStatus, collectionError, currentContext } =
         useAppSelector((state) => state.notes);
+    const threadContainerRef = useRef<HTMLDivElement>(null);
+    const prevNotesLengthRef = useRef(notes.length);
 
     // Fetch notes on component mount
     useEffect(() => {
         dispatch(fetchNotes({ contexts: [currentContext] }));
     }, [dispatch, currentContext]);
+
+    useEffect(() => {
+        if (
+            threadContainerRef.current &&
+            notes.length > prevNotesLengthRef.current
+        ) {
+            const element = threadContainerRef.current;
+            element.scrollTop = element.scrollHeight;
+        }
+        prevNotesLengthRef.current = notes.length;
+    }, [notes]);
 
     // Show loading state
     if (collectionStatus === "loading" && notes.length === 0) {
@@ -44,7 +57,10 @@ export function Thread() {
     const reversedNotes = [...notes].reverse();
 
     return (
-        <div className="w-full flex-grow overflow-y-auto p-4 md:p-6">
+        <div
+            ref={threadContainerRef}
+            className="w-full flex-grow overflow-y-auto px-4 md:px-6 py-8 md:py-10 smooth-scroll"
+        >
             {reversedNotes.length === 0 ? (
                 <div className="flex-grow flex items-center justify-center h-full">
                     <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">

@@ -10,7 +10,7 @@ export function NotesPanel() {
     return (
         <div
             className={cn(
-                "flex flex-col h-full w-full md:max-w-screen-lg md:mx-auto"
+                "flex flex-col h-screen w-full md:max-w-screen-lg md:mx-auto"
             )}
         >
             <NotesPanelHeader /> {/* Add NotesPanelHeader here */}
