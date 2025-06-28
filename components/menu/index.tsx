@@ -54,7 +54,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
             ref={menuRef} // Assign menuRef to the main div
             className={cn(
                 "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
-                "transition-transform duration-300 ease-in-out shadow-lg border-r border-border/20 w-80 z-[100]",
+                "transition-transform duration-300 ease-in-out border-r border-border/20 w-80 z-[100]",
                 "flex flex-col", // Added flex flex-col
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}
