@@ -43,7 +43,6 @@ export function DeleteNoteButton({ note, className }: DeleteNoteButtonProps) {
             {isDeleting ? (
                 <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
                 </>
             ) : (
                 <Trash2Icon size={16} />

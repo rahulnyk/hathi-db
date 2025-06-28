@@ -154,7 +154,7 @@
 
 /* Styles for when the card is collapsed */
 .ai-note-card-collapsed {
-    @apply py-2; /* Reduced padding when collapsed */
+    @apply pt-2; /* Reduced padding when collapsed */
 }
 
 .ai-note-card-collapsed .ai-note-card-content,
