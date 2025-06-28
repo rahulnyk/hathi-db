@@ -13,7 +13,7 @@ export function InputPanel() {
                 "backdrop-blur-2xl",
                 "border border-zinc-300 dark:border-zinc-600", // Border color
                 "px-4 py-2 md:px-2 md:py-2", // Padding
-                "m-4 md:m-4 rounded-2xl" // Margin for spacing
+                "rounded-2xl" // Rounded corners
             )}
         >
             <div className="flex flex-col gap-1">
