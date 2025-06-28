@@ -367,15 +367,7 @@ export function NotesEditor({
             const existingTags = currentNote?.tags || [];
             const mergedTags = [...new Set([...existingTags, ...newTags])];
 
-            // Dispatch setEditingNoteId(null) to exit edit mode
-            dispatch(setEditingNoteId(null));
-
-            // Call onSave callback if provided
-            if (onSave) {
-                onSave();
-            }
-
-            // Send patch request to server
+            // Send patch request to server FIRST
             await dispatch(
                 patchNote({
                     noteId,
@@ -386,6 +378,14 @@ export function NotesEditor({
                     },
                 })
             );
+
+            // Only exit edit mode AFTER successful save
+            dispatch(setEditingNoteId(null));
+
+            // Call onSave callback if provided
+            if (onSave) {
+                onSave();
+            }
         } catch (error) {
             console.error("Error saving note:", error);
         } finally {
