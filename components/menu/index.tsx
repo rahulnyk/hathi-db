@@ -45,10 +45,6 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
         };
     }, [isOpen, onClose, deviceType]); // Add isOpen, onClose, and deviceType to dependency array
 
-    // isDatePickerOpen state and related useEffect/handleCalendarButtonClick removed
-
-    // if (!isOpen) return null; // Using translate-x for animation, so always render
-
     return (
         <div
             ref={menuRef} // Assign menuRef to the main div
@@ -101,9 +97,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                         deviceType={deviceType}
                     />
                 </div>
-                {/* <div className="flex-grow overflow-y-auto border-t border-neutral-200 dark:border-neutral-800 mt-2 pt-2">
-                    
-                </div> */}
+
                 {/* Sticky Bottom Group - always rendered in "expanded" form because menu is either open or not rendered */}
                 <div className="flex flex-row items-center justify-around p-2 border-t border-border/20 mt-auto gap-2">
                     <ThemeSwitcher isExpanded={true} />
