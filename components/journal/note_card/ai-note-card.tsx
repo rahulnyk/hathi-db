@@ -33,7 +33,7 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
         <div
             className={cn(
                 "ai-note-card p-3 my-2 rounded-lg relative border font-outfit",
-                isCollapsed ? "ai-note-card-collapsed" : "ai-note-card-expanded"
+                isCollapsed ? "ai-note-card-collapsed" : ""
             )}
         >
             <div

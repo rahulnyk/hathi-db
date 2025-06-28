@@ -114,6 +114,7 @@ export function NoteCard({ note }: { note: Note }) {
     return (
         <div
             onClick={handleCardClick}
+            onDoubleClick={handleDoubleClick}
             className={cn(
                 "px-2 sm:px-4 my-2 rounded-lg relative",
                 isNoteEditing && // Use isNoteEditing here
@@ -137,7 +138,6 @@ export function NoteCard({ note }: { note: Note }) {
             ) : (
                 <div
                     className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
-                    onDoubleClick={handleDoubleClick}
                     title="Double-click to edit"
                 >
                     <ReactMarkdown
