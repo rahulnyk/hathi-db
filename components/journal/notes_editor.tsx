@@ -10,10 +10,9 @@ import {
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-// import { ArrowDownToLine } from "lucide-react";
-// import { ArrowUpToLine } from "lucide-react";
 import { ArrowUp, X, Check } from "lucide-react";
 import { HashLoader } from "react-spinners";
+import { answerQuestion } from "@/app/actions/qa";
 
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
@@ -273,6 +272,46 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
         // Default behavior for other keys or if auto-delete didn't apply
     };
 
+    const handleQAQuestion = async () => {
+        try {
+            // Extract the question by removing the \qai prefix
+            const question = content.trim().substring(5); // Remove '\qai '
+            
+            if (!question.trim()) {
+                console.error('No question provided after \\qai command');
+                return;
+            }
+
+            // Call the Q&A action
+            const result = await answerQuestion(question);
+            
+            if (result.answer) {
+                // Create an AI answer note that appears in the timeline
+                const aiAnswerNote = createOptimisticNote(
+                    `**Q:** ${question}\n\n**A:** ${result.answer}`,
+                    user.id,
+                    currentContext,
+                    "note", // Use regular note type
+                    [], // No contexts extracted from AI answers
+                    ["ai-answer"] // Special tag for AI answers
+                );
+
+                // Add the AI answer to the timeline
+                dispatch(addNoteOptimistically(aiAnswerNote));
+                
+                // Clear the input
+                setContent("");
+            } else {
+                console.error('Failed to get AI answer:', result.error);
+                // Could show an error message to the user here
+            }
+        } catch (error) {
+            console.error('Error handling Q&A question:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
@@ -288,6 +327,13 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     const handleCreateNote = async () => {
         setIsSubmitting(true);
+
+        // Check if this is a Q&A question
+        if (content.trim().startsWith('\\qai ')) {
+            await handleQAQuestion();
+            return;
+        }
+
         // extract contexts and tags from the note content
         const { contexts, tags } = extractMetadata(content);
 
@@ -409,7 +455,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                     placeholder={
                         isEditMode
                             ? "Edit your note content..."
-                            : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
+                            : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks. Tip: Start your message with \\qai to ask questions about your notes!"
                     }
                     className={
                         isEditMode

@@ -1,37 +1,76 @@
 <a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
+  <img alt="Hathi - AI-Powered Note-Taking with Supabase and Next.js" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
+  <h1 align="center">Hathi - AI-Powered Note-Taking App</h1>
 </a>
 
 <p align="center">
- The fastest way to build apps with Next.js and Supabase
+ An intelligent note-taking application with AI-powered Q&A built with Next.js and Supabase
 </p>
 
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
+  <a href="#ai-qa-feature"><strong>AI Q&A Feature</strong></a> ·
   <a href="#demo"><strong>Demo</strong></a> ·
   <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
   <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
   <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
 </p>
 <br/>
 
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### Core Note-Taking
+- **Rich Markdown Support**: Write notes with full Markdown formatting including headers, lists, code blocks, and emphasis
+- **Context-Based Organization**: Organize notes using contextual tags and categories
+- **Smart Bracket Insertion**: Auto-completion for brackets, parentheses, and other paired characters
+- **Real-time Editing**: Edit notes inline with double-click functionality
+- **Optimistic Updates**: Instant UI updates with background synchronization
+
+### AI-Powered Features
+- **Intelligent Q&A**: Ask questions about your notes using natural language
+- **Semantic Search**: Find relevant notes using AI embeddings and vector similarity
+- **Context Suggestions**: AI-generated context suggestions for better organization
+- **Note Structuring**: AI-powered note structuring and formatting
+
+### Technical Features
+- Built on [Next.js](https://nextjs.org) App Router
+- **Supabase Integration**: Authentication, database, and real-time subscriptions
+- **Vector Embeddings**: OpenAI embeddings for semantic search capabilities
+- **Redux State Management**: Centralized state with optimistic updates
+- **TypeScript**: Full type safety throughout the application
+- **Responsive Design**: Works on desktop and mobile devices
+- **Tailwind CSS** styling with **shadcn/ui** components
+
+## AI Q&A Feature
+
+The standout feature of Hathi is its AI-powered Q&A system that lets you ask questions about your notes using natural language.
+
+### How to Use
+
+1. **Ask Questions**: In any note input field, start your message with `\qai` followed by your question
+   ```
+   \qai What did I discuss in my team meetings last week?
+   \qai Summarize my project notes
+   \qai What are the key points from my research on AI?
+   ```
+
+2. **Get AI Answers**: The system will:
+   - Search your notes using semantic similarity (AI embeddings)
+   - Fall back to keyword matching if needed
+   - Generate contextual answers using OpenAI
+   - Display the answer inline in your note timeline
+
+3. **Smart Search**: The system uses multiple search strategies:
+   - **Semantic Search**: Uses OpenAI embeddings to find conceptually similar notes
+   - **Keyword Matching**: Falls back to traditional text matching
+   - **Recent Notes**: Uses your most recent notes if no specific matches are found
+
+### Features
+- **Inline Integration**: Ask questions directly in the note input box
+- **Visual Distinction**: AI answers are clearly marked and cannot be edited
+- **Context Aware**: Uses your personal context tags and note history
+- **Robust Fallbacks**: Multiple search strategies ensure you always get relevant results
+- **No Separate Interface**: Seamlessly integrated into the note-taking workflow
 
 ## Demo
 
@@ -55,7 +94,7 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
 2. Copy the database credentials mainly NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-3. You will also need an OPEN AI API Key OPENAI_API_KEY
+3. You will also need an OPEN AI API Key OPENAI_API_KEY for the AI features
 
 4. Rename `.env.example` to `.env.local` and update the following:
 
@@ -67,23 +106,61 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
    Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
 
-5. You can now run the Next.js local development server:
+5. Install dependencies:
 
-   ```
+   ```bash
    npm install
    ```
 
-6. Run migrations using `npm run migrate`
+6. **Important**: Run database migrations to set up the schema and AI features:
 
-7. Run the project using npm run dev
+   ```bash
+   npm run migrate
+   ```
 
+   This will create:
+   - Notes table with embedding support
+   - Context and tags functionality  
+   - Semantic search functions for AI Q&A
+   - User context statistics functions
+
+7. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+8. Visit `http://localhost:3000` and start taking notes!
+
+### Database Schema
+
+The application uses several key tables:
+- **notes**: Stores user notes with content, contexts, tags, and AI embeddings
+- **Vector embeddings**: OpenAI embeddings for semantic search
+- **RPC functions**: Custom functions for similarity search and context statistics
+
+## Environment Variables
+
+Required environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key  
+- `OPENAI_API_KEY`: OpenAI API key for AI features (Q&A, embeddings, suggestions)
+
+## Architecture
+
+Hathi is built with modern web technologies:
+
+- **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL) with Row Level Security
+- **AI**: OpenAI API for embeddings, completions, and Q&A
+- **State**: Redux Toolkit with optimistic updates
+- **Components**: shadcn/ui component library
+- **Deployment**: Vercel (recommended)
 
 ## Feedback and issues
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+Please file feedback and issues in this repository's issue tracker.
 
-## More Supabase examples
+## License
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+This project is open source and available under the [MIT License](LICENSE).
