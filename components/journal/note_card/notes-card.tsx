@@ -114,12 +114,13 @@ export function NoteCard({ note }: { note: Note }) {
     return (
         <div
             onClick={handleCardClick}
+            onDoubleClick={handleDoubleClick}
             className={cn(
                 "px-2 sm:px-4 my-2 rounded-lg relative",
                 isNoteEditing && // Use isNoteEditing here
                     "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
                 isNoteActive &&
-                    "border-l-4 border-zinc-200 dark:border-zinc-800 rounded-none my-0"
+                    "border-l-4 border-zinc-300 dark:border-zinc-600 rounded-none my-0"
             )}
         >
             {/* Top right buttons */}
@@ -137,7 +138,6 @@ export function NoteCard({ note }: { note: Note }) {
             ) : (
                 <div
                     className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
-                    onDoubleClick={handleDoubleClick}
                     title="Double-click to edit"
                 >
                     <ReactMarkdown

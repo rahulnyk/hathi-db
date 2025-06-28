@@ -30,6 +30,9 @@ const uiSlice = createSlice({
             state.datePickerSelectedDate = new Date().toISOString();
         },
         setActiveNoteId: (state, action: PayloadAction<string | null>) => {
+            if (action.payload === state.editingNoteId) {
+                return; // Prevent setting active note if it is the same as the editing note
+            }
             state.activeNoteId = action.payload;
             // If a note is being activated, ensure no note is in editing mode.
             if (action.payload !== null) {

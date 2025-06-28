@@ -1,22 +1,10 @@
 "use client";
 
-import { Note, deleteNote, markNoteAsDeleting } from "@/store/notesSlice";
-import {
-    MoreVertical,
-    Trash2,
-    Loader2,
-    Sparkles,
-    Check,
-    Undo,
-} from "lucide-react";
+import { Note } from "@/store/notesSlice"; // Removed deleteNote, markNoteAsDeleting
+import { Loader2, Sparkles, Check, Undo } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { DeleteNoteButton } from "./delete-note-button"; // Import DeleteNoteButton
 import {
     structurizeNoteThunk,
     acceptStructurizedNoteThunk,
@@ -29,12 +17,9 @@ interface CardHeaderProps {
 
 export function CardHeader({ note }: CardHeaderProps) {
     const dispatch = useAppDispatch();
-    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
-
-    const isNoteEditing = note.id === editingNoteId; // Determine if this note is being edited
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -47,18 +32,6 @@ export function CardHeader({ note }: CardHeaderProps) {
             hour12: true,
         };
         return date.toLocaleDateString("en-US", options);
-    };
-
-    const handleDelete = () => {
-        // Mark as deleting first (optimistic update)
-        dispatch(markNoteAsDeleting(note.id));
-
-        // Then try to actually delete it
-        dispatch(
-            deleteNote({
-                noteId: note.id,
-            })
-        );
     };
 
     const handleStructurize = () => {
@@ -102,6 +75,8 @@ export function CardHeader({ note }: CardHeaderProps) {
 
                 {/* Button Group */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Direct Delete Button */}
+                    <DeleteNoteButton note={note} />
                     {/* Structurize button - show when not in preview mode and not editing */}
                     {!(
                         aiStructurizedState?.status === "succeeded" &&
@@ -123,83 +98,45 @@ export function CardHeader({ note }: CardHeaderProps) {
                             <span className="sr-only">Structurize note</span>
                         </Button>
                     )}
-
-                    {/* More options dropdown */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                                disabled={isNoteEditing} // Use isNoteEditing here
-                            >
-                                <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                                <span className="sr-only">More options</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                                onClick={handleDelete}
-                                className="text-destructive flex items-center cursor-pointer"
-                                disabled={note.persistenceStatus === "deleting"}
-                            >
-                                {note.persistenceStatus === "deleting" ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                )}
-                                {note.persistenceStatus === "deleting"
-                                    ? "Deleting..."
-                                    : "Delete Note"}
-                            </DropdownMenuItem>
-                            {/* Additional actions can be added here in the future */}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Accept/Reject buttons - show when in preview mode and not editing */}
+                    {aiStructurizedState?.status === "succeeded" &&
+                        aiStructurizedState.structuredContent && (
+                            <>
+                                <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
+                                    <span>✨ Structured preview - click</span>
+                                    <Check className="h-3 w-3 inline" />
+                                    <span>to save or</span>
+                                    <Undo className="h-3 w-3 inline" />
+                                    <span>to revert</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                                    onClick={handleAcceptStructurize}
+                                    title="Accept structured content"
+                                >
+                                    <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                                    <span className="sr-only">
+                                        Accept structured content
+                                    </span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
+                                    onClick={handleRejectStructurize}
+                                    title="Revert to original content"
+                                >
+                                    <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
+                                    <span className="sr-only">
+                                        Revert to original content
+                                    </span>
+                                </Button>
+                            </>
+                        )}
                 </div>
             </div>
-
-            {/* Accept/Reject buttons row - show when in preview mode */}
-            {aiStructurizedState?.status === "succeeded" &&
-                aiStructurizedState.structuredContent && (
-                    <div className="flex items-center justify-between mb-2 gap-2">
-                        <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1 flex-1 min-w-0">
-                            <span className="hidden sm:inline">
-                                ✨ Structured preview - click
-                            </span>
-                            <span className="sm:hidden">✨ Preview</span>
-                            <Check className="h-3 w-3 inline flex-shrink-0" />
-                            <span className="hidden sm:inline">to save or</span>
-                            <Undo className="h-3 w-3 inline flex-shrink-0" />
-                            <span className="hidden sm:inline">to revert</span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
-                                onClick={handleAcceptStructurize}
-                                title="Accept structured content"
-                            >
-                                <Check className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
-                                <span className="sr-only">
-                                    Accept structured content
-                                </span>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full opacity-60 hover:opacity-100"
-                                onClick={handleRejectStructurize}
-                                title="Revert to original content"
-                            >
-                                <Undo className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
-                                <span className="sr-only">
-                                    Revert to original content
-                                </span>
-                            </Button>
-                        </div>
-                    </div>
-                )}
         </>
     );
 }
