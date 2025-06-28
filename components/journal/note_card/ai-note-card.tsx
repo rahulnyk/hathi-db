@@ -54,7 +54,7 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
                         className="mr-2 ai-note-icon-color flex-shrink-0"
                     />
                     {!isCollapsed && (
-                        <span className="font-semibold text-sm ai-note-title-color">
+                        <span className="font-semibold ai-note-title-color">
                             AI Generated Note
                         </span>
                     )}
