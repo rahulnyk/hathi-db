@@ -34,7 +34,7 @@ export function Thread() {
     // Show loading state
     if (collectionStatus === "loading" && notes.length === 0) {
         return (
-            <div className="w-full flex-grow overflow-y-auto p-4 md:p-6 flex items-center justify-center">
+            <div className="w-full flex-grow overflow-y-auto no-scrollbar p-4 md:p-6 flex items-center justify-center">
                 <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">
                     Loading notes...
                 </div>
