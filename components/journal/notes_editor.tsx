@@ -34,6 +34,10 @@ const BRACKET_PAIRS: Record<string, string> = {
     "<": ">",
 };
 
+// Q&A command constants
+const QA_COMMAND = "/q ";
+const QA_COMMAND_PATTERN = /^\/q\s+/i;
+
 // New unified helper function for bracket insertion (wrapping selection or empty pair)
 function handleBracketInsertion(
     openingBracket: string,
@@ -274,11 +278,11 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
 
     const handleQAQuestion = async () => {
         try {
-            // Extract the question by removing the \qai prefix
-            const question = content.trim().substring(5); // Remove '\qai '
+            // Extract the question by removing the command prefix using the pattern
+            const question = content.trim().replace(QA_COMMAND_PATTERN, '').trim();
             
-            if (!question.trim()) {
-                console.error('No question provided after \\qai command');
+            if (!question) {
+                console.error(`No question provided after ${QA_COMMAND} command`);
                 return;
             }
 
@@ -328,8 +332,8 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
     const handleCreateNote = async () => {
         setIsSubmitting(true);
 
-        // Check if this is a Q&A question
-        if (content.trim().startsWith('\\qai ')) {
+        // Check if this is a Q&A question using the pattern
+        if (QA_COMMAND_PATTERN.test(content.trim())) {
             await handleQAQuestion();
             return;
         }
@@ -455,7 +459,7 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                     placeholder={
                         isEditMode
                             ? "Edit your note content..."
-                            : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks. Tip: Start your message with \\qai to ask questions about your notes!"
+                            : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                     className={
                         isEditMode

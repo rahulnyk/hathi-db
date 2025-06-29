@@ -47,11 +47,11 @@ The standout feature of Hathi is its AI-powered Q&A system that lets you ask que
 
 ### How to Use
 
-1. **Ask Questions**: In any note input field, start your message with `\qai` followed by your question
+1. **Ask Questions**: In any note input field, start your message with `/q` followed by your question
    ```
-   \qai What did I discuss in my team meetings last week?
-   \qai Summarize my project notes
-   \qai What are the key points from my research on AI?
+   /q What did I discuss in my team meetings last week?
+   /q Summarize my project notes
+   /q What are the key points from my research on AI?
    ```
 
 2. **Get AI Answers**: The system will:
