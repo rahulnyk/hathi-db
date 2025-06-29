@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { measureExecutionTime } from "@/lib/performance";
 
 /**
  * Retrieves the currently authenticated user from Supabase.
@@ -50,37 +51,41 @@ export async function addNote({
     tags?: string[];
     note_type?: NoteType;
 }): Promise<Note> {
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
+    return measureExecutionTime("addNote", async () => {
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
 
-    try {
-        const noteToInsert = {
-            content,
-            user_id: user.id,
-            key_context,
-            contexts: contexts || [],
-            tags: tags || [],
-            note_type,
-        };
-        const { data, error } = await supabase
-            .from("notes")
-            .insert([noteToInsert])
-            .select();
+        try {
+            const noteToInsert = {
+                content,
+                user_id: user.id,
+                key_context,
+                contexts: contexts || [],
+                tags: tags || [],
+                note_type,
+            };
+            const { data, error } = await supabase
+                .from("notes")
+                .insert([noteToInsert])
+                .select();
 
-        if (error) throw error;
-        if (!data || data.length === 0)
-            throw new Error("No data returned after insert");
+            if (error) throw error;
+            if (!data || data.length === 0)
+                throw new Error("No data returned after insert");
 
-        return {
-            ...data[0],
-            persistenceStatus: "persisted",
-        } as Note;
-    } catch (error: unknown) {
-        const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error adding note:", errorMessage);
-        throw new Error(`Failed to add note: ${errorMessage}`);
-    }
+            return {
+                ...data[0],
+                persistenceStatus: "persisted",
+            } as Note;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error adding note:", errorMessage);
+            throw new Error(`Failed to add note: ${errorMessage}`);
+        }
+    });
 }
 
 /**
@@ -95,25 +100,29 @@ export async function deleteNote({
 }: {
     noteId: string;
 }): Promise<{ noteId: string }> {
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
+    return measureExecutionTime("deleteNote", async () => {
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
 
-    try {
-        const { error } = await supabase
-            .from("notes")
-            .delete()
-            .eq("id", noteId)
-            .eq("user_id", user.id);
+        try {
+            const { error } = await supabase
+                .from("notes")
+                .delete()
+                .eq("id", noteId)
+                .eq("user_id", user.id);
 
-        if (error) throw error;
+            if (error) throw error;
 
-        return { noteId };
-    } catch (error: unknown) {
-        const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error fetching notes:", errorMessage);
-        throw new Error(`Failed to fetch notes: ${errorMessage}`);
-    }
+            return { noteId };
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error deleting note:", errorMessage);
+            throw new Error(`Failed to delete note: ${errorMessage}`);
+        }
+    });
 }
 
 /**
@@ -138,41 +147,47 @@ export async function fetchNotes({
     contexts?: string[];
     method?: "AND" | "OR";
 }): Promise<Note[]> {
-    if (!keyContext && (!contexts || contexts.length === 0)) {
-        throw new Error(
-            "At least one filtering parameter (keyContext or contexts) must be provided"
-        );
-    }
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
-    try {
-        // Start query with user filtering using the provided userId
-
-        let query = supabase
-            .from("notes")
-            .select("*")
-            .eq("user_id", user.id) // Filter by provided user ID
-            .order("created_at", { ascending: false });
-
-        if (contexts && contexts.length > 0) {
-            query = applyContextsArrayFilter(query, contexts, method || "OR");
-        } else if (keyContext) {
-            // Fallback to single keyContext filtering (existing functionality)
-            query = query.contains("contexts", [keyContext]);
+    return measureExecutionTime("fetchNotes", async () => {
+        if (!keyContext && (!contexts || contexts.length === 0)) {
+            throw new Error(
+                "At least one filtering parameter (keyContext or contexts) must be provided"
+            );
         }
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
+        try {
+            // Start query with user filtering using the provided userId
 
-        const { data, error } = await query;
+            let query = supabase
+                .from("notes")
+                .select("*")
+                .eq("user_id", user.id) // Filter by provided user ID
+                .order("created_at", { ascending: false });
 
-        if (error) {
-            console.error("Supabase error:", error);
+            if (contexts && contexts.length > 0) {
+                query = applyContextsArrayFilter(
+                    query,
+                    contexts,
+                    method || "OR"
+                );
+            } else if (keyContext) {
+                // Fallback to single keyContext filtering (existing functionality)
+                query = query.contains("contexts", [keyContext]);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error("Supabase error:", error);
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching notes:", error);
             throw error;
         }
-
-        return data || [];
-    } catch (error) {
-        console.error("Error fetching notes:", error);
-        throw error;
-    }
+    });
 }
 
 /**
@@ -199,42 +214,46 @@ export async function patchNote({
         embedding_created_at?: string;
     };
 }): Promise<Note> {
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
+    return measureExecutionTime("patchNote", async () => {
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
 
-    try {
-        // Prepare the update object
-        const updateData: Record<string, unknown> = {};
+        try {
+            // Prepare the update object
+            const updateData: Record<string, unknown> = {};
 
-        // Only include fields that are actually being updated
-        Object.entries(patches).forEach(([key, value]) => {
-            if (value !== undefined) {
-                updateData[key] = value;
-            }
-        });
+            // Only include fields that are actually being updated
+            Object.entries(patches).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    updateData[key] = value;
+                }
+            });
 
-        // Update the note
-        const { data, error } = await supabase
-            .from("notes")
-            .update(updateData)
-            .eq("id", noteId)
-            .eq("user_id", user.id)
-            .select()
-            .single();
+            // Update the note
+            const { data, error } = await supabase
+                .from("notes")
+                .update(updateData)
+                .eq("id", noteId)
+                .eq("user_id", user.id)
+                .select()
+                .single();
 
-        if (error) throw error;
-        if (!data) throw new Error("No data returned after update");
+            if (error) throw error;
+            if (!data) throw new Error("No data returned after update");
 
-        return {
-            ...data,
-            persistenceStatus: "persisted",
-        } as Note;
-    } catch (error: unknown) {
-        const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error patching note:", errorMessage);
-        throw new Error(`Failed to patch note: ${errorMessage}`);
-    }
+            return {
+                ...data,
+                persistenceStatus: "persisted",
+            } as Note;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error patching note:", errorMessage);
+            throw new Error(`Failed to patch note: ${errorMessage}`);
+        }
+    });
 }
 
 /**

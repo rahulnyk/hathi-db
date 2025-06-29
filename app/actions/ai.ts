@@ -2,6 +2,7 @@
 
 import { fetchContextStats } from "./notes";
 import { aiProvider } from "@/lib/ai";
+import { measureExecutionTime } from "@/lib/performance";
 
 /**
  * Generates context suggestions for a note using AI
@@ -14,23 +15,33 @@ export async function suggestContexts({
 }: {
     content: string;
 }): Promise<string[]> {
-    try {
-        // Fetch user's existing contexts
-        const contextStats = await fetchContextStats();
-        const userContexts = contextStats.map(stat => stat.context);
+    return measureExecutionTime("suggestContexts", async () => {
+        try {
+            // Fetch user's existing contexts
+            const contextStats = await fetchContextStats();
+            const userContexts = contextStats.map((stat) => stat.context);
 
-        // Generate suggestions using AI
-        const response = await aiProvider.suggestContexts({
-            content,
-            userContexts,
-        });
+            // Generate suggestions using AI
+            const response = await aiProvider.suggestContexts({
+                content,
+                userContexts,
+            });
 
-        return response.suggestions;
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error generating context suggestions:", errorMessage);
-        throw new Error(`Failed to generate context suggestions: ${errorMessage}`);
-    }
+            return response.suggestions;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error(
+                "Error generating context suggestions:",
+                errorMessage
+            );
+            throw new Error(
+                `Failed to generate context suggestions: ${errorMessage}`
+            );
+        }
+    });
 }
 
 /**
@@ -44,23 +55,28 @@ export async function structurizeNote({
 }: {
     content: string;
 }): Promise<string> {
-    try {
-        // Fetch user's existing contexts for better structuring
-        const contextStats = await fetchContextStats();
-        const userContexts = contextStats.map(stat => stat.context);
+    return measureExecutionTime("structurizeNote", async () => {
+        try {
+            // Fetch user's existing contexts for better structuring
+            const contextStats = await fetchContextStats();
+            const userContexts = contextStats.map((stat) => stat.context);
 
-        // Generate structured content using AI
-        const response = await aiProvider.structurizeNote({
-            content,
-            userContexts,
-        });
+            // Generate structured content using AI
+            const response = await aiProvider.structurizeNote({
+                content,
+                userContexts,
+            });
 
-        return response.structuredContent;
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error structurizing note:", errorMessage);
-        throw new Error(`Failed to structurize note: ${errorMessage}`);
-    }
+            return response.structuredContent;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error structurizing note:", errorMessage);
+            throw new Error(`Failed to structurize note: ${errorMessage}`);
+        }
+    });
 }
 
 /**
@@ -74,12 +90,17 @@ export async function generateEmbedding({
 }: {
     content: string;
 }): Promise<number[]> {
-    try {
-        const response = await aiProvider.generateEmbedding({ content });
-        return response.embedding;
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-        console.error("Error generating embedding:", errorMessage);
-        throw new Error(`Failed to generate embedding: ${errorMessage}`);
-    }
+    return measureExecutionTime("generateEmbedding", async () => {
+        try {
+            const response = await aiProvider.generateEmbedding({ content });
+            return response.embedding;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error generating embedding:", errorMessage);
+            throw new Error(`Failed to generate embedding: ${errorMessage}`);
+        }
+    });
 }
