@@ -2,11 +2,6 @@
  * Q&A prompts for answering questions based on user's notes
  */
 
-/**
- * Q&A prompts for answering questions based on user's notes
- */
-
-// Updated interface to match the enhanced data structure
 interface EnhancedNote {
     id: string;
     content: string;
