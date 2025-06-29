@@ -291,9 +291,18 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
             const result = await answerQuestion(question);
             
             if (result.answer) {
+                // Format sources section if there are relevant sources
+                let sourcesSection = "";
+                if (result.relevantSources && result.relevantSources.length > 0) {
+                    const sourceLinks = result.relevantSources
+                        .map(noteId => `[Note ${noteId.slice(-8)}](#note-${noteId})`)
+                        .join(", ");
+                    sourcesSection = `\n\n**Sources:** ${sourceLinks}`;
+                }
+
                 // Create an AI answer note that appears in the timeline
                 const aiAnswerNote = createOptimisticNote(
-                    `**Q:** ${question}\n\n**A:** ${result.answer}`,
+                    `**Q:** ${question}\n\n**A:** ${result.answer}${sourcesSection}`,
                     user.id,
                     currentContext,
                     "ai-note", // Use AI note type to identify AI answers
@@ -308,7 +317,8 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                 dispatch(markAsAIAnswer({
                     noteId: aiAnswerNote.id,
                     question: question,
-                    answer: result.answer
+                    answer: result.answer,
+                    relevantSources: result.relevantSources
                 }));
                 
                 // Clear the input

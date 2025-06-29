@@ -29,6 +29,7 @@ export interface AIAnswerState {
     question?: string;
     answer?: string;
     createdAt?: string;
+    relevantSources?: string[]; // Note IDs that were used as context
 }
 
 interface AIState {
@@ -244,13 +245,15 @@ const aiSlice = createSlice({
             noteId: string;
             question: string;
             answer: string;
+            relevantSources?: string[];
         }>) => {
-            const { noteId, question, answer } = action.payload;
+            const { noteId, question, answer, relevantSources } = action.payload;
             state.aiAnswers[noteId] = {
                 isAIAnswer: true,
                 question,
                 answer,
                 createdAt: new Date().toISOString(),
+                relevantSources,
             };
         },
         removeAIAnswer: (state, action: PayloadAction<string>) => {
