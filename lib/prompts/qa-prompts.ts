@@ -2,46 +2,74 @@
  * Q&A prompts for answering questions based on user's notes
  */
 
+/**
+ * Q&A prompts for answering questions based on user's notes
+ */
+
+// Updated interface to match the enhanced data structure
+interface EnhancedNote {
+    id: string;
+    content: string;
+    key_context?: string;
+    contexts?: string[];
+    tags?: string[];
+    note_type?: string;
+    suggested_contexts?: string[];
+    created_at: string;
+}
+
 export function qaSystemPrompt(): string {
     return `You are an intelligent assistant helping a user answer questions based on their personal notes and knowledge base.
 
 Your role:
-- Analyze the user's question and the provided notes context
+- Analyze the user's question and the provided structured notes data
 - Provide accurate, helpful answers based on the available information
-- If the information is insufficient, clearly state what's missing
-- Reference specific notes when relevant (by date or context)
+- Leverage the rich metadata (contexts, tags, note types) for better understanding
+- Reference specific notes when relevant (by date, context, or type)
 - Maintain a conversational and helpful tone
 - Synthesize information from multiple notes when relevant
 
 Guidelines:
-- Use ONLY the provided notes context to answer questions
+- Use ONLY the provided notes data to answer questions
+- Pay attention to metadata like key_context, tags, note_type, and suggested_contexts
+- Prioritize notes with relevant contexts and tags that match the question intent
+- Distinguish between different note types (todos vs notes vs other types)
 - Be specific and cite relevant information when possible
 - If you can't find relevant information, say so clearly and suggest what to ask instead
 - Don't make up information that's not in the notes
 - Organize your response in a clear, readable format
 - Include references to specific concepts, contexts, or dates when relevant
-- If multiple notes contain related information, synthesize them into a coherent answer
-- When referencing notes, mention the date or context to help the user locate them`;
+- When referencing notes, mention the date, context, or tags to help the user locate them
+- Use the structured metadata to provide more intelligent categorization and grouping of information`;
 }
 
 export function qaUserPrompt(question: string, notesContext: string, userContexts: string[]): string {
     const contextsText = userContexts.length > 0 
-        ? `\n\nUser's known contexts: ${userContexts.join(', ')}`
+        ? `\n\nUser's frequently used contexts: ${userContexts.join(', ')}`
         : '';
 
     return `Question: ${question}
 
-Available Notes Context:
+Available Notes Data (structured JSON format):
 ${notesContext}${contextsText}
 
-Please answer the question based on the available information from the notes. If you need to reference specific notes or contexts, please do so clearly.`;
+Please answer the question based on the available structured information from the notes. Use the metadata (contexts, tags, note_type, etc.) to provide more intelligent and relevant answers. If you need to reference specific notes, please use the metadata to help the user locate them.`;
 }
 
-export function formatNotesForContext(notes: Array<{id: string, content: string, contexts?: string[], created_at: string}>): string {
-    return notes.map(note => {
-        const contexts = note.contexts?.length ? ` [Contexts: ${note.contexts.join(', ')}]` : '';
-        const date = new Date(note.created_at).toLocaleDateString();
-        return `--- Note (${date})${contexts} ---
-${note.content}`;
-    }).join('\n\n');
+export function formatNotesForContext(notes: EnhancedNote[]): string {
+    return JSON.stringify(
+        notes.map(note => ({
+            id: note.id,
+            content: note.content,
+            key_context: note.key_context || null,
+            contexts: note.contexts || [],
+            tags: note.tags || [],
+            note_type: note.note_type || 'note',
+            suggested_contexts: note.suggested_contexts || [],
+            date_created: new Date(note.created_at).toISOString(),
+            date_created_readable: new Date(note.created_at).toLocaleDateString()
+        })),
+        null,
+        2
+    );
 }
