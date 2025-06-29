@@ -90,6 +90,26 @@ export function NoteCard({ note }: { note: Note }) {
                     "";
                 console.log("Hashtag clicked:", content);
             }
+
+            // Handle clicks on source note links in AI answers
+            if (target.tagName === "A" && target.getAttribute("href")?.startsWith("#note-")) {
+                event.preventDefault();
+                const noteId = target.getAttribute("href")?.replace("#note-", "");
+                if (noteId) {
+                    // Scroll to the referenced note if it exists in the DOM
+                    const targetNote = document.querySelector(`[data-note-id="${noteId}"]`);
+                    if (targetNote) {
+                        targetNote.scrollIntoView({ behavior: "smooth", block: "center" });
+                        // Add a temporary highlight effect
+                        targetNote.classList.add("bg-yellow-100", "dark:bg-yellow-900/30");
+                        setTimeout(() => {
+                            targetNote.classList.remove("bg-yellow-100", "dark:bg-yellow-900/30");
+                        }, 2000);
+                    } else {
+                        console.log("Referenced note not found in current view:", noteId);
+                    }
+                }
+            }
         };
 
         document.addEventListener("click", handleClick);
@@ -98,8 +118,9 @@ export function NoteCard({ note }: { note: Note }) {
 
     return (
         <div
+            data-note-id={note.id}
             className={cn(
-                "p-2 sm:p-4 py-0 rounded-lg relative",
+                "p-2 sm:p-4 py-0 rounded-lg relative transition-colors duration-500",
                 note.isEditing &&
                     "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30",
                 isAiAnswer &&

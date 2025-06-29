@@ -25,7 +25,6 @@ Your role:
 - Analyze the user's question and the provided structured notes data
 - Provide accurate, helpful answers based on the available information
 - Leverage the rich metadata (contexts, tags, note types) for better understanding
-- Reference specific notes when relevant (by date, context, or type)
 - Maintain a conversational and helpful tone
 - Synthesize information from multiple notes when relevant
 
@@ -38,9 +37,10 @@ Guidelines:
 - If you can't find relevant information, say so clearly and suggest what to ask instead
 - Don't make up information that's not in the notes
 - Organize your response in a clear, readable format
-- Include references to specific concepts, contexts, or dates when relevant
-- When referencing notes, mention the date, context, or tags to help the user locate them
-- Use the structured metadata to provide more intelligent categorization and grouping of information`;
+- Include references to dates, contexts, or other identifying information to help the user locate relevant notes
+- Do NOT include note IDs in your response text - the system will automatically provide clickable source links
+- Focus on the content and context rather than technical identifiers
+- When referencing specific notes, use descriptive information like dates, contexts, or key phrases instead of IDs`;
 }
 
 export function qaUserPrompt(question: string, notesContext: string, userContexts: string[]): string {
@@ -53,7 +53,7 @@ export function qaUserPrompt(question: string, notesContext: string, userContext
 Available Notes Data (structured JSON format):
 ${notesContext}${contextsText}
 
-Please answer the question based on the available structured information from the notes. Use the metadata (contexts, tags, note_type, etc.) to provide more intelligent and relevant answers. If you need to reference specific notes, please use the metadata to help the user locate them.`;
+Please answer the question based on the available structured information from the notes. Use the metadata (contexts, tags, note_type, etc.) to provide more intelligent and relevant answers. When referencing specific notes, use descriptive information like dates, contexts, or key content phrases rather than technical note IDs. The system will automatically provide clickable source references.`;
 }
 
 export function formatNotesForContext(notes: EnhancedNote[]): string {
