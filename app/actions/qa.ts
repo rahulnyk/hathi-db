@@ -10,7 +10,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 interface NoteWithSimilarity {
     id: string;
     content: string;
+    key_context?: string;
     contexts?: string[];
+    tags?: string[];
+    note_type?: string;
+    suggested_contexts?: string[];
     created_at: string;
     similarity?: number;
 }
@@ -107,7 +111,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
     // First, try to get ANY notes for this user to see if they exist
     const { data: allNotes, error: notesError } = await supabase
         .from("notes")
-        .select("id, content, contexts, created_at")
+        .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -132,10 +136,16 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
         return await generateAnswer(question, (allNotes.slice(0, 20) as NoteWithSimilarity[]) || [], userId, supabase);
     }
 
-    // Try simple content matching first (case-insensitive)
+    // Try simple content matching first (case-insensitive) - now includes metadata
     const matchingNotes = allNotes.filter(note => {
         const content = note.content.toLowerCase();
-        return keywords.some(keyword => content.includes(keyword));
+        const keyContext = note.key_context?.toLowerCase() || '';
+        const contexts = note.contexts?.join(' ').toLowerCase() || '';
+        const tags = note.tags?.join(' ').toLowerCase() || '';
+        const suggestedContexts = note.suggested_contexts?.join(' ').toLowerCase() || '';
+        const allText = `${content} ${keyContext} ${contexts} ${tags} ${suggestedContexts}`;
+        
+        return keywords.some(keyword => allText.includes(keyword));
     });
 
     if (matchingNotes.length > 0) {
@@ -148,7 +158,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
         
         const { data: keywordNotes } = await supabase
             .from("notes")
-            .select("id, content, contexts, created_at")
+            .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
             .eq("user_id", userId)
             .textSearch('content', searchTerm, { type: 'websearch' })
             .limit(15);

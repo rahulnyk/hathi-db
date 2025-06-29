@@ -11,7 +11,11 @@ CREATE OR REPLACE FUNCTION search_notes_by_similarity(
 RETURNS TABLE(
     id UUID,
     content TEXT,
+    key_context TEXT,
     contexts TEXT[],
+    tags TEXT[],
+    note_type TEXT,
+    suggested_contexts TEXT[],
     created_at TIMESTAMPTZ,
     similarity FLOAT
 ) AS $$
@@ -20,7 +24,11 @@ BEGIN
     SELECT 
         n.id,
         n.content,
+        n.key_context,
         n.contexts,
+        n.tags,
+        n.note_type,
+        n.suggested_contexts,
         n.created_at,
         (1 - (n.embedding <=> p_query_embedding)) AS similarity
     FROM notes n
