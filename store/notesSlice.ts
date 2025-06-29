@@ -14,7 +14,7 @@ import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
 
 // Define possible note types
-export type NoteType = "note" | "todo" | null;
+export type NoteType = "note" | "todo" | "ai-note" | null;
 
 export type Note = {
     id: string;

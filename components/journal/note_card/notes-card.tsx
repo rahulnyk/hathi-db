@@ -15,6 +15,7 @@ import { setCurrentContext } from "@/store/notesSlice";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
+    isAIAnswerNote,
 } from "@/store/aiSlice";
 import { ContextContainer } from "./context-container";
 import { CodeBlock } from "./code-block";
@@ -29,8 +30,10 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
-    // Check if this is an AI answer note
-    const isAiAnswer = note.tags?.includes("ai-answer");
+    // Check if this is an AI answer note using the AI slice utility
+    const isAiAnswer = useAppSelector((state) => 
+        isAIAnswerNote(state, note.id)
+    ) || note.note_type === "ai-note"; // Fallback to note type for backward compatibility
 
     // Determine which content to display
     const displayContent =

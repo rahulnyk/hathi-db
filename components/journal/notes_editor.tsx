@@ -6,6 +6,7 @@ import { addNote, addNoteOptimistically, patchNote, exitEditMode, updateEditingC
 import {
     generateSuggestedContexts,
     generateEmbeddingThunk,
+    markAsAIAnswer,
 } from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
@@ -295,13 +296,20 @@ export function NotesEditor({ isEditMode, noteId, initialContent, onCancel, onSa
                     `**Q:** ${question}\n\n**A:** ${result.answer}`,
                     user.id,
                     currentContext,
-                    "note", // Use regular note type
+                    "ai-note", // Use AI note type to identify AI answers
                     [], // No contexts extracted from AI answers
-                    ["ai-answer"] // Special tag for AI answers
+                    [] // No special tags needed
                 );
 
                 // Add the AI answer to the timeline
                 dispatch(addNoteOptimistically(aiAnswerNote));
+                
+                // Mark this note as an AI answer in the AI slice
+                dispatch(markAsAIAnswer({
+                    noteId: aiAnswerNote.id,
+                    question: question,
+                    answer: result.answer
+                }));
                 
                 // Clear the input
                 setContent("");
