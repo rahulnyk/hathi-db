@@ -109,13 +109,13 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 5. Install dependencies:
 
    ```bash
-   npm install
+   yarn install
    ```
 
 6. **Important**: Run database migrations to set up the schema and AI features:
 
    ```bash
-   npm run migrate
+   yarn migrate
    ```
 
    This will create:
@@ -127,7 +127,7 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 7. Start the development server:
 
    ```bash
-   npm run dev
+   yarn dev
    ```
 
 8. Visit `http://localhost:3000` and start taking notes!
