@@ -5,6 +5,7 @@ import { aiProvider } from "@/lib/ai";
 import { formatNotesForContext } from "@/lib/prompts/qa-prompts";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
 
 // Types for database responses
 interface NoteWithSimilarity {
@@ -63,8 +64,8 @@ export async function answerQuestion(question: string): Promise<QAResult> {
             {
                 p_user_id: user.id,
                 p_query_embedding: questionEmbedding.embedding,
-                p_similarity_threshold: 0.7, // Adjust threshold as needed
-                p_limit: 10 // Limit results to most relevant notes
+                p_similarity_threshold: QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
+                p_limit: DEFAULT_SEARCH_LIMIT
             }
         );
 
@@ -81,8 +82,8 @@ export async function answerQuestion(question: string): Promise<QAResult> {
                 {
                     p_user_id: user.id,
                     p_query_embedding: questionEmbedding.embedding,
-                    p_similarity_threshold: 0.5, // Lower threshold
-                    p_limit: 15
+                    p_similarity_threshold: QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
+                    p_limit: DEFAULT_SEARCH_LIMIT
                 }
             );
 
@@ -114,7 +115,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
         .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(QA_SEARCH_LIMITS.MAX_USER_NOTES);
     
     if (notesError) {
         console.error("Error fetching notes:", notesError);
@@ -133,7 +134,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
         .filter(word => word.length > 2 && !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'not', 'had'].includes(word));
     
     if (keywords.length === 0) {
-        return await generateAnswer(question, (allNotes.slice(0, 20) as NoteWithSimilarity[]) || [], userId, supabase);
+        return await generateAnswer(question, (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
     }
 
     // Try simple content matching first (case-insensitive) - now includes metadata
@@ -149,7 +150,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
     });
 
     if (matchingNotes.length > 0) {
-        return await generateAnswer(question, (matchingNotes.slice(0, 15) as NoteWithSimilarity[]) || [], userId, supabase);
+        return await generateAnswer(question, (matchingNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
     }
 
     // If no keyword matches, try PostgreSQL text search as last resort
@@ -161,7 +162,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
             .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
             .eq("user_id", userId)
             .textSearch('content', searchTerm, { type: 'websearch' })
-            .limit(15);
+            .limit(DEFAULT_SEARCH_LIMIT);
         
         if (keywordNotes && keywordNotes.length > 0) {
             return await generateAnswer(question, (keywordNotes as NoteWithSimilarity[]) || [], userId, supabase);
@@ -171,7 +172,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
     }
 
     // Final fallback: use most recent notes
-    return await generateAnswer(question, (allNotes.slice(0, 20) as NoteWithSimilarity[]) || [], userId, supabase);
+    return await generateAnswer(question, (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
 }
 
 /**
