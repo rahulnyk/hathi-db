@@ -1,17 +1,30 @@
 /**
- * Q&A prompts for answering questions based on user's notes
+ * Formats an array of notes into a structured JSON string for AI context.
+ *
+ * This function takes a list of `EnhancedNote` objects and transforms them into a
+ * human-readable, pretty-printed JSON string. It selects key fields from each note,
+ * adds formatted creation dates (`toISOString` and `toLocaleDateString`), and ensures
+ * that optional fields have default values. The resulting string is designed to be
+ * passed as part of a prompt to an AI model, providing it with the necessary
+ * context to answer questions based on the user's notes.
+ *
+ * @param notes - The array of `EnhancedNote` objects to be formatted.
+ * @returns A pretty-printed JSON string representing the provided notes, ready for inclusion in an AI prompt.
  */
+import type { Note } from "@/store/notesSlice";
 
-interface EnhancedNote {
-    id: string;
-    content: string;
-    key_context?: string;
-    contexts?: string[];
-    tags?: string[];
-    note_type?: string;
-    suggested_contexts?: string[];
-    created_at: string;
-}
+interface EnhancedNote
+    extends Pick<
+        Note,
+        | "id"
+        | "content"
+        | "key_context"
+        | "contexts"
+        | "tags"
+        | "note_type"
+        // | "suggested_contexts"
+        | "created_at"
+    > {}
 
 export function qaSystemPrompt(): string {
     return `You are an intelligent assistant helping a user answer questions based on their personal notes and knowledge base.
@@ -38,10 +51,15 @@ Guidelines:
 - When referencing specific notes, use descriptive information like dates, contexts, or key phrases instead of IDs`;
 }
 
-export function qaUserPrompt(question: string, notesContext: string, userContexts: string[]): string {
-    const contextsText = userContexts.length > 0 
-        ? `\n\nUser's frequently used contexts: ${userContexts.join(', ')}`
-        : '';
+export function qaUserPrompt(
+    question: string,
+    notesContext: string,
+    userContexts: string[]
+): string {
+    const contextsText =
+        userContexts.length > 0
+            ? `\n\nUser's frequently used contexts: ${userContexts.join(", ")}`
+            : "";
 
     return `Question: ${question}
 
@@ -53,16 +71,18 @@ Please answer the question based on the available structured information from th
 
 export function formatNotesForContext(notes: EnhancedNote[]): string {
     return JSON.stringify(
-        notes.map(note => ({
+        notes.map((note) => ({
             id: note.id,
             content: note.content,
             key_context: note.key_context || null,
             contexts: note.contexts || [],
             tags: note.tags || [],
-            note_type: note.note_type || 'note',
-            suggested_contexts: note.suggested_contexts || [],
-            date_created: new Date(note.created_at).toISOString(),
-            date_created_readable: new Date(note.created_at).toLocaleDateString()
+            note_type: note.note_type || "note",
+            // suggested_contexts: note.suggested_contexts || [],
+            // date_created: new Date(note.created_at).toISOString(),
+            date_created_readable: new Date(
+                note.created_at
+            ).toLocaleDateString(),
         })),
         null,
         2

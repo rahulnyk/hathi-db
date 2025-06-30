@@ -7,24 +7,22 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
 import { AI_ANSWERS_ENABLED } from "@/lib/constants/ai-config";
-
+import type { Note } from "@/store/notesSlice";
+import { ContextStat } from "./notes";
 // Types for database responses
-interface NoteWithSimilarity {
-    id: string;
-    content: string;
-    key_context?: string;
-    contexts?: string[];
-    tags?: string[];
-    note_type?: string;
-    suggested_contexts?: string[];
-    created_at: string;
+interface NoteWithSimilarity
+    extends Pick<
+        Note,
+        | "id"
+        | "content"
+        | "key_context"
+        | "contexts"
+        | "tags"
+        | "note_type"
+        | "suggested_contexts"
+        | "created_at"
+    > {
     similarity?: number;
-}
-
-interface ContextStat {
-    context: string;
-    count: number;
-    lastUsed: string;
 }
 
 export interface QAResult {
@@ -39,10 +37,13 @@ export interface QAResult {
 export async function answerQuestion(question: string): Promise<QAResult> {
     try {
         const supabase = await createClient();
-        
+
         // Check authentication
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser();
+
         if (authError || !user) {
             redirect("/auth/login");
         }
@@ -51,7 +52,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
         let questionEmbedding;
         try {
             questionEmbedding = await aiProvider.generateEmbedding({
-                content: question
+                content: question,
             });
         } catch (embeddingError) {
             console.error("Error generating embedding:", embeddingError);
@@ -61,12 +62,13 @@ export async function answerQuestion(question: string): Promise<QAResult> {
 
         // Use semantic search to find relevant notes
         const { data: relevantNotes, error: searchError } = await supabase.rpc(
-            'search_notes_by_similarity',
+            "search_notes_by_similarity",
             {
                 p_user_id: user.id,
                 p_query_embedding: questionEmbedding.embedding,
-                p_similarity_threshold: QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
-                p_limit: DEFAULT_SEARCH_LIMIT
+                p_similarity_threshold:
+                    QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
+                p_limit: DEFAULT_SEARCH_LIMIT,
             }
         );
 
@@ -79,29 +81,39 @@ export async function answerQuestion(question: string): Promise<QAResult> {
         if (!relevantNotes || relevantNotes.length === 0) {
             // Try with lower threshold if no results
             const { data: fallbackNotes } = await supabase.rpc(
-                'search_notes_by_similarity',
+                "search_notes_by_similarity",
                 {
                     p_user_id: user.id,
                     p_query_embedding: questionEmbedding.embedding,
-                    p_similarity_threshold: QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
-                    p_limit: DEFAULT_SEARCH_LIMIT
+                    p_similarity_threshold:
+                        QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
+                    p_limit: DEFAULT_SEARCH_LIMIT,
                 }
             );
 
             if (!fallbackNotes || fallbackNotes.length === 0) {
                 return await fallbackToBasicSearch(question, user.id, supabase);
             }
-            
-            return await generateAnswer(question, (fallbackNotes as NoteWithSimilarity[]) || [], user.id, supabase);
+
+            return await generateAnswer(
+                question,
+                (fallbackNotes as NoteWithSimilarity[]) || [],
+                user.id,
+                supabase
+            );
         }
 
-        return await generateAnswer(question, (relevantNotes as NoteWithSimilarity[]) || [], user.id, supabase);
-
+        return await generateAnswer(
+            question,
+            (relevantNotes as NoteWithSimilarity[]) || [],
+            user.id,
+            supabase
+        );
     } catch (error) {
         console.error("Error in answerQuestion:", error);
         return {
             answer: "Sorry, I encountered an error while trying to answer your question. Please try again.",
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: error instanceof Error ? error.message : "Unknown error",
         };
     }
 }
@@ -109,15 +121,21 @@ export async function answerQuestion(question: string): Promise<QAResult> {
 /**
  * Fallback to basic keyword search when semantic search fails or returns no results
  */
-async function fallbackToBasicSearch(question: string, userId: string, supabase: SupabaseClient): Promise<QAResult> {
+async function fallbackToBasicSearch(
+    question: string,
+    userId: string,
+    supabase: SupabaseClient
+): Promise<QAResult> {
     // First, try to get ANY notes for this user to see if they exist
     const { data: allNotes, error: notesError } = await supabase
         .from("notes")
-        .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
+        .select(
+            "id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at"
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(QA_SEARCH_LIMITS.MAX_USER_NOTES);
-    
+
     if (notesError) {
         console.error("Error fetching notes:", notesError);
     }
@@ -125,65 +143,137 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
     if (!allNotes || allNotes.length === 0) {
         return {
             answer: "I don't see any notes in your knowledge base yet. Try adding some notes first!",
-            relevantSources: []
+            relevantSources: [],
         };
     }
 
     // Extract keywords from question for basic search
-    const keywords = question.toLowerCase()
+    const keywords = question
+        .toLowerCase()
         .split(/\s+/)
-        .filter(word => word.length > 2 && !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'not', 'had'].includes(word));
-    
+        .filter(
+            (word) =>
+                word.length > 2 &&
+                ![
+                    "the",
+                    "and",
+                    "for",
+                    "are",
+                    "but",
+                    "not",
+                    "you",
+                    "all",
+                    "can",
+                    "had",
+                    "her",
+                    "was",
+                    "one",
+                    "our",
+                    "out",
+                    "day",
+                    "get",
+                    "has",
+                    "him",
+                    "his",
+                    "how",
+                    "its",
+                    "may",
+                    "new",
+                    "now",
+                    "old",
+                    "see",
+                    "two",
+                    "way",
+                    "who",
+                    "boy",
+                    "did",
+                    "not",
+                    "had",
+                ].includes(word)
+        );
+
     if (keywords.length === 0) {
-        return await generateAnswer(question, (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
+        return await generateAnswer(
+            question,
+            (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) ||
+                [],
+            userId,
+            supabase
+        );
     }
 
     // Try simple content matching first (case-insensitive) - now includes metadata
-    const matchingNotes = allNotes.filter(note => {
+    const matchingNotes = allNotes.filter((note) => {
         const content = note.content.toLowerCase();
-        const keyContext = note.key_context?.toLowerCase() || '';
-        const contexts = note.contexts?.join(' ').toLowerCase() || '';
-        const tags = note.tags?.join(' ').toLowerCase() || '';
-        const suggestedContexts = note.suggested_contexts?.join(' ').toLowerCase() || '';
+        const keyContext = note.key_context?.toLowerCase() || "";
+        const contexts = note.contexts?.join(" ").toLowerCase() || "";
+        const tags = note.tags?.join(" ").toLowerCase() || "";
+        const suggestedContexts =
+            note.suggested_contexts?.join(" ").toLowerCase() || "";
         const allText = `${content} ${keyContext} ${contexts} ${tags} ${suggestedContexts}`;
-        
-        return keywords.some(keyword => allText.includes(keyword));
+
+        return keywords.some((keyword) => allText.includes(keyword));
     });
 
     if (matchingNotes.length > 0) {
-        return await generateAnswer(question, (matchingNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
+        return await generateAnswer(
+            question,
+            (matchingNotes.slice(
+                0,
+                DEFAULT_SEARCH_LIMIT
+            ) as NoteWithSimilarity[]) || [],
+            userId,
+            supabase
+        );
     }
 
     // If no keyword matches, try PostgreSQL text search as last resort
     try {
-        const searchTerm = keywords.join(' | '); // OR search
-        
+        const searchTerm = keywords.join(" | "); // OR search
+
         const { data: keywordNotes } = await supabase
             .from("notes")
-            .select("id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at")
+            .select(
+                "id, content, key_context, contexts, tags, note_type, suggested_contexts, created_at"
+            )
             .eq("user_id", userId)
-            .textSearch('content', searchTerm, { type: 'websearch' })
+            .textSearch("content", searchTerm, { type: "websearch" })
             .limit(DEFAULT_SEARCH_LIMIT);
-        
+
         if (keywordNotes && keywordNotes.length > 0) {
-            return await generateAnswer(question, (keywordNotes as NoteWithSimilarity[]) || [], userId, supabase);
+            return await generateAnswer(
+                question,
+                (keywordNotes as NoteWithSimilarity[]) || [],
+                userId,
+                supabase
+            );
         }
     } catch (searchError) {
         console.error("PostgreSQL text search failed:", searchError);
     }
 
     // Final fallback: use most recent notes
-    return await generateAnswer(question, (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [], userId, supabase);
+    return await generateAnswer(
+        question,
+        (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [],
+        userId,
+        supabase
+    );
 }
 
 /**
  * Generate answer using AI with the retrieved notes, or show sources directly
  */
-async function generateAnswer(question: string, notes: NoteWithSimilarity[], userId: string, supabase: SupabaseClient): Promise<QAResult> {
+async function generateAnswer(
+    question: string,
+    notes: NoteWithSimilarity[],
+    userId: string,
+    supabase: SupabaseClient
+): Promise<QAResult> {
     if (notes.length === 0) {
         return {
             answer: "I don't see any relevant notes in your knowledge base for this question. Try adding some notes first or asking about something else!",
-            relevantSources: []
+            relevantSources: [],
         };
     }
 
@@ -191,17 +281,23 @@ async function generateAnswer(question: string, notes: NoteWithSimilarity[], use
     if (!AI_ANSWERS_ENABLED) {
         // Return a simple message and let the source notes do the talking
         return {
-            answer: `Found ${notes.length} relevant note${notes.length === 1 ? '' : 's'} for: "${question}"`,
-            relevantSources: notes.map(note => note.id)
+            answer: `Found ${notes.length} relevant note${
+                notes.length === 1 ? "" : "s"
+            } for: "${question}"`,
+            relevantSources: notes.map((note) => note.id),
         };
     }
 
     // AI answers are enabled - proceed with AI processing
     // Get user's contexts for better AI understanding
-    const { data: contextStats } = await supabase
-        .rpc("get_user_context_stats", { p_user_id: userId });
-    
-    const userContexts = ((contextStats as ContextStat[]) || []).map(stat => stat.context);
+    const { data: contextStats } = await supabase.rpc(
+        "get_user_context_stats",
+        { p_user_id: userId }
+    );
+
+    const userContexts = ((contextStats as ContextStat[]) || []).map(
+        (stat) => stat.context
+    );
 
     // Format notes for AI context
     const notesContext = formatNotesForContext(notes);
@@ -210,11 +306,11 @@ async function generateAnswer(question: string, notes: NoteWithSimilarity[], use
     const response = await aiProvider.answerQuestion({
         question,
         context: notesContext,
-        userContexts
+        userContexts,
     });
 
     return {
         answer: response.answer,
-        relevantSources: notes.map(note => note.id)
+        relevantSources: notes.map((note) => note.id),
     };
 }
