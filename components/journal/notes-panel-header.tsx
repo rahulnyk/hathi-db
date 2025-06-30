@@ -1,10 +1,20 @@
 "use client";
 
-import { cn, slugToSentenceCase } from "@/lib/utils"; // Added slugToSentenceCase
-import { useAppSelector } from "@/store";
-import { Target } from "lucide-react";
+import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
+import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
+import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentContext
+import { Target, Home } from "lucide-react"; // Added Home icon
+
 export function NotesPanelHeader() {
+    const dispatch = useAppDispatch(); // Initialize dispatch
     const { currentContext } = useAppSelector((state) => state.notes);
+    const todaysDateSlug = dateToSlug(new Date());
+
+    const showHomeButton = currentContext !== todaysDateSlug;
+
+    const handleGoToToday = () => {
+        dispatch(setCurrentContext(todaysDateSlug));
+    };
 
     return (
         <div
@@ -27,7 +37,7 @@ export function NotesPanelHeader() {
                         "accent-font"
                     )}
                 >
-                    <Target size={15} className="hidden md:block" />
+                    <Target size={22} className="hidden md:block" />
                     <h2
                         className={cn(
                             "text-2xl",
@@ -36,10 +46,18 @@ export function NotesPanelHeader() {
                     >
                         {slugToSentenceCase(currentContext)}
                     </h2>
-                    <Target size={15} className="hidden md:block" />
                 </div>
 
-                {/* Removed Right side - Action buttons div */}
+                {/* Home button */}
+                {showHomeButton && (
+                    <button
+                        onClick={handleGoToToday}
+                        className="ml-auto accent-font" // Pushes the button to the right
+                        title="Go to Today"
+                    >
+                        <Home size={24} />
+                    </button>
+                )}
             </div>
             {/* Removed Calendar menu div */}
         </div>

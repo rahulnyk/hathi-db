@@ -44,3 +44,4 @@ pnpm-lock.yaml
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+performance_log.csv
