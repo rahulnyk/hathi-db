@@ -9,6 +9,7 @@ import { AI_ANSWERS_ENABLED } from "@/lib/constants/ai-config";
 import type { Note } from "@/store/notesSlice";
 import { fetchContextStats } from "./contexts";
 import { getAuthUser } from "./get-auth-user";
+import { measureExecutionTime } from "@/lib/performance";
 // Types for database responses
 interface NoteWithSimilarity
     extends Pick<
@@ -35,76 +36,76 @@ export interface QAResult {
  * Server action to answer a question based on user's notes using semantic search
  */
 export async function answerQuestion(question: string): Promise<QAResult> {
-    try {
-        const supabase = await createClient();
-
-        // Check authentication
-        const user = await getAuthUser(supabase);
-
-        // Generate embedding for the question
-        let questionEmbedding;
+    return measureExecutionTime("answerQuestion", async () => {
         try {
-            questionEmbedding = await aiProvider.generateEmbedding({
-                content: question,
-            });
-        } catch (embeddingError) {
-            console.error("Error generating embedding:", embeddingError);
-            // Fallback to basic search if embedding generation fails
-            return await fallbackToBasicSearch(question, supabase);
-        }
+            const supabase = await createClient();
 
-        // Use semantic search to find relevant notes
-        const { data: relevantNotes, error: searchError } = await supabase.rpc(
-            "search_notes_by_similarity",
-            {
-                p_user_id: user.id,
-                p_query_embedding: questionEmbedding.embedding,
-                p_similarity_threshold:
-                    QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
-                p_limit: DEFAULT_SEARCH_LIMIT,
+            // Check authentication
+            const user = await getAuthUser(supabase);
+
+            // Generate embedding for the question
+            let questionEmbedding;
+            try {
+                questionEmbedding = await aiProvider.generateEmbedding({
+                    content: question,
+                });
+            } catch (embeddingError) {
+                console.error("Error generating embedding:", embeddingError);
+                // Fallback to basic search if embedding generation fails
+                return await fallbackToBasicSearch(question, supabase);
             }
-        );
 
-        if (searchError) {
-            console.error("Error in semantic search:", searchError);
-            // Fallback to basic search if semantic search fails
-            return await fallbackToBasicSearch(question, supabase);
-        }
-
-        if (!relevantNotes || relevantNotes.length === 0) {
-            // Try with lower threshold if no results
-            const { data: fallbackNotes } = await supabase.rpc(
-                "search_notes_by_similarity",
-                {
+            // Use semantic search to find relevant notes
+            const { data: relevantNotes, error: searchError } =
+                await supabase.rpc("search_notes_by_similarity", {
                     p_user_id: user.id,
                     p_query_embedding: questionEmbedding.embedding,
                     p_similarity_threshold:
-                        QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
+                        QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
                     p_limit: DEFAULT_SEARCH_LIMIT,
-                }
-            );
+                });
 
-            if (!fallbackNotes || fallbackNotes.length === 0) {
+            if (searchError) {
+                console.error("Error in semantic search:", searchError);
+                // Fallback to basic search if semantic search fails
                 return await fallbackToBasicSearch(question, supabase);
+            }
+
+            if (!relevantNotes || relevantNotes.length === 0) {
+                // Try with lower threshold if no results
+                const { data: fallbackNotes } = await supabase.rpc(
+                    "search_notes_by_similarity",
+                    {
+                        p_user_id: user.id,
+                        p_query_embedding: questionEmbedding.embedding,
+                        p_similarity_threshold:
+                            QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
+                        p_limit: DEFAULT_SEARCH_LIMIT,
+                    }
+                );
+
+                if (!fallbackNotes || fallbackNotes.length === 0) {
+                    return await fallbackToBasicSearch(question, supabase);
+                }
+
+                return await generateAnswer(
+                    question,
+                    (fallbackNotes as NoteWithSimilarity[]) || []
+                );
             }
 
             return await generateAnswer(
                 question,
-                (fallbackNotes as NoteWithSimilarity[]) || []
+                (relevantNotes as NoteWithSimilarity[]) || []
             );
+        } catch (error) {
+            console.error("Error in answerQuestion:", error);
+            return {
+                answer: "Sorry, I encountered an error while trying to answer your question. Please try again.",
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
         }
-
-        return await generateAnswer(
-            question,
-            (relevantNotes as NoteWithSimilarity[]) || []
-        );
-    } catch (error) {
-        console.error("Error in answerQuestion:", error);
-        return {
-            answer: "Sorry, I encountered an error while trying to answer your question. Please try again.",
-            error: error instanceof Error ? error.message : "Unknown error",
-        };
-    }
+    });
 }
 
 /**
