@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAppSelector } from "@/store";
 import { getAIAnswerDetails } from "@/store/aiSlice";
 import { CollapsibleSourceNote } from "./collapsible-source-note";
@@ -15,19 +15,21 @@ interface SourceNotesListProps {
 
 export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
     // Get AI answer details to access source note IDs
-    const aiAnswerDetails = useAppSelector((state) => 
+    const aiAnswerDetails = useAppSelector((state) =>
         getAIAnswerDetails(state, aiNoteId)
     );
 
     // Get notes currently loaded in Redux state
     const notesInState = useAppSelector((state) => state.notes.notes);
-    
+
     // State to hold source notes (including fetched ones)
     const [sourceNotes, setSourceNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Get source note IDs
-    const sourceNoteIds = aiAnswerDetails?.relevantSources || [];
+    // Memoize source note IDs to prevent unnecessary re-renders
+    const sourceNoteIds = useMemo(() => {
+        return aiAnswerDetails?.relevantSources || [];
+    }, [aiAnswerDetails?.relevantSources]);
 
     // Effect to fetch missing source notes
     useEffect(() => {
@@ -38,12 +40,12 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
 
         // Find notes that are already in Redux state
         const notesFromState = sourceNoteIds
-            .map(id => notesInState.find(note => note.id === id))
+            .map((id) => notesInState.find((note) => note.id === id))
             .filter((note): note is Note => note !== undefined);
 
         // Find missing note IDs
         const missingNoteIds = sourceNoteIds.filter(
-            id => !notesInState.find(note => note.id === id)
+            (id) => !notesInState.find((note) => note.id === id)
         );
 
         if (missingNoteIds.length === 0) {
@@ -60,21 +62,18 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
             setIsLoading(true);
             try {
                 const fetchedNotes = await fetchNotesByIds(missingNoteIds);
-                
+
                 // Combine notes from state with fetched notes
-                const allSourceNotes = [
-                    ...notesFromState,
-                    ...fetchedNotes
-                ];
-                
+                const allSourceNotes = [...notesFromState, ...fetchedNotes];
+
                 // Sort by original order in sourceNoteIds
                 const sortedNotes = sourceNoteIds
-                    .map(id => allSourceNotes.find(note => note.id === id))
+                    .map((id) => allSourceNotes.find((note) => note.id === id))
                     .filter((note): note is Note => note !== undefined);
-                
+
                 setSourceNotes(sortedNotes);
             } catch (error) {
-                console.error('Error fetching source notes:', error);
+                console.error("Error fetching source notes:", error);
                 // Fallback to notes from state only
                 setSourceNotes(notesFromState);
             } finally {
@@ -110,20 +109,22 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
         <div className={cn("mt-4", className)}>
             <div className="mb-3">
                 <h4 className="text-sm font-semibold text-muted-foreground">
-                    Sources ({sourceNotes.length}{isLoading ? `/${sourceNoteIds.length}` : ''})
+                    Sources ({sourceNotes.length}
+                    {isLoading ? `/${sourceNoteIds.length}` : ""})
                 </h4>
                 <div className="text-xs text-muted-foreground mt-1">
-                    {isLoading && sourceNotes.length < sourceNoteIds.length 
-                        ? `Loading ${sourceNoteIds.length - sourceNotes.length} more source notes...`
-                        : 'Notes used to generate this answer'
-                    }
+                    {isLoading && sourceNotes.length < sourceNoteIds.length
+                        ? `Loading ${
+                              sourceNoteIds.length - sourceNotes.length
+                          } more source notes...`
+                        : "Notes used to generate this answer"}
                 </div>
             </div>
-            
+
             <div className="space-y-2 sm:space-y-3">
                 {sourceNotes.map((note) => (
-                    <CollapsibleSourceNote 
-                        key={note.id} 
+                    <CollapsibleSourceNote
+                        key={note.id}
                         note={note}
                         initiallyCollapsed={true}
                     />
