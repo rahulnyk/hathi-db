@@ -7,14 +7,14 @@ import { setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
 import {
     generateSuggestedContexts,
     generateEmbeddingThunk,
+    markAsAIAnswer,
 } from "@/store/aiSlice";
 import { createOptimisticNote } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-// import { ArrowDownToLine } from "lucide-react";
-// import { ArrowUpToLine } from "lucide-react";
 import { ArrowUp, X, Check } from "lucide-react";
 import { HashLoader } from "react-spinners";
+import { answerQuestion } from "@/app/actions/qa";
 
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
@@ -35,6 +35,10 @@ const BRACKET_PAIRS: Record<string, string> = {
     "{": "}",
     "<": ">",
 };
+
+// Q&A command constants
+const QA_COMMAND = "/q ";
+const QA_COMMAND_PATTERN = /^\/q\s+/i;
 
 // New unified helper function for bracket insertion (wrapping selection or empty pair)
 function handleBracketInsertion(
@@ -278,6 +282,54 @@ export function NotesEditor({
         // Default behavior for other keys or if auto-delete didn't apply
     };
 
+    const handleQAQuestion = async () => {
+        try {
+            // Extract the question by removing the command prefix using the pattern
+            const question = content.trim().replace(QA_COMMAND_PATTERN, '').trim();
+            
+            if (!question) {
+                console.error(`No question provided after ${QA_COMMAND} command`);
+                return;
+            }
+
+            // Call the Q&A action
+            const result = await answerQuestion(question);
+            
+            if (result.answer) {
+                // Create an AI answer note that appears in the timeline
+                const aiAnswerNote = createOptimisticNote(
+                    `**Q:** ${question}\n\n**A:** ${result.answer}`,
+                    user.id,
+                    currentContext,
+                    "ai-note", // Use AI note type to identify AI answers
+                    [], // No contexts extracted from AI answers
+                    [] // No special tags needed
+                );
+
+                // Add the AI answer to the timeline
+                dispatch(addNoteOptimistically(aiAnswerNote));
+                
+                // Mark this note as an AI answer in the AI slice
+                dispatch(markAsAIAnswer({
+                    noteId: aiAnswerNote.id,
+                    question: question,
+                    answer: result.answer,
+                    relevantSources: result.relevantSources
+                }));
+                
+                // Clear the input
+                setContent("");
+            } else {
+                console.error('Failed to get AI answer:', result.error);
+                // Could show an error message to the user here
+            }
+        } catch (error) {
+            console.error('Error handling Q&A question:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
@@ -293,6 +345,13 @@ export function NotesEditor({
 
     const handleCreateNote = async () => {
         setIsSubmitting(true);
+
+        // Check if this is a Q&A question using the pattern
+        if (QA_COMMAND_PATTERN.test(content.trim())) {
+            await handleQAQuestion();
+            return;
+        }
+
         // extract contexts and tags from the note content
         const { contexts, tags } = extractMetadata(content);
 
@@ -421,7 +480,7 @@ export function NotesEditor({
                     placeholder={
                         isEditMode
                             ? "Edit your note content..."
-                            : "Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write `code` between backticks."
+                            : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                     className={
                         isEditMode

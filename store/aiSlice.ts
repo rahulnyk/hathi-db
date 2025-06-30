@@ -24,6 +24,14 @@ export interface StructurizedNoteState {
     error?: string;
 }
 
+export interface AIAnswerState {
+    isAIAnswer: boolean;
+    question?: string;
+    answer?: string;
+    createdAt?: string;
+    relevantSources?: string[]; // Note IDs that were used as context
+}
+
 interface AIState {
     suggestedContexts: {
         [noteId: string]: SuggestedContexts;
@@ -31,11 +39,15 @@ interface AIState {
     structurizedNote: {
         [noteId: string]: StructurizedNoteState;
     };
+    aiAnswers: {
+        [noteId: string]: AIAnswerState;
+    };
 }
 
 const initialState: AIState = {
     suggestedContexts: {},
     structurizedNote: {},
+    aiAnswers: {},
 };
 
 // Async thunk for generating context suggestions
@@ -229,9 +241,29 @@ const aiSlice = createSlice({
             const noteId = action.payload;
             delete state.structurizedNote[noteId];
         },
+        markAsAIAnswer: (state, action: PayloadAction<{
+            noteId: string;
+            question: string;
+            answer: string;
+            relevantSources?: string[];
+        }>) => {
+            const { noteId, question, answer, relevantSources } = action.payload;
+            state.aiAnswers[noteId] = {
+                isAIAnswer: true,
+                question,
+                answer,
+                createdAt: new Date().toISOString(),
+                relevantSources,
+            };
+        },
+        removeAIAnswer: (state, action: PayloadAction<string>) => {
+            const noteId = action.payload;
+            delete state.aiAnswers[noteId];
+        },
         clearAllAI: (state) => {
             state.suggestedContexts = {};
             state.structurizedNote = {};
+            state.aiAnswers = {};
         },
     },
     extraReducers: (builder) => {
@@ -337,6 +369,17 @@ const aiSlice = createSlice({
     },
 });
 
-export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } =
+export const { clearSuggestedContexts, clearStructurizeNote, markAsAIAnswer, removeAIAnswer, clearAllAI } =
     aiSlice.actions;
+
+// Utility function to check if a note is an AI answer
+export const isAIAnswerNote = (state: any, noteId: string): boolean => {
+    return state.ai.aiAnswers[noteId]?.isAIAnswer || false;
+};
+
+// Utility function to get AI answer details
+export const getAIAnswerDetails = (state: any, noteId: string): AIAnswerState | null => {
+    return state.ai.aiAnswers[noteId] || null;
+};
+
 export default aiSlice.reducer;
