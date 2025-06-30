@@ -32,7 +32,7 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
-    // Determine if note is of type 'ai-note'
+    // Determine if note is of type 'ai-note' (AI notes are handled by AiNoteCard component)
     const isAiNote = note.note_type === "ai-note";
     // Determine if the current note is active
     const isNoteActive = note.id === activeNoteId;
@@ -75,9 +75,10 @@ export function NoteCard({ note }: { note: Note }) {
         }
         if (
             note.persistenceStatus === "pending" ||
-            note.persistenceStatus === "failed"
+            note.persistenceStatus === "failed" ||
+            isAiNote // Don't allow editing AI notes (they use separate AiNoteCard component)
         ) {
-            return; // Don't allow editing of notes that haven't been saved yet
+            return; // Don't allow editing of notes that haven't been saved yet or AI notes
         }
         // Dispatch setEditingNoteId instead of enterEditMode
         dispatch(setEditingNoteId(note.id));
@@ -113,10 +114,11 @@ export function NoteCard({ note }: { note: Note }) {
 
     return (
         <div
+            data-note-id={note.id}
             onClick={handleCardClick}
             onDoubleClick={handleDoubleClick}
             className={cn(
-                "px-2 sm:px-4 my-2 rounded-lg relative",
+                "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
                 isNoteEditing && // Use isNoteEditing here
                     "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
                 isNoteActive &&

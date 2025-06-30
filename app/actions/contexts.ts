@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/app/actions/get-auth-user";
+import { measureExecutionTime } from "@/lib/performance";
 
 /**
  * Represents the statistics for a single context.
@@ -41,31 +42,39 @@ export interface FetchContextStatsParams {
  *          sorted by count and then by last used date in descending order.
  */
 export async function fetchContextStats(): Promise<ContextStatParams[]> {
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
+    return measureExecutionTime("fetchContextStats", async () => {
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
 
-    try {
-        // Call the database function `get_user_context_stats` with the user's ID.
-        // The function performs all the complex aggregation on the database side.
-        const { data, error } = await supabase.rpc("get_user_context_stats", {
-            p_user_id: user.id,
-        });
+        try {
+            // Call the database function `get_user_context_stats` with the user's ID.
+            // The function performs all the complex aggregation on the database side.
+            const { data, error } = await supabase.rpc(
+                "get_user_context_stats",
+                {
+                    p_user_id: user.id,
+                }
+            );
 
-        if (error) {
-            console.error("Supabase RPC error fetching context stats:", error);
-            throw error;
+            if (error) {
+                console.error(
+                    "Supabase RPC error fetching context stats:",
+                    error
+                );
+                throw error;
+            }
+
+            // The RPC call returns data in the exact shape of the ContextStatParams interface.
+            return data || [];
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Could not fetch context statistics.";
+            console.error("Error in fetchContextStats:", errorMessage);
+            throw new Error(errorMessage);
         }
-
-        // The RPC call returns data in the exact shape of the ContextStatParams interface.
-        return data || [];
-    } catch (error) {
-        const errorMessage =
-            error instanceof Error
-                ? error.message
-                : "Could not fetch context statistics.";
-        console.error("Error in fetchContextStats:", errorMessage);
-        throw new Error(errorMessage);
-    }
+    });
 }
 
 /**
@@ -78,58 +87,61 @@ export async function fetchContextStats(): Promise<ContextStatParams[]> {
 export async function fetchContextStatsPaginated(
     params: FetchContextStatsParams = {}
 ): Promise<PaginatedContextStats> {
-    const { limit = 30, offset = 0, searchTerm } = params;
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
+    return measureExecutionTime("fetchContextStatsPaginated", async () => {
+        const { limit = 30, offset = 0, searchTerm } = params;
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
 
-    try {
-        const { data, error } = await supabase.rpc(
-            "get_user_context_stats_paginated",
-            {
-                p_user_id: user.id,
-                p_limit: limit,
-                p_offset: offset,
-                p_search_term: searchTerm || null,
-            }
-        );
-
-        if (error) {
-            console.error(
-                "Supabase RPC error fetching paginated context stats:",
-                error
+        try {
+            const { data, error } = await supabase.rpc(
+                "get_user_context_stats_paginated",
+                {
+                    p_user_id: user.id,
+                    p_limit: limit,
+                    p_offset: offset,
+                    p_search_term: searchTerm || null,
+                }
             );
-            throw error;
+
+            if (error) {
+                console.error(
+                    "Supabase RPC error fetching paginated context stats:",
+                    error
+                );
+                throw error;
+            }
+
+            const contexts = (data || []).map(
+                (row: {
+                    context: string;
+                    count: number;
+                    lastUsed: string;
+                    total_count: number;
+                }) => ({
+                    context: row.context,
+                    count: row.count,
+                    lastUsed: row.lastUsed,
+                })
+            );
+
+            const totalCount =
+                data && data.length > 0 ? data[0].total_count : 0;
+            const hasMore = offset + contexts.length < totalCount;
+
+            return {
+                contexts,
+                totalCount,
+                hasMore,
+            };
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Could not fetch paginated context statistics.";
+            console.error("Error in fetchContextStatsPaginated:", errorMessage);
+            throw new Error(errorMessage);
         }
-
-        const contexts = (data || []).map(
-            (row: {
-                context: string;
-                count: number;
-                lastUsed: string;
-                total_count: number;
-            }) => ({
-                context: row.context,
-                count: row.count,
-                lastUsed: row.lastUsed,
-            })
-        );
-
-        const totalCount = data && data.length > 0 ? data[0].total_count : 0;
-        const hasMore = offset + contexts.length < totalCount;
-
-        return {
-            contexts,
-            totalCount,
-            hasMore,
-        };
-    } catch (error) {
-        const errorMessage =
-            error instanceof Error
-                ? error.message
-                : "Could not fetch paginated context statistics.";
-        console.error("Error in fetchContextStatsPaginated:", errorMessage);
-        throw new Error(errorMessage);
-    }
+    });
 }
 
 /**
@@ -144,32 +156,34 @@ export async function searchContexts(
     searchTerm: string,
     limit: number = 20
 ): Promise<ContextStatParams[]> {
-    if (!searchTerm.trim()) {
-        return [];
-    }
-
-    const supabase = await createClient();
-    const user = await getAuthUser(supabase);
-
-    try {
-        const { data, error } = await supabase.rpc("search_user_contexts", {
-            p_user_id: user.id,
-            p_search_term: searchTerm.trim(),
-            p_limit: limit,
-        });
-
-        if (error) {
-            console.error("Supabase RPC error searching contexts:", error);
-            throw error;
+    return measureExecutionTime("searchContexts", async () => {
+        if (!searchTerm.trim()) {
+            return [];
         }
 
-        return data || [];
-    } catch (error) {
-        const errorMessage =
-            error instanceof Error
-                ? error.message
-                : "Could not search contexts.";
-        console.error("Error in searchContexts:", errorMessage);
-        throw new Error(errorMessage);
-    }
+        const supabase = await createClient();
+        const user = await getAuthUser(supabase);
+
+        try {
+            const { data, error } = await supabase.rpc("search_user_contexts", {
+                p_user_id: user.id,
+                p_search_term: searchTerm.trim(),
+                p_limit: limit,
+            });
+
+            if (error) {
+                console.error("Supabase RPC error searching contexts:", error);
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Could not search contexts.";
+            console.error("Error in searchContexts:", errorMessage);
+            throw new Error(errorMessage);
+        }
+    });
 }

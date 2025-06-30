@@ -26,11 +26,24 @@ export interface StructurizeNoteResponse {
     structuredContent: string;
 }
 
+// Q&A types
+export interface QARequest {
+    question: string;
+    context: string; // Combined relevant notes content
+    userContexts: string[];
+}
+
+export interface QAResponse {
+    answer: string;
+    relevantSources?: string[]; // Note IDs that were used as context
+}
+
 // AI Provider interface for abstraction
 export interface AIProvider {
     suggestContexts(request: SuggestContextsRequest): Promise<SuggestContextsResponse>;
     generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
     structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse>;
+    answerQuestion(request: QARequest): Promise<QAResponse>;
 }
 
 // Error types

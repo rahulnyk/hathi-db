@@ -10,6 +10,8 @@ import {
     AIError,
     AIRateLimitError,
     AIQuotaExceededError,
+    QARequest,
+    QAResponse,
 } from "./types";
 
 import {
@@ -21,6 +23,11 @@ import {
     suggestContextSystemPrompt,
     suggestContextUserPrompt,
 } from "../prompts/suggest-context-prompts";
+
+import {
+    qaSystemPrompt,
+    qaUserPrompt,
+} from "../prompts/qa-prompts";
 
 export class OpenAIProvider implements AIProvider {
     private client: OpenAI;
@@ -102,6 +109,37 @@ export class OpenAIProvider implements AIProvider {
 
             return {
                 structuredContent: response.choices[0].message.content || "",
+            };
+        } catch (error) {
+            throw this.handleOpenAIError(error);
+        }
+    }
+
+    async answerQuestion(request: QARequest): Promise<QAResponse> {
+        const { question, context, userContexts } = request;
+
+        const systemPrompt = qaSystemPrompt();
+        const userPrompt = qaUserPrompt(question, context, userContexts);
+
+        try {
+            const response = await this.client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                temperature: 0.7,
+                max_tokens: 1000,
+            });
+
+            const answer = response.choices[0]?.message?.content;
+            if (!answer) {
+                throw new AIError("No answer generated");
+            }
+
+            return {
+                answer: answer.trim(),
+                relevantSources: [], // Could be enhanced to track which notes were most relevant
             };
         } catch (error) {
             throw this.handleOpenAIError(error);
