@@ -12,6 +12,7 @@ import {
 import { searchContexts } from "@/app/actions/contexts";
 import { ContextStatParams } from "@/app/actions/contexts";
 import { cn, slugToSentenceCase } from "@/lib/utils";
+import { useDebounce } from "use-debounce"; // Import from use-debounce library
 
 export interface ContextSearchBoxProps {
     onContextSelect?: (context: string) => void;
@@ -35,13 +36,15 @@ export const ContextSearchBox = ({
     const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Debounced search function
-    const debouncedSearch = useCallback(
+    // Use the debounce hook from use-debounce library
+    const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+
+    // Search function
+    const performSearch = useCallback(
         async (term: string) => {
             if (!term.trim()) {
                 setSuggestions([]);
@@ -72,28 +75,16 @@ export const ContextSearchBox = ({
             }
         },
         [maxSuggestions]
-    ); // Handle search input changes
+    );
+
+    // Effect that triggers search when debounced search term changes
     useEffect(() => {
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
+        // Only search if the search term is different from the selected context label
+        // This prevents searching when a context is selected
+        if (debouncedSearchTerm !== selectedContextLabel) {
+            performSearch(debouncedSearchTerm);
         }
-
-        const timeoutId = setTimeout(() => {
-            // Only search if the search term is different from the selected context label
-            // This prevents searching when a context is selected
-            if (searchTerm !== selectedContextLabel) {
-                debouncedSearch(searchTerm);
-            }
-        }, 300); // 300ms debounce
-
-        searchTimeoutRef.current = timeoutId;
-
-        return () => {
-            if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current);
-            }
-        };
-    }, [searchTerm, debouncedSearch, selectedContextLabel]);
+    }, [debouncedSearchTerm, selectedContextLabel, performSearch]);
 
     // Handle clicks outside to close dropdown
     useEffect(() => {
@@ -124,10 +115,10 @@ export const ContextSearchBox = ({
     };
 
     const handleSuggestionSelect = (item: SuggestionItem) => {
-        const contextSlug = (item.data as ContextStatParams).context; // Original slug format
+        const contextSlug = (item.data as ContextStatParams).context;
         setSelectedContext(contextSlug);
         setSelectedContextLabel(item.label);
-        setSearchTerm(item.label); // Display formatted version
+        setSearchTerm(item.label);
         setIsDropdownOpen(false);
         setSuggestions([]);
 
@@ -150,6 +141,16 @@ export const ContextSearchBox = ({
             setIsDropdownOpen(true);
         }
     };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            setIsDropdownOpen(false);
+            setSuggestions([]);
+            inputRef.current?.blur();
+        }
+    };
+
     return (
         <div
             ref={(node) => {
@@ -172,6 +173,7 @@ export const ContextSearchBox = ({
                     value={searchTerm}
                     onChange={handleInputChange}
                     onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     className={cn("pl-9", selectedContext && "pr-9")}
                 />
