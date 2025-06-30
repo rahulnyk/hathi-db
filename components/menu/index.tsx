@@ -6,11 +6,13 @@ import { useRef, useEffect } from "react"; // Import useRef and useEffect
 // CalendarIcon import removed
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
-import { useAppSelector } from "@/store"; // Import useAppSelector
+import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
+import { setCurrentContext } from "@/store/notesSlice";
 import { ThemeSwitcher } from "../theme-switcher";
 import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
 import { ContextList } from "./context-list"; // Import ContextList component
+import { ContextSearchBox } from "../ui/context-search-box";
 // Unused imports related to dispatch and dateToSlug are now fully removed.
 import { cn } from "@/lib/utils";
 import { HathiIcon } from "../icon";
@@ -21,6 +23,7 @@ interface RetractableMenuProps {
 }
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
+    const dispatch = useAppDispatch();
     const deviceType = useAppSelector((state) => state.ui.deviceType); // Get deviceType from Redux store
     const menuRef = useRef<HTMLDivElement>(null); // Create menuRef
 
@@ -92,6 +95,20 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             }}
                         />
                     </div>
+
+                    {/* Context Search Box */}
+                    <div className="px-2">
+                        <ContextSearchBox
+                            placeholder="Search contexts..."
+                            onContextSelect={(context) => {
+                                dispatch(setCurrentContext(context));
+                                if (deviceType === "mobile") {
+                                    onClose();
+                                }
+                            }}
+                        />
+                    </div>
+
                     <ContextList
                         onCloseMenu={onClose}
                         deviceType={deviceType}
