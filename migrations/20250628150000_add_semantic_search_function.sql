@@ -36,7 +36,7 @@ BEGIN
         n.user_id = p_user_id 
         AND n.embedding IS NOT NULL
         AND (1 - (n.embedding <=> p_query_embedding)) >= p_similarity_threshold
-    ORDER BY n.embedding <=> p_query_embedding
+    ORDER BY (1 - (n.embedding <=> p_query_embedding)) DESC
     LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql;
