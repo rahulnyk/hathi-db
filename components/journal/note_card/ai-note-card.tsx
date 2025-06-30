@@ -130,7 +130,7 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
             {!isCollapsed && (
                 <>
                     <div className="ai-note-card-content prose prose-sm dark:prose-invert max-w-none mb-2 mt-4 px-4">
-                        <ReactMarkdown 
+                        <ReactMarkdown
                             remarkPlugins={[
                                 remarkGfm,
                                 remarkContextPlugin,
@@ -143,12 +143,12 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
                             {note.content}
                         </ReactMarkdown>
                     </div>
-                    
+
                     {/* Source Notes List */}
                     <div className="px-4">
                         <SourceNotesList aiNoteId={note.id} />
                     </div>
-                    
+
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right px-4">
                         {formattedDate}
                     </div>
