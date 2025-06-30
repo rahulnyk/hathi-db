@@ -6,6 +6,7 @@ import { formatNotesForContext } from "@/lib/prompts/qa-prompts";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
+import { AI_ANSWERS_ENABLED } from "@/lib/constants/ai-config";
 
 // Types for database responses
 interface NoteWithSimilarity {
@@ -176,7 +177,7 @@ async function fallbackToBasicSearch(question: string, userId: string, supabase:
 }
 
 /**
- * Generate answer using AI with the retrieved notes
+ * Generate answer using AI with the retrieved notes, or show sources directly
  */
 async function generateAnswer(question: string, notes: NoteWithSimilarity[], userId: string, supabase: SupabaseClient): Promise<QAResult> {
     if (notes.length === 0) {
@@ -186,6 +187,16 @@ async function generateAnswer(question: string, notes: NoteWithSimilarity[], use
         };
     }
 
+    // Check if AI answers are enabled
+    if (!AI_ANSWERS_ENABLED) {
+        // Return a simple message and let the source notes do the talking
+        return {
+            answer: `Found ${notes.length} relevant note${notes.length === 1 ? '' : 's'} for: "${question}"`,
+            relevantSources: notes.map(note => note.id)
+        };
+    }
+
+    // AI answers are enabled - proceed with AI processing
     // Get user's contexts for better AI understanding
     const { data: contextStats } = await supabase
         .rpc("get_user_context_stats", { p_user_id: userId });
