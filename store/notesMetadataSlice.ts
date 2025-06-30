@@ -26,22 +26,6 @@ const initialState: NotesMetadataState = {
     isLoadingMore: false,
 };
 
-// 3. Create the async thunk to fetch context stats (original - keeping for backward compatibility)
-export const fetchContextsMetadata = createAsyncThunk<ContextStatParams[]>(
-    "notesMetadata/fetchContexts",
-    async (_, { rejectWithValue }) => {
-        try {
-            const stats = await fetchContextStats();
-            return stats;
-        } catch (error) {
-            if (error instanceof Error) {
-                return rejectWithValue(error.message);
-            }
-            return rejectWithValue("An unknown error occurred");
-        }
-    }
-);
-
 // 4. Single async thunk to handle both initial load and pagination
 export const fetchContextsPaginated = createAsyncThunk<
     {
@@ -97,22 +81,6 @@ const notesMetadataSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Original fetchContextsMetadata
-            .addCase(fetchContextsMetadata.pending, (state) => {
-                state.status = "loading";
-                state.error = null;
-            })
-            .addCase(
-                fetchContextsMetadata.fulfilled,
-                (state, action: PayloadAction<ContextStatParams[]>) => {
-                    state.status = "succeeded";
-                    state.contexts = action.payload;
-                }
-            )
-            .addCase(fetchContextsMetadata.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload as string;
-            })
             // Single paginated fetch thunk
             .addCase(fetchContextsPaginated.pending, (state, action) => {
                 if (action.meta.arg?.reset || !state.contexts.length) {

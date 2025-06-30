@@ -84,7 +84,7 @@ export const ContextSearchBox = ({
         if (searchTerm !== selectedContextLabel) {
             performSearch(debouncedSearchTerm);
         }
-    }, [debouncedSearchTerm, selectedContextLabel, performSearch]);
+    }, [debouncedSearchTerm, selectedContextLabel, performSearch, searchTerm]);
 
     // Handle clicks outside to close dropdown
     useEffect(() => {
