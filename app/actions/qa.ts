@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
 import { AI_ANSWERS_ENABLED } from "@/lib/constants/ai-config";
 import type { Note } from "@/store/notesSlice";
-import { ContextStat } from "./notes";
+import { fetchContextStats } from "./contexts";
 // Types for database responses
 interface NoteWithSimilarity
     extends Pick<
@@ -288,16 +288,9 @@ async function generateAnswer(
         };
     }
 
-    // AI answers are enabled - proceed with AI processing
-    // Get user's contexts for better AI understanding
-    const { data: contextStats } = await supabase.rpc(
-        "get_user_context_stats",
-        { p_user_id: userId }
-    );
+    const contextStats = await fetchContextStats();
 
-    const userContexts = ((contextStats as ContextStat[]) || []).map(
-        (stat) => stat.context
-    );
+    const userContexts = (contextStats || []).map((stat) => stat.context);
 
     // Format notes for AI context
     const notesContext = formatNotesForContext(notes);

@@ -1,6 +1,6 @@
 "use server";
 
-import { fetchContextStats } from "./notes";
+import { fetchContextStats } from "./contexts";
 import { aiProvider } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
 

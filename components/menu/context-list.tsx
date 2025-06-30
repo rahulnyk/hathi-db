@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { fetchContextsMetadata } from "@/store/notesMetadataSlice";
+import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
 import { setCurrentContext } from "@/store/notesSlice";
-import { DeviceType } from "@/store/uiSlice"; // Import DeviceType
-import { ContextStat } from "@/app/actions/notes";
+import { DeviceType } from "@/store/uiSlice";
+import { ContextStatParams } from "@/app/actions/contexts";
 import { cn, slugToSentenceCase } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface ContextListProps {
     onCloseMenu: () => void;
@@ -15,29 +17,30 @@ interface ContextListProps {
 
 export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     const dispatch = useAppDispatch();
-    const { contexts, status } = useAppSelector((state) => state.notesMetadata);
+    const { contexts, status, hasMore, isLoadingMore } = useAppSelector(
+        (state) => state.notesMetadata
+    );
     const { currentContext } = useAppSelector((state) => state.notes);
 
+    // Fetch contexts when component mounts
     useEffect(() => {
         if (status === "idle") {
-            dispatch(fetchContextsMetadata());
+            dispatch(fetchContextsPaginated({ reset: true }));
         }
     }, [status, dispatch]);
 
-    const sortedContexts = useMemo(() => {
-        return [...contexts].sort(
-            (a, b) =>
-                new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
-        );
-    }, [contexts]);
-
     const handleContextClick = (contextSlug: string) => {
         if (deviceType === "mobile") {
-            // Conditionally call onCloseMenu
             onCloseMenu();
         }
         dispatch(setCurrentContext(contextSlug));
     };
+
+    const handleLoadMore = useCallback(() => {
+        if (hasMore && !isLoadingMore) {
+            dispatch(fetchContextsPaginated());
+        }
+    }, [hasMore, isLoadingMore, dispatch]);
 
     if (status === "loading" || status === "idle") {
         return (
@@ -57,7 +60,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
 
     return (
         <div className="flex flex-col gap-1 px-2 py-1">
-            {sortedContexts.map((contextStat: ContextStat) => (
+            {/* Context List */}
+            {contexts.map((contextStat: ContextStatParams) => (
                 <div
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}
@@ -91,6 +95,28 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     </span>
                 </div>
             ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+                <div className="px-2 mt-2">
+                    <Button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                    >
+                        {isLoadingMore ? (
+                            <>
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                Loading...
+                            </>
+                        ) : (
+                            "More"
+                        )}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
