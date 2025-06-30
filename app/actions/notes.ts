@@ -191,6 +191,47 @@ export async function fetchNotes({
 }
 
 /**
+ * Fetches notes by their IDs for the authenticated user
+ * Used by source notes list to fetch missing notes not in Redux state
+ *
+ * @param noteIds - Array of note IDs to fetch
+ * @returns Promise that resolves to an array of notes
+ */
+export async function fetchNotesByIds(noteIds: string[]): Promise<Note[]> {
+    return measureExecutionTime("fetchNotesByIds", async () => {
+        try {
+            if (!noteIds || noteIds.length === 0) {
+                return [];
+            }
+
+            const client = await createClient();
+            const user = await getAuthUser(client);
+
+            // Fetch notes by IDs for the current user
+            const { data: notes, error: fetchError } = await client
+                .from("notes")
+                .select("*")
+                .in("id", noteIds)
+                .eq("user_id", user.id);
+
+            if (fetchError) {
+                console.error("Error fetching notes by IDs:", fetchError);
+                throw new Error(`Failed to fetch notes: ${fetchError.message}`);
+            }
+
+            return (notes as Note[]) || [];
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Could not fetch notes by IDs.";
+            console.error("Error in fetchNotesByIds:", errorMessage);
+            throw new Error(errorMessage);
+        }
+    });
+}
+
+/**
  * Patches a note with the provided updates
  *
  * @param noteId - The ID of the note to update
