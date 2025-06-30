@@ -1,6 +1,7 @@
 "use client";
 
-import { Note, enterEditMode } from "@/store/notesSlice";
+import { Note } from "@/store/notesSlice"; // Removed enterEditMode
+import { setActiveNoteId, setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
 import ReactMarkdown from "react-markdown";
 
 import remarkGfm from "remark-gfm";
@@ -25,15 +26,24 @@ import { CardHeader } from "./card-header";
 
 export function NoteCard({ note }: { note: Note }) {
     const dispatch = useAppDispatch();
+    const activeNoteId = useAppSelector((state) => state.ui.activeNoteId);
+    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
 
-    // Check if this is an AI answer note using the AI slice utility
-    const isAiAnswer = useAppSelector((state) => 
-        isAIAnswerNote(state, note.id)
-    ) || note.note_type === "ai-note"; // Fallback to note type for backward compatibility
+    // Determine if note is of type 'ai-note'
+    const isAiNote = note.note_type === "ai-note";
+    // Determine if the current note is active
+    const isNoteActive = note.id === activeNoteId;
+    // Determine if the current note is being edited
+    const isNoteEditing = note.id === editingNoteId;
+
+    // Determine if the ContextContainer should be visible
+    const showContextContainer = isNoteActive || isNoteEditing;
+    // Determine if the CardHeader should be visible
+    const showCardHeader = isNoteActive && !isNoteEditing;
 
     // Determine which content to display
     const displayContent =
@@ -51,7 +61,19 @@ export function NoteCard({ note }: { note: Note }) {
         );
     };
 
+    const handleCardClick = () => {
+        if (isAiNote) {
+            return; // Don't allow interaction with AI-generated notes
+        }
+        if (note.id !== activeNoteId) {
+            dispatch(setActiveNoteId(note.id));
+        }
+    };
+
     const handleDoubleClick = () => {
+        if (isAiNote) {
+            return; // Don't allow editing of AI-generated notes
+        }
         if (
             note.persistenceStatus === "pending" ||
             note.persistenceStatus === "failed" ||
@@ -59,13 +81,8 @@ export function NoteCard({ note }: { note: Note }) {
         ) {
             return; // Don't allow editing of notes that haven't been saved yet or AI answers
         }
-
-        dispatch(
-            enterEditMode({
-                noteId: note.id,
-                originalContent: note.content,
-            })
-        );
+        // Dispatch setEditingNoteId instead of enterEditMode
+        dispatch(setEditingNoteId(note.id));
     };
 
     useEffect(() => {
@@ -118,35 +135,32 @@ export function NoteCard({ note }: { note: Note }) {
 
     return (
         <div
-            data-note-id={note.id}
+            onClick={handleCardClick}
+            onDoubleClick={handleDoubleClick}
             className={cn(
-                "p-2 sm:p-4 py-0 rounded-lg relative transition-colors duration-500",
-                note.isEditing &&
-                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30",
-                isAiAnswer &&
-                    "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-400 dark:border-blue-500"
+                "px-2 sm:px-4 my-2 rounded-lg relative",
+                isNoteEditing && // Use isNoteEditing here
+                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
+                isNoteActive &&
+                    "border-l-4 border-zinc-300 dark:border-zinc-600 rounded-none my-0"
             )}
         >
             {/* Top right buttons */}
-            {!note.isEditing && <CardHeader note={note} />}
+            {showCardHeader && <CardHeader note={note} />}
 
             {/* Note content - show editor if editing, otherwise show markdown */}
-            {note.isEditing ? (
+            {isNoteEditing ? ( // Use isNoteEditing here
                 <div className="mb-2">
                     <NotesEditor
-                        isEditMode={true}
+                        isEditMode={true} // This prop might be redundant now or could signify a specific UI variant
                         noteId={note.id}
-                        initialContent={note.content}
+                        initialContent={note.content} // Pass initial content for the editor
                     />
                 </div>
             ) : (
                 <div
-                    className={cn(
-                        "prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0",
-                        !isAiAnswer && "cursor-pointer"
-                    )}
-                    onDoubleClick={handleDoubleClick}
-                    title={isAiAnswer ? "AI Answer" : "Double-click to edit"}
+                    className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
+                    title="Double-click to edit"
                 >
                     <ReactMarkdown
                         remarkPlugins={[
@@ -164,7 +178,7 @@ export function NoteCard({ note }: { note: Note }) {
                 </div>
             )}
 
-            <ContextContainer note={note} />
+            {showContextContainer && <ContextContainer note={note} />}
 
             <NoteStatusIndicator
                 note={note}

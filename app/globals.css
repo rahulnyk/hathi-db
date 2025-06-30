@@ -5,6 +5,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
 /* Custom accent font styles */
 .accent-font {
     @apply font-outfit font-black tracking-wider text-zinc-400; /* Added font-montserrat */
@@ -94,6 +104,10 @@
     }
 }
 
+.smooth-scroll {
+    scroll-behavior: smooth;
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -101,4 +115,64 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Styles for AiNoteCard - Highly Subtle Blue Theme */
+.ai-note-card {
+    /* Extremely subtle background, more reliant on context for "blue" feel via accents */
+    @apply bg-blue-100/50 dark:bg-blue-900/10 border-blue-500/10 dark:border-blue-600/10;
+}
+
+.ai-note-icon-color {
+    /* Icon maintains a clearer blue accent */
+    @apply text-xs text-gray-500 dark:text-gray-400 ml-2;
+}
+
+.ai-note-title-color {
+    /* Title also maintains a clearer blue accent, now smaller and lighter */
+    @apply text-xs text-gray-500 dark:text-gray-400;
+    /* text-muted-foreground/50 was the reference, using blue accent with similar subtlety */
+}
+
+/* Ensure the parent flex container in the card header enables vertical centering */
+/* This is already handled by `items-center` in AiNoteCard.tsx's header div: */
+/* `<div className="flex items-center justify-between mb-2">` */
+/* The class `.ai-note-card-collapsed` reduces vertical padding with `py-2`. */
+/* This should be sufficient given `items-center` on the direct parent of icon & button. */
+
+.ai-note-card-content .prose,
+.ai-note-card-content p,
+.ai-note-card-content ul,
+.ai-note-card-content ol,
+.ai-note-card-content blockquote {
+    /* Neutral text, relying on faint background for any "tint" */
+    @apply text-sm font-normal text-gray-600 dark:text-gray-400;
+}
+
+/* .ai-note-card-content strong, */
+.ai-note-card-content b {
+    /* Slightly darker neutral for emphasis */
+    @apply font-semibold text-gray-700/80 dark:text-gray-300/80;
+}
+
+.ai-note-card-content h1,
+.ai-note-card-content h2,
+.ai-note-card-content h3,
+.ai-note-card-content h4,
+.ai-note-card-content h5,
+.ai-note-card-content h6 {
+    /* Darker neutral for headings */
+    @apply text-gray-700/80 dark:text-gray-200/80;
+    @apply font-semibold;
+}
+
+/* Styles for when the card is collapsed */
+.ai-note-card-collapsed {
+    @apply pt-2; /* Reduced padding when collapsed */
+}
+
+.ai-note-card-collapsed .ai-note-card-content,
+.ai-note-card-collapsed .text-right {
+    /* This targets the bottom date */
+    @apply hidden; /* Hide content and bottom date when collapsed */
 }
