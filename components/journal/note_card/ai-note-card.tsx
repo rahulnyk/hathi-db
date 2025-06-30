@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Note } from "@/store/notesSlice";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkContextPlugin from "@/lib/remark_context_plugin";
+import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
+import { useAppDispatch } from "@/store";
+import { setCurrentContext } from "@/store/notesSlice";
+import { sentenceCaseToSlug } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     ChevronDownIcon,
@@ -13,6 +18,8 @@ import {
 import { DeleteNoteButton } from "./delete-note-button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { CodeBlock } from "./code-block";
+import { SourceNotesList } from "./source-notes-list";
 
 interface AiNoteCardProps {
     note: Note;
@@ -20,6 +27,7 @@ interface AiNoteCardProps {
 
 export function AiNoteCard({ note }: AiNoteCardProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const dispatch = useAppDispatch();
 
     const toggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
@@ -29,10 +37,39 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
         addSuffix: true,
     });
 
+    // Handle clicks for context pills and hashtags
+    useEffect(() => {
+        const handleClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+
+            if (target.classList.contains("context-pill-inline")) {
+                const content =
+                    target.getAttribute("data-content") ||
+                    target.textContent ||
+                    "";
+                const context = sentenceCaseToSlug(content);
+                dispatch(setCurrentContext(context));
+                console.log("Context clicked:", context);
+            }
+
+            if (target.classList.contains("hashtag-pill")) {
+                const content =
+                    target.getAttribute("data-content") ||
+                    target.textContent?.replace("#", "") ||
+                    "";
+                console.log("Hashtag clicked:", content);
+            }
+        };
+
+        document.addEventListener("click", handleClick);
+        return () => document.removeEventListener("click", handleClick);
+    }, [dispatch]);
+
     return (
         <div
+            data-note-id={note.id}
             className={cn(
-                "ai-note-card p-3 my-2 rounded-lg relative border font-outfit",
+                "ai-note-card p-3 my-2 rounded-lg relative border font-outfit transition-colors duration-500",
                 isCollapsed ? "ai-note-card-collapsed" : ""
             )}
         >
@@ -93,11 +130,26 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
             {!isCollapsed && (
                 <>
                     <div className="ai-note-card-content prose prose-sm dark:prose-invert max-w-none mb-2 mt-4 px-4">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown 
+                            remarkPlugins={[
+                                remarkGfm,
+                                remarkContextPlugin,
+                                remarkHashtagPlugin,
+                            ]}
+                            components={{
+                                code: CodeBlock, // Use custom CodeBlock component
+                            }}
+                        >
                             {note.content}
                         </ReactMarkdown>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">
+                    
+                    {/* Source Notes List */}
+                    <div className="px-4">
+                        <SourceNotesList aiNoteId={note.id} />
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right px-4">
                         {formattedDate}
                     </div>
                 </>

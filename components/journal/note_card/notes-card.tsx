@@ -16,7 +16,6 @@ import { setCurrentContext } from "@/store/notesSlice";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
-    isAIAnswerNote,
 } from "@/store/aiSlice";
 import { ContextContainer } from "./context-container";
 import { CodeBlock } from "./code-block";
@@ -33,7 +32,7 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
-    // Determine if note is of type 'ai-note'
+    // Determine if note is of type 'ai-note' (AI notes are handled by AiNoteCard component)
     const isAiNote = note.note_type === "ai-note";
     // Determine if the current note is active
     const isNoteActive = note.id === activeNoteId;
@@ -77,9 +76,9 @@ export function NoteCard({ note }: { note: Note }) {
         if (
             note.persistenceStatus === "pending" ||
             note.persistenceStatus === "failed" ||
-            isAiAnswer // Don't allow editing AI answer notes
+            isAiNote // Don't allow editing AI notes (they use separate AiNoteCard component)
         ) {
-            return; // Don't allow editing of notes that haven't been saved yet or AI answers
+            return; // Don't allow editing of notes that haven't been saved yet or AI notes
         }
         // Dispatch setEditingNoteId instead of enterEditMode
         dispatch(setEditingNoteId(note.id));
@@ -107,26 +106,6 @@ export function NoteCard({ note }: { note: Note }) {
                     "";
                 console.log("Hashtag clicked:", content);
             }
-
-            // Handle clicks on source note links in AI answers
-            if (target.tagName === "A" && target.getAttribute("href")?.startsWith("#note-")) {
-                event.preventDefault();
-                const noteId = target.getAttribute("href")?.replace("#note-", "");
-                if (noteId) {
-                    // Scroll to the referenced note if it exists in the DOM
-                    const targetNote = document.querySelector(`[data-note-id="${noteId}"]`);
-                    if (targetNote) {
-                        targetNote.scrollIntoView({ behavior: "smooth", block: "center" });
-                        // Add a temporary highlight effect
-                        targetNote.classList.add("bg-yellow-100", "dark:bg-yellow-900/30");
-                        setTimeout(() => {
-                            targetNote.classList.remove("bg-yellow-100", "dark:bg-yellow-900/30");
-                        }, 2000);
-                    } else {
-                        console.log("Referenced note not found in current view:", noteId);
-                    }
-                }
-            }
         };
 
         document.addEventListener("click", handleClick);
@@ -135,10 +114,11 @@ export function NoteCard({ note }: { note: Note }) {
 
     return (
         <div
+            data-note-id={note.id}
             onClick={handleCardClick}
             onDoubleClick={handleDoubleClick}
             className={cn(
-                "px-2 sm:px-4 my-2 rounded-lg relative",
+                "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
                 isNoteEditing && // Use isNoteEditing here
                     "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
                 isNoteActive &&
