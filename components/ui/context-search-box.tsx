@@ -81,7 +81,7 @@ export const ContextSearchBox = ({
     useEffect(() => {
         // Only search if the search term is different from the selected context label
         // This prevents searching when a context is selected
-        if (debouncedSearchTerm !== selectedContextLabel) {
+        if (searchTerm !== selectedContextLabel) {
             performSearch(debouncedSearchTerm);
         }
     }, [debouncedSearchTerm, selectedContextLabel, performSearch]);
