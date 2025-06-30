@@ -2,31 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { measureExecutionTime } from "@/lib/performance";
-
-/**
- * Retrieves the currently authenticated user from Supabase.
- *
- * @param client - The Supabase client instance
- * @returns Promise that resolves to the authenticated user object
- * @throws Error if no user is authenticated
- */
-async function getAuthUser(client: SupabaseClient): Promise<User> {
-    const {
-        data: { user },
-        error,
-    } = await client.auth.getUser();
-
-    if (!user) {
-        const errorMessage =
-            error?.message || "No user authenticated. Please log in.";
-        console.error("Authentication error:", errorMessage);
-        throw new Error(errorMessage);
-    }
-
-    return user;
-}
+import { getAuthUser } from "@/app/actions/get-auth-user";
 
 /**
  * Adds a new note to the database.
