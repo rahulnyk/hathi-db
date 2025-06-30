@@ -3,12 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { aiProvider } from "@/lib/ai";
 import { formatNotesForContext } from "@/lib/prompts/qa-prompts";
-import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
 import { AI_ANSWERS_ENABLED } from "@/lib/constants/ai-config";
 import type { Note } from "@/store/notesSlice";
 import { fetchContextStats } from "./contexts";
+import { getAuthUser } from "./get-auth-user";
 // Types for database responses
 interface NoteWithSimilarity
     extends Pick<
@@ -39,14 +39,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
         const supabase = await createClient();
 
         // Check authentication
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser();
-
-        if (authError || !user) {
-            redirect("/auth/login");
-        }
+        const user = await getAuthUser(supabase);
 
         // Generate embedding for the question
         let questionEmbedding;
@@ -57,7 +50,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
         } catch (embeddingError) {
             console.error("Error generating embedding:", embeddingError);
             // Fallback to basic search if embedding generation fails
-            return await fallbackToBasicSearch(question, user.id, supabase);
+            return await fallbackToBasicSearch(question, supabase);
         }
 
         // Use semantic search to find relevant notes
@@ -75,7 +68,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
         if (searchError) {
             console.error("Error in semantic search:", searchError);
             // Fallback to basic search if semantic search fails
-            return await fallbackToBasicSearch(question, user.id, supabase);
+            return await fallbackToBasicSearch(question, supabase);
         }
 
         if (!relevantNotes || relevantNotes.length === 0) {
@@ -92,22 +85,18 @@ export async function answerQuestion(question: string): Promise<QAResult> {
             );
 
             if (!fallbackNotes || fallbackNotes.length === 0) {
-                return await fallbackToBasicSearch(question, user.id, supabase);
+                return await fallbackToBasicSearch(question, supabase);
             }
 
             return await generateAnswer(
                 question,
-                (fallbackNotes as NoteWithSimilarity[]) || [],
-                user.id,
-                supabase
+                (fallbackNotes as NoteWithSimilarity[]) || []
             );
         }
 
         return await generateAnswer(
             question,
-            (relevantNotes as NoteWithSimilarity[]) || [],
-            user.id,
-            supabase
+            (relevantNotes as NoteWithSimilarity[]) || []
         );
     } catch (error) {
         console.error("Error in answerQuestion:", error);
@@ -123,10 +112,11 @@ export async function answerQuestion(question: string): Promise<QAResult> {
  */
 async function fallbackToBasicSearch(
     question: string,
-    userId: string,
     supabase: SupabaseClient
 ): Promise<QAResult> {
     // First, try to get ANY notes for this user to see if they exist
+    const { id: userId } = await getAuthUser(supabase);
+
     const { data: allNotes, error: notesError } = await supabase
         .from("notes")
         .select(
@@ -196,9 +186,7 @@ async function fallbackToBasicSearch(
         return await generateAnswer(
             question,
             (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) ||
-                [],
-            userId,
-            supabase
+                []
         );
     }
 
@@ -221,9 +209,7 @@ async function fallbackToBasicSearch(
             (matchingNotes.slice(
                 0,
                 DEFAULT_SEARCH_LIMIT
-            ) as NoteWithSimilarity[]) || [],
-            userId,
-            supabase
+            ) as NoteWithSimilarity[]) || []
         );
     }
 
@@ -243,9 +229,7 @@ async function fallbackToBasicSearch(
         if (keywordNotes && keywordNotes.length > 0) {
             return await generateAnswer(
                 question,
-                (keywordNotes as NoteWithSimilarity[]) || [],
-                userId,
-                supabase
+                (keywordNotes as NoteWithSimilarity[]) || []
             );
         }
     } catch (searchError) {
@@ -255,9 +239,7 @@ async function fallbackToBasicSearch(
     // Final fallback: use most recent notes
     return await generateAnswer(
         question,
-        (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || [],
-        userId,
-        supabase
+        (allNotes.slice(0, DEFAULT_SEARCH_LIMIT) as NoteWithSimilarity[]) || []
     );
 }
 
@@ -266,9 +248,7 @@ async function fallbackToBasicSearch(
  */
 async function generateAnswer(
     question: string,
-    notes: NoteWithSimilarity[],
-    userId: string,
-    supabase: SupabaseClient
+    notes: NoteWithSimilarity[]
 ): Promise<QAResult> {
     if (notes.length === 0) {
         return {

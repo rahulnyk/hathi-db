@@ -13,18 +13,16 @@
  */
 import type { Note } from "@/store/notesSlice";
 
-interface EnhancedNote
-    extends Pick<
-        Note,
-        | "id"
-        | "content"
-        | "key_context"
-        | "contexts"
-        | "tags"
-        | "note_type"
-        // | "suggested_contexts"
-        | "created_at"
-    > {}
+type EnhancedNote = Pick<
+    Note,
+    | "id"
+    | "content"
+    | "key_context"
+    | "contexts"
+    | "tags"
+    | "note_type"
+    | "created_at"
+>;
 
 export function qaSystemPrompt(): string {
     return `You are an intelligent assistant helping a user answer questions based on their personal notes and knowledge base.
@@ -78,8 +76,6 @@ export function formatNotesForContext(notes: EnhancedNote[]): string {
             contexts: note.contexts || [],
             tags: note.tags || [],
             note_type: note.note_type || "note",
-            // suggested_contexts: note.suggested_contexts || [],
-            // date_created: new Date(note.created_at).toISOString(),
             date_created_readable: new Date(
                 note.created_at
             ).toLocaleDateString(),
