@@ -10,4 +10,4 @@
  * When true: Questions get AI-generated answers based on semantic search results
  * When false: Questions show the retrieved notes directly via source notes list
  */
-export const AI_ANSWERS_ENABLED = false;
+export const AI_ANSWERS_ENABLED = true;
