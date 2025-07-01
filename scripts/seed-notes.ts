@@ -116,7 +116,7 @@ async function updateNotesWithEmbeddings(notes: any[]) {
 
       // Add a small delay between requests to be respectful to the API
       if (i < notes.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
       console.error(`Error generating embedding for note ${note.id}:`, error);
@@ -688,7 +688,7 @@ async function runSeedNotes() {
     // Insert all notes
     const { data, error } = await supabase
       .from('notes')
-      .insert(seedNotes.slice(0, 8))
+      .insert(seedNotes)
       .select();
 
     if (error) {
