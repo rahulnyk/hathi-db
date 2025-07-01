@@ -1,5 +1,5 @@
--- Migration: Update embedding dimensions for Google Gemini embedding-001
--- Created: 2025-01-01
+-- Migration: Update embedding dimensions for Google Gemini text-embedding-004
+-- Created: 2025-07-01
 
 -- Step 1: Drop existing indexes
 DROP INDEX IF EXISTS idx_notes_embedding_cosine;
@@ -8,7 +8,7 @@ DROP INDEX IF EXISTS idx_notes_embedding_l2;
 -- Step 2: Drop existing embedding column
 ALTER TABLE notes DROP COLUMN IF EXISTS embedding;
 
--- Step 3: Add new embedding column with 768 dimensions (Google embedding-001)
+-- Step 3: Add new embedding column with 768 dimensions (Google text-embedding-004)
 ALTER TABLE notes ADD COLUMN embedding vector(768) DEFAULT NULL;
 
 -- Step 4: Recreate indexes for vector similarity searches
@@ -27,7 +27,7 @@ WHERE embedding IS NOT NULL;
 -- Step 5: Update the semantic search function to use 768 dimensions
 CREATE OR REPLACE FUNCTION search_notes_by_similarity(
     p_user_id UUID,
-    p_query_embedding vector(768), -- Google embedding-001 dimension
+    p_query_embedding vector(768), -- Google text-embedding-004 dimension
     p_similarity_threshold FLOAT DEFAULT 0.7,
     p_limit INTEGER DEFAULT 10
 )

@@ -32,7 +32,7 @@ yarn seed
 ### What it does
 
 1. **Creates Sample Notes**: Inserts 17 diverse sample notes with different contexts, tags, and content types
-2. **Generates Embeddings**: Uses Google's embedding-001 model with optimized prompts for each note
+2. **Generates Embeddings**: Uses Google's text-embedding-004 model with optimized prompts for each note
 3. **Updates Database**: Patches each note with its embedding vector and metadata
 4. **Batch Processing**: Processes notes in batches of 5 to avoid API rate limits
 
