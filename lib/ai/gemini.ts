@@ -48,7 +48,7 @@ export class GeminiProvider implements AIProvider {
         }
 
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         this.embeddingModel = this.genAI.getGenerativeModel({ model: "text-embedding-004" });
     }
 
