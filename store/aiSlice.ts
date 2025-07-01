@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
     suggestContexts as suggestContextsAction,
-    generateEmbedding as generateEmbeddingAction,
     generateDocumentEmbedding as generateDocumentEmbeddingAction,
     structurizeNote as structurizeNoteAction,
 } from "@/app/actions/ai";

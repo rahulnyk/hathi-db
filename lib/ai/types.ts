@@ -9,14 +9,6 @@ export interface SuggestContextsResponse {
     suggestions: string[];
 }
 
-export interface EmbeddingRequest {
-    content: string;
-}
-
-export interface EmbeddingResponse {
-    embedding: number[];
-}
-
 // New types for optimized embeddings
 export interface DocumentEmbeddingRequest {
     content: string;
@@ -61,7 +53,6 @@ export interface QAResponse {
 // AI Provider interface for abstraction
 export interface AIProvider {
     suggestContexts(request: SuggestContextsRequest): Promise<SuggestContextsResponse>;
-    generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
     generateDocumentEmbedding(request: DocumentEmbeddingRequest): Promise<DocumentEmbeddingResponse>;
     generateQueryEmbedding(request: QueryEmbeddingRequest): Promise<QueryEmbeddingResponse>;
     structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse>;
