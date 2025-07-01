@@ -70,32 +70,6 @@ export async function structurizeNote({
 }
 
 /**
- * Generates embeddings for a note (for future use)
- *
- * @param content - The content of the note
- * @returns Promise that resolves to the embedding vector
- */
-export async function generateEmbedding({
-    content,
-}: {
-    content: string;
-}): Promise<number[]> {
-    return measureExecutionTime("generateEmbedding", async () => {
-        try {
-            const response = await aiProvider.generateEmbedding({ content });
-            return response.embedding;
-        } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Unknown error occurred";
-            console.error("Error generating embedding:", errorMessage);
-            throw new Error(`Failed to generate embedding: ${errorMessage}`);
-        }
-    });
-}
-
-/**
  * Generates optimized document embeddings for notes (for retrieval)
  *
  * @param content - The content of the note

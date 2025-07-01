@@ -3,8 +3,6 @@ import {
     AIProvider,
     SuggestContextsRequest,
     SuggestContextsResponse,
-    EmbeddingRequest,
-    EmbeddingResponse,
     DocumentEmbeddingRequest,
     DocumentEmbeddingResponse,
     QueryEmbeddingRequest,
@@ -78,20 +76,6 @@ export class GeminiProvider implements AIProvider {
         }
     }
 
-    async generateEmbedding(
-        request: EmbeddingRequest
-    ): Promise<EmbeddingResponse> {
-        try {
-            const result = await this.embeddingModel.embedContent(request.content);
-            const embedding = result.embedding.values;
-
-            return {
-                embedding: embedding,
-            };
-        } catch (error) {
-            throw this.handleGeminiError(error);
-        }
-    }
 
     async generateDocumentEmbedding(
         request: DocumentEmbeddingRequest
