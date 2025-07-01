@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
+import { AI_MODEL_CONFIG } from '../lib/constants/ai-config';
 
 // Load environment variables from .env.local file (Next.js standard)
 dotenv.config({ path: '.env.local' });
@@ -29,8 +30,7 @@ if (!googleApiKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Initialize Google AI for embeddings
-const genAI = new GoogleGenerativeAI(googleApiKey);
-const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+const genAI = new GoogleGenAI({ apiKey: googleApiKey });
 
 // Sample user ID - you'll need to replace this with a real user ID from your auth.users table
 // const SAMPLE_USER_ID = '00000000-0000-0000-0000-000000000000'; // Replace with actual user ID
@@ -67,62 +67,60 @@ async function generateDocumentEmbedding(
   noteType?: string
 ): Promise<number[]> {
   try {
-    const contextText = contexts && contexts.length > 0 ? `\nContexts: ${contexts.join(", ")}` : "";
-    const tagsText = tags && tags.length > 0 ? `\nTags: ${tags.join(", ")}` : "";
-    const typeText = noteType ? `\nType: ${noteType}` : "";
+    const prompt = `Document: ${content}${contexts ? `\nContexts: ${contexts.join(', ')}` : ''}${tags ? `\nTags: ${tags.join(', ')}` : ''}${noteType ? `\nType: ${noteType}` : ''}
 
-    const prompt = `Document for retrieval:
-Content: ${content}${contextText}${tagsText}${typeText}
+This is a document that should be retrieved when users ask questions about: ${content}${contexts ? `\nContexts: ${contexts.join(', ')}` : ''}${tags ? `\nTags: ${tags.join(', ')}` : ''}${noteType ? `\nType: ${noteType}` : ''}`;
 
-This is a document that should be retrieved when users ask questions about: ${content}${contextText}${tagsText}${typeText}`;
-
-    const result = await embeddingModel.embedContent(prompt);
-    return result.embedding.values;
+    const result = await genAI.models.embedContent({
+        model: AI_MODEL_CONFIG.GEMINI.embedding.model,
+        contents: [{ text: prompt }],
+        config: {
+            outputDimensionality: 1536
+        }
+    });
+    
+    if (!result.embeddings || !result.embeddings[0]?.values) {
+        throw new Error('No embedding generated');
+    }
+    return result.embeddings[0].values;
   } catch (error) {
     console.error('Error generating embedding:', error);
     throw error;
   }
 }
 
-// Function to batch update notes with embeddings
+// Function to sequentially update notes with embeddings (one at a time)
 async function updateNotesWithEmbeddings(notes: any[]) {
-  console.log(`Generating embeddings for ${notes.length} notes...`);
+  console.log(`Generating embeddings for ${notes.length} notes (processing sequentially)...`);
 
-  const batchSize = 5; // Process in batches to avoid rate limits
   const updatedNotes = [];
 
-  for (let i = 0; i < notes.length; i += batchSize) {
-    const batch = notes.slice(i, i + batchSize);
-    console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(notes.length / batchSize)}...`);
+  for (let i = 0; i < notes.length; i++) {
+    const note = notes[i];
+    console.log(`Processing note ${i + 1}/${notes.length} (ID: ${note.id})...`);
 
-    const batchPromises = batch.map(async (note) => {
-      try {
-        const embedding = await generateDocumentEmbedding(
-          note.content,
-          note.contexts,
-          note.tags,
-          note.note_type
-        );
+    try {
+      const embedding = await generateDocumentEmbedding(
+        note.content,
+        note.contexts,
+        note.tags,
+        note.note_type
+      );
 
-        return {
-          id: note.id,
-          embedding,
-          embedding_model: 'text-embedding-004',
-          embedding_created_at: new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error(`Error generating embedding for note ${note.id}:`, error);
-        return null;
+      updatedNotes.push({
+        id: note.id,
+        embedding,
+        embedding_model: AI_MODEL_CONFIG.GEMINI.embedding.model,
+        embedding_created_at: new Date().toISOString(),
+      });
+
+      // Add a small delay between requests to be respectful to the API
+      if (i < notes.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    const validResults = batchResults.filter(result => result !== null);
-    updatedNotes.push(...validResults);
-
-    // Add a small delay between batches to be respectful to the API
-    if (i + batchSize < notes.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`Error generating embedding for note ${note.id}:`, error);
+      // Continue with next note instead of failing the entire batch
     }
   }
 
@@ -690,7 +688,7 @@ async function runSeedNotes() {
     // Insert all notes
     const { data, error } = await supabase
       .from('notes')
-      .insert(seedNotes)
+      .insert(seedNotes.slice(0, 8))
       .select();
 
     if (error) {
@@ -732,12 +730,4 @@ async function runSeedNotes() {
 }
 
 // Run the seed function
-runSeedNotes()
-  .then(() => {
-    console.log('Seeding completed!');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('Seeding failed:', error);
-    process.exit(1);
-  });
+runSeedNotes().catch(console.error);

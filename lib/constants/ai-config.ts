@@ -29,13 +29,32 @@ export type AIProviderType = typeof AI_PROVIDER[keyof typeof AI_PROVIDER];
 export const CURRENT_AI_PROVIDER: AIProviderType = AI_PROVIDER.GEMINI;
 
 /**
- * Embedding model configuration
+ * AI Model Configuration
+ */
+export const AI_MODEL_CONFIG = {
+    // Google Gemini models
+    GEMINI: {
+        // Text generation model
+        textGeneration: {
+            model: 'gemini-2.5-flash'
+        },
+        // Embedding model - gemini-embedding-exp-03-07 produces 1536 dimensions
+        embedding: {
+            model: 'gemini-embedding-exp-03-07',
+            dimensions: 1536
+        }
+    }
+} as const;
+
+/**
+ * Embedding model configuration (legacy - use AI_MODEL_CONFIG instead)
+ * @deprecated Use AI_MODEL_CONFIG.GEMINI.embedding instead
  */
 export const EMBEDDING_CONFIG = {
-    // Google text-embedding-004: 768 dimensions (improved performance and accuracy)
+    // Google gemini-embedding-exp-03-07: 1536 dimensions (stable production model)
     GEMINI: {
-        model: 'text-embedding-004',
-        dimensions: 768
+        model: 'gemini-embedding-exp-03-07',
+        dimensions: 1536
     }
 } as const;
 
@@ -44,4 +63,11 @@ export const EMBEDDING_CONFIG = {
  */
 export function getCurrentEmbeddingConfig() {
     return EMBEDDING_CONFIG.GEMINI;
+}
+
+/**
+ * Get current text generation model configuration
+ */
+export function getCurrentTextGenerationConfig() {
+    return AI_MODEL_CONFIG.GEMINI.textGeneration;
 }
