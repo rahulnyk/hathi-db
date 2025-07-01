@@ -15,18 +15,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 ### AI Provider Configuration
 
-The application currently uses **Google Gemini** as the default AI provider. You can switch to OpenAI by changing the `CURRENT_AI_PROVIDER` in `lib/constants/ai-config.ts`.
+The application uses **Google Gemini** as the AI provider.
 
-#### Google AI (Default)
+#### Google AI
 ```bash
 # Get this from Google AI Studio: https://aistudio.google.com/
 GOOGLE_AI_API_KEY=your-google-ai-api-key
-```
-
-#### OpenAI (Alternative)
-```bash
-# Get this from OpenAI Platform: https://platform.openai.com/
-OPENAI_API_KEY=your-openai-api-key
 ```
 
 ### Optional Configuration
@@ -50,18 +44,6 @@ LOG_PERF_TO_CSV=false
 3. Go to Settings > API
 4. Copy the Project URL and anon/public key
 
-## Switching AI Providers
-
-To switch between AI providers, edit `lib/constants/ai-config.ts`:
-
-```typescript
-// For Google Gemini (default)
-export const CURRENT_AI_PROVIDER: AIProviderType = AI_PROVIDER.GEMINI;
-
-// For OpenAI
-export const CURRENT_AI_PROVIDER: AIProviderType = AI_PROVIDER.OPENAI;
-```
-
 ## Database Migration
 
 After setting up your environment variables, run the database migrations:
@@ -70,9 +52,8 @@ After setting up your environment variables, run the database migrations:
 pnpm migrate
 ```
 
-This will set up the database with the correct embedding dimensions for your chosen AI provider:
+This will set up the database with the correct embedding dimensions for Google Gemini:
 - **Google Gemini**: 768 dimensions (embedding-001)
-- **OpenAI**: 1536 dimensions (text-embedding-3-small)
 
 ## Troubleshooting
 
@@ -82,13 +63,9 @@ This will set up the database with the correct embedding dimensions for your cho
    - Make sure you've added the Google AI API key to your `.env.local` file
    - Restart your development server after adding the environment variable
 
-2. **"OPENAI_API_KEY environment variable is required"**
-   - This error appears if you're using OpenAI but haven't set the API key
-   - Either add the OpenAI API key or switch to Google Gemini
-
-3. **Vector dimension mismatch**
-   - If you switch AI providers, you may need to run migrations again
-   - The application will automatically handle the dimension changes
+2. **Vector dimension mismatch**
+   - The application uses 768-dimensional vectors for Google embedding-001
+   - Run migrations if you encounter dimension-related issues
 
 ### Development vs Production
 
