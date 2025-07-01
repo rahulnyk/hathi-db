@@ -55,9 +55,23 @@ export class GeminiAI implements AIProvider {
         try {
             const result = await this.genAI.models.generateContent({
                 model: this.textModel,
-                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
+                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                config: {
+                    maxOutputTokens: 150, // Limit response size for faster generation
+                    temperature: 0.2, // Low temperature for consistent, faster responses
+                    topP: 0.8,
+                    topK: 10
+                }
             });
+
             const response = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+            // Check for empty response
+            if (!response || response.trim().length === 0) {
+                console.error("Gemini returned empty response");
+                throw new AIError("Gemini returned an empty response");
+            }
+
             const suggestions = this.parseSuggestionsJSON(response);
             return { suggestions };
         } catch (error) {
@@ -189,32 +203,45 @@ export class GeminiAI implements AIProvider {
 
     private parseSuggestionsJSON(suggestionsText: string): string[] {
         try {
-            const parsed = JSON.parse(suggestionsText);
+            // Clean the response text - remove markdown code blocks if present
+            let cleanedText = suggestionsText.trim();
 
-            // Validate the response structure
-            if (!parsed || typeof parsed !== "object") {
-                throw new Error("Response is not an object");
+            // Remove markdown code blocks (```json ... ```)
+            if (cleanedText.startsWith('```json')) {
+                cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanedText.startsWith('```')) {
+                cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
             }
 
-            if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
-                throw new Error(
-                    "Response does not contain a suggestions array"
-                );
+            const parsed = JSON.parse(cleanedText);
+
+            let suggestions: string[];
+
+            // Handle both array format and object format
+            if (Array.isArray(parsed)) {
+                // Direct array format: ["suggestion1", "suggestion2"]
+                suggestions = parsed;
+            } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.suggestions)) {
+                // Object format: { "suggestions": ["suggestion1", "suggestion2"] }
+                suggestions = parsed.suggestions;
+            } else {
+                throw new Error("Response is not a valid array or object with suggestions");
             }
 
             // Validate each suggestion is a string
-            const suggestions = parsed.suggestions.filter(
+            const validSuggestions = suggestions.filter(
                 (suggestion: unknown) =>
                     typeof suggestion === "string" &&
                     suggestion.trim().length > 0
             );
 
             // Limit to 5 suggestions and ensure they're properly formatted
-            return suggestions
+            return validSuggestions
                 .slice(0, 5)
                 .map((suggestion: string) => suggestion.trim().toLowerCase());
         } catch (error) {
             console.error("Failed to parse Gemini response as JSON:", error);
+            console.error("Raw response:", suggestionsText);
             throw new AIError("Gemini did not return a valid JSON response");
         }
     }
