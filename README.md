@@ -75,7 +75,7 @@ cd hathi-3
 ### 2. Install Dependencies
 
 ```bash
-pnpm install
+yarn install
 ```
 
 ### 3. Set Up Environment Variables
@@ -108,7 +108,7 @@ pnpm install
 Run the database migrations to set up the required tables and functions:
 
 ```bash
-pnpm migrate
+yarn migrate
 ```
 
 This will create:
@@ -122,7 +122,7 @@ This will create:
 ### 5. Start the Development Server
 
 ```bash
-pnpm dev
+yarn dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see your application.
@@ -131,13 +131,13 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application.
 
 ### Available Scripts
 
--   `pnpm dev` - Start development server with Turbopack
--   `pnpm build` - Build for production
--   `pnpm start` - Start production server
--   `pnpm lint` - Run ESLint
--   `pnpm migrate` - Run database migrations
--   `pnpm migrate:create` - Create a new migration
--   `pnpm migrate:reset` - Reset database and run all migrations
+-   `yarn dev` - Start development server with Turbopack
+-   `yarn build` - Build for production
+-   `yarn start` - Start production server
+-   `yarn lint` - Run ESLint
+-   `yarn migrate` - Run database migrations
+-   `yarn migrate:create` - Create a new migration
+-   `yarn migrate:reset` - Reset database and run all migrations
 
 ### Project Structure
 
