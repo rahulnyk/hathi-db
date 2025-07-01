@@ -407,7 +407,7 @@ export function NotesEditor({
                     content: persistedNote.content,
                     contexts: persistedNote.contexts,
                     tags: persistedNote.tags,
-                    noteType: persistedNote.note_type || undefined,
+                    noteType: persistedNote.note_type || "note",
                 })
             );
         }
@@ -454,7 +454,7 @@ export function NotesEditor({
                     content,
                     contexts: mergedContexts,
                     tags: mergedTags,
-                    noteType: currentNote?.note_type || undefined,
+                    noteType: currentNote?.note_type || "note",
                 })
             );
 
