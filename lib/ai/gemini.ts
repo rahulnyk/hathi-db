@@ -58,7 +58,7 @@ export class GeminiAI implements AIProvider {
                 contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
             });
             const response = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const suggestions = response.split('\n').filter((line: string) => line.trim().length > 0);
+            const suggestions = this.parseSuggestionsJSON(response);
             return { suggestions };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -185,5 +185,37 @@ export class GeminiAI implements AIProvider {
             return new AIError('Rate limit exceeded', 'RATE_LIMIT', true);
         }
         return new AIError(`Gemini API error: ${errorMessage}`, undefined, true);
+    }
+
+    private parseSuggestionsJSON(suggestionsText: string): string[] {
+        try {
+            const parsed = JSON.parse(suggestionsText);
+
+            // Validate the response structure
+            if (!parsed || typeof parsed !== "object") {
+                throw new Error("Response is not an object");
+            }
+
+            if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+                throw new Error(
+                    "Response does not contain a suggestions array"
+                );
+            }
+
+            // Validate each suggestion is a string
+            const suggestions = parsed.suggestions.filter(
+                (suggestion: unknown) =>
+                    typeof suggestion === "string" &&
+                    suggestion.trim().length > 0
+            );
+
+            // Limit to 5 suggestions and ensure they're properly formatted
+            return suggestions
+                .slice(0, 5)
+                .map((suggestion: string) => suggestion.trim().toLowerCase());
+        } catch (error) {
+            console.error("Failed to parse Gemini response as JSON:", error);
+            throw new AIError("Gemini did not return a valid JSON response");
+        }
     }
 }
