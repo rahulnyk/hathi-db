@@ -23,7 +23,7 @@ Priority:
 2. Existing contexts: ${contextsListString}
 3. General contexts: work, personal, health, finance, family, travel, learning, etc.
 
-IMPORTANT: Return ONLY a valid JSON array of strings, nothing else.
+CRITICAL: Return ONLY a JSON array of strings, no markdown, no explanations, no other text.
 Example: ["work", "meeting-notes"]
 Max 5 contexts.`;
     
@@ -31,5 +31,5 @@ Max 5 contexts.`;
 }
 
 export function suggestContextSystemPrompt(): string {
-    return `You suggest contexts for notes. You must return ONLY a valid JSON array of strings, no other text.`;
+    return `You are a context suggestion tool. Return ONLY valid JSON arrays of strings. No markdown formatting, no explanations, no additional text.`;
 }

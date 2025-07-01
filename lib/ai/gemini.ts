@@ -203,46 +203,28 @@ export class GeminiAI implements AIProvider {
 
     private parseSuggestionsJSON(suggestionsText: string): string[] {
         try {
-            // Clean the response text - remove markdown code blocks if present
-            let cleanedText = suggestionsText.trim();
-
-            // Remove markdown code blocks (```json ... ```)
-            if (cleanedText.startsWith('```json')) {
-                cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-            } else if (cleanedText.startsWith('```')) {
-                cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
-            }
-
+            const cleanedText = suggestionsText.trim();
             const parsed = JSON.parse(cleanedText);
 
-            let suggestions: string[];
-
-            // Handle both array format and object format
-            if (Array.isArray(parsed)) {
-                // Direct array format: ["suggestion1", "suggestion2"]
-                suggestions = parsed;
-            } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.suggestions)) {
-                // Object format: { "suggestions": ["suggestion1", "suggestion2"] }
-                suggestions = parsed.suggestions;
-            } else {
-                throw new Error("Response is not a valid array or object with suggestions");
+            // Expect a direct array of strings
+            if (!Array.isArray(parsed)) {
+                throw new Error("Response is not an array");
             }
 
-            // Validate each suggestion is a string
-            const validSuggestions = suggestions.filter(
-                (suggestion: unknown) =>
+            // Filter and validate suggestions
+            const validSuggestions = parsed
+                .filter((suggestion: unknown) =>
                     typeof suggestion === "string" &&
                     suggestion.trim().length > 0
-            );
-
-            // Limit to 5 suggestions and ensure they're properly formatted
-            return validSuggestions
-                .slice(0, 5)
+                )
+                .slice(0, 5) // Limit to 5
                 .map((suggestion: string) => suggestion.trim().toLowerCase());
+
+            return validSuggestions;
         } catch (error) {
             console.error("Failed to parse Gemini response as JSON:", error);
             console.error("Raw response:", suggestionsText);
-            throw new AIError("Gemini did not return a valid JSON response");
+            throw new AIError("Gemini did not return a valid JSON array");
         }
     }
 }
