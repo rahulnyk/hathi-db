@@ -10,7 +10,7 @@ import remarkContextPlugin from "@/lib/remark_context_plugin";
 import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
 import {
@@ -32,9 +32,11 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
-    // Get all user contexts from the store
-    const allUserContexts = useAppSelector((state) =>
-        state.notesMetadata.contexts.map(ctx => ctx.context)
+    // Get all user contexts from the store - memoized in place
+    const contexts = useAppSelector((state) => state.notesMetadata.contexts);
+    const allUserContexts = useMemo(() =>
+        contexts.map(ctx => ctx.context),
+        [contexts]
     );
 
     // Determine if note is of type 'ai-note' (AI notes are handled by AiNoteCard component)
