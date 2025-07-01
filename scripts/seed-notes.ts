@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
+
 import * as dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
-import { AI_MODEL_CONFIG } from '../lib/constants/ai-config';
+import { createClient } from '@supabase/supabase-js';
+import { GeminiAI } from '../lib/ai/gemini';
+import { getCurrentEmbeddingConfig } from '../lib/constants/ai-config';
 
 // Load environment variables from .env.local file (Next.js standard)
 dotenv.config({ path: '.env.local' });
@@ -15,26 +15,16 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
 // You'll need to set these environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUserId = process.env.SUPABASE_USER_ID!;
 const googleApiKey = process.env.GOOGLE_AI_API_KEY!;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
-}
-
-if (!googleApiKey) {
-  console.error('Missing required environment variable: GOOGLE_AI_API_KEY');
+if (!supabaseUrl || !supabaseServiceKey || !supabaseUserId || !googleApiKey) {
+  console.error('Missing required environment variables');
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Initialize Google AI for embeddings
-const genAI = new GoogleGenAI({ apiKey: googleApiKey });
-
-// Sample user ID - you'll need to replace this with a real user ID from your auth.users table
-// const SAMPLE_USER_ID = '00000000-0000-0000-0000-000000000000'; // Replace with actual user ID
-const SAMPLE_USER_ID = '8ac6bb74-99e7-4d83-a8e0-786b93d3dee4';
+const aiProvider = new GeminiAI(googleApiKey);
 
 interface NoteData {
   user_id: string;
@@ -59,7 +49,7 @@ function dateToTimestamp(dateStr: string): string {
   return date.toISOString();
 }
 
-// Function to generate document embedding with optimized prompt
+// Function to generate document embedding using AI provider
 async function generateDocumentEmbedding(
   content: string,
   contexts?: string[],
@@ -67,22 +57,14 @@ async function generateDocumentEmbedding(
   noteType?: string
 ): Promise<number[]> {
   try {
-    const prompt = `Document: ${content}${contexts ? `\nContexts: ${contexts.join(', ')}` : ''}${tags ? `\nTags: ${tags.join(', ')}` : ''}${noteType ? `\nType: ${noteType}` : ''}
-
-This is a document that should be retrieved when users ask questions about: ${content}${contexts ? `\nContexts: ${contexts.join(', ')}` : ''}${tags ? `\nTags: ${tags.join(', ')}` : ''}${noteType ? `\nType: ${noteType}` : ''}`;
-
-    const result = await genAI.models.embedContent({
-        model: AI_MODEL_CONFIG.GEMINI.embedding.model,
-        contents: [{ text: prompt }],
-        config: {
-            outputDimensionality: 1536
-        }
+    const response = await aiProvider.generateDocumentEmbedding({
+      content,
+      contexts,
+      tags,
+      noteType
     });
     
-    if (!result.embeddings || !result.embeddings[0]?.values) {
-        throw new Error('No embedding generated');
-    }
-    return result.embeddings[0].values;
+    return response.embedding;
   } catch (error) {
     console.error('Error generating embedding:', error);
     throw error;
@@ -110,7 +92,7 @@ async function updateNotesWithEmbeddings(notes: any[]) {
       updatedNotes.push({
         id: note.id,
         embedding,
-        embedding_model: AI_MODEL_CONFIG.GEMINI.embedding.model,
+        embedding_model: getCurrentEmbeddingConfig().model,
         embedding_created_at: new Date().toISOString(),
       });
 
@@ -130,7 +112,7 @@ async function updateNotesWithEmbeddings(notes: any[]) {
 const seedNotes: NoteData[] = [
   // 1. Meeting Notes with Work Context
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# Weekly Team Standup - [[work]] [[meeting]]
 
 ## Agenda
@@ -161,7 +143,7 @@ The team is making good progress on the Q2 objectives. The new dashboard feature
 
   // 2. Personal Journal Entry
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Today was quite productive! [[personal]] [[journal]]
 
 Started the day with a morning walk in the park [[health]] [[exercise]]. The weather was perfect - sunny but not too hot. Saw some interesting birds and even spotted a rabbit!
@@ -182,7 +164,7 @@ Feeling grateful for good health, good friends, and meaningful work.`,
 
   // 3. Technical Documentation
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# API Authentication Implementation [[tech]] [[documentation]]
 
 ## Overview
@@ -237,7 +219,7 @@ const authenticateToken = (req, res, next) => {
 
   // 4. Recipe Notes
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# Grandma's Chocolate Chip Cookies [[cooking]] [[recipe]]
 
 ## Ingredients
@@ -285,7 +267,7 @@ This recipe has been in our family for generations! [[family]] [[tradition]]`,
 
   // 5. Book Notes
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# "Atomic Habits" by James Clear [[reading]] [[book-notes]]
 
 ## Key Concepts
@@ -329,7 +311,7 @@ This book completely changed how I think about personal development! [[personal-
 
   // 6. Travel Planning
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# Japan Trip Planning [[travel]] [[planning]]
 
 ## Trip Details
@@ -402,7 +384,7 @@ So excited for this adventure! [[adventure]] [[culture]]`,
 
   // 7. Simple Task List
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# Weekend To-Do List [[tasks]] [[personal]]
 
 ## Saturday
@@ -439,7 +421,7 @@ Also need to schedule dentist appointment for next month [[health]].`,
 
   // 8. Learning Notes
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# React Hooks Deep Dive [[learning]] [[programming]]
 
 ## useState Hook
@@ -510,7 +492,7 @@ Need to practice more with useContext and useReducer! [[react]] [[frontend]]`,
 
   // 9. Health & Fitness
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `# Workout Plan - Week 3 [[fitness]] [[health]]
 
 ## Monday - Upper Body
@@ -574,7 +556,7 @@ Feeling stronger and more energized! [[motivation]] [[wellness]]`,
 
   // 10. Simple Note with Contexts
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Had a great conversation with Sarah today about the new project. [[work]] [[colleague]] She had some really insightful ideas about the user interface design. [[ui]] [[design]]
 
 We discussed the color scheme and layout options. She suggested using a more minimalist approach which I think would work well. [[minimalism]]
@@ -591,7 +573,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 11. Unstructured: Grocery List
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Grocery list for the week: apples, bananas, spinach, milk, eggs, bread, coffee. Don't forget to check for discounts on cereal.`,
     key_context: '25-june-2025',
     contexts: ['25-june-2025', 'grocery', 'shopping'],
@@ -604,7 +586,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 12. Unstructured: Quick Thought
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Why do cats always find the sunniest spot in the house? Must be nice to be a cat.`,
     key_context: '26-june-2025',
     contexts: ['26-june-2025', 'thoughts', 'cats'],
@@ -617,7 +599,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 13. Unstructured: Work Reminder
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Remember to send the quarterly report to finance by Friday. Ask John for the latest numbers.`,
     key_context: '27-june-2025',
     contexts: ['27-june-2025', 'work', 'reminder'],
@@ -630,7 +612,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 14. Unstructured: Dream Log
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Dreamt I was flying over a city made of glass. Woke up feeling inspired and a little confused.`,
     key_context: '28-june-2025',
     contexts: ['28-june-2025', 'dream', 'personal'],
@@ -643,7 +625,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 15. Unstructured: Fitness Progress
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Ran 5km in 28 minutes today. Felt strong, but need to stretch more before running.`,
     key_context: '29-june-2025',
     contexts: ['29-june-2025', 'fitness', 'running'],
@@ -656,7 +638,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 16. Unstructured: Movie Reaction
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `Watched "The Grand Budapest Hotel". Loved the colors and quirky characters. Wes Anderson's style is so unique!`,
     key_context: '30-june-2025',
     contexts: ['30-june-2025', 'movies', 'entertainment'],
@@ -669,7 +651,7 @@ Need to follow up with the development team tomorrow to discuss the technical fe
 
   // 17. Unstructured: Weather Note
   {
-    user_id: SAMPLE_USER_ID,
+    user_id: supabaseUserId,
     content: `It rained all afternoon. Streets were empty, and the air smelled fresh. Perfect day for reading indoors.`,
     key_context: '1-july-2025',
     contexts: ['1-july-2025', 'weather', 'personal'],
