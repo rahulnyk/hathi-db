@@ -49,7 +49,7 @@ LOG_PERF_TO_CSV=false
 After setting up your environment variables, run the database migrations:
 
 ```bash
-pnpm migrate
+yarn migrate
 ```
 
 This will set up the database with the correct embedding dimensions for Google Gemini:
