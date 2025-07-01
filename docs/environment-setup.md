@@ -53,7 +53,7 @@ yarn migrate
 ```
 
 This will set up the database with the correct embedding dimensions for Google Gemini:
-- **Google Gemini**: 768 dimensions (embedding-001)
+- **Google Gemini**: 768 dimensions (text-embedding-004)
 
 ## Troubleshooting
 
@@ -64,7 +64,7 @@ This will set up the database with the correct embedding dimensions for Google G
    - Restart your development server after adding the environment variable
 
 2. **Vector dimension mismatch**
-   - The application uses 768-dimensional vectors for Google embedding-001
+   - The application uses 768-dimensional vectors for Google text-embedding-004
    - Run migrations if you encounter dimension-related issues
 
 ### Development vs Production

@@ -30,7 +30,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Initialize Google AI for embeddings
 const genAI = new GoogleGenerativeAI(googleApiKey);
-const embeddingModel = genAI.getGenerativeModel({ model: "embedding-001" });
+const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 // Sample user ID - you'll need to replace this with a real user ID from your auth.users table
 // const SAMPLE_USER_ID = '00000000-0000-0000-0000-000000000000'; // Replace with actual user ID
@@ -107,7 +107,7 @@ async function updateNotesWithEmbeddings(notes: any[]) {
         return {
           id: note.id,
           embedding,
-          embedding_model: 'embedding-001',
+          embedding_model: 'text-embedding-004',
           embedding_created_at: new Date().toISOString(),
         };
       } catch (error) {

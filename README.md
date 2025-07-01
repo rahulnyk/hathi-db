@@ -116,7 +116,7 @@ This will create:
 -   Notes table with RLS policies
 -   Context and tags support
 -   User statistics functions
--   Embedding support for AI features (768-dimensional vectors for Google embedding-001)
+-   Embedding support for AI features (768-dimensional vectors for Google text-embedding-004)
 -   Pagination functions
 
 ### 5. Start the Development Server

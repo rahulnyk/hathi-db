@@ -32,9 +32,9 @@ export const CURRENT_AI_PROVIDER: AIProviderType = AI_PROVIDER.GEMINI;
  * Embedding model configuration
  */
 export const EMBEDDING_CONFIG = {
-    // Google embedding-001: 768 dimensions
+    // Google text-embedding-004: 768 dimensions (improved performance and accuracy)
     GEMINI: {
-        model: 'embedding-001',
+        model: 'text-embedding-004',
         dimensions: 768
     }
 } as const;
