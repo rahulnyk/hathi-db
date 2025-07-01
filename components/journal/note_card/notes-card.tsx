@@ -32,6 +32,11 @@ export function NoteCard({ note }: { note: Note }) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
+    // Get all user contexts from the store
+    const allUserContexts = useAppSelector((state) =>
+        state.notesMetadata.contexts.map(ctx => ctx.context)
+    );
+
     // Determine if note is of type 'ai-note' (AI notes are handled by AiNoteCard component)
     const isAiNote = note.note_type === "ai-note";
     // Determine if the current note is active
@@ -52,14 +57,11 @@ export function NoteCard({ note }: { note: Note }) {
             : note.content;
 
     const handleStructurize = () => {
-        // Get user contexts from the note's contexts
-        const userContexts = note.contexts || [];
-
         dispatch(
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
-                userContexts,
+                userContexts: allUserContexts,
             })
         );
     };
@@ -167,14 +169,11 @@ export function NoteCard({ note }: { note: Note }) {
             <NoteStatusIndicator
                 note={note}
                 onRefreshContextSuggestions={() => {
-                    // Get user contexts from the note's contexts
-                    const userContexts = note.contexts || [];
-
                     dispatch(
                         generateSuggestedContexts({
                             noteId: note.id,
                             content: note.content,
-                            userContexts,
+                            userContexts: allUserContexts,
                         })
                     );
                 }}

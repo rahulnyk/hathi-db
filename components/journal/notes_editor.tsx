@@ -134,6 +134,11 @@ export function NotesEditor({
         noteId ? state.notes.notes.find((note) => note.id === noteId) : null
     );
 
+    // Get all user contexts from the store
+    const allUserContexts = useAppSelector((state) =>
+        state.notesMetadata.contexts.map(ctx => ctx.context)
+    );
+
     // Initialize content when entering edit mode
     useEffect(() => {
         if (
@@ -390,7 +395,7 @@ export function NotesEditor({
                 generateSuggestedContexts({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
-                    userContexts: persistedNote.contexts || [],
+                    userContexts: allUserContexts,
                 })
             );
 
