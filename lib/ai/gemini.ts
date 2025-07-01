@@ -1,5 +1,20 @@
 import { GoogleGenAI } from '@google/genai';
-import { AIProvider, EmbeddingRequest, EmbeddingResponse, DocumentEmbeddingRequest, DocumentEmbeddingResponse, QueryEmbeddingRequest, QueryEmbeddingResponse, SuggestContextsRequest, SuggestContextsResponse, StructurizeNoteRequest, StructurizeNoteResponse, QARequest, QAResponse, AIError } from './types';
+import {
+    AIProvider,
+    EmbeddingRequest,
+    EmbeddingResponse,
+    DocumentEmbeddingRequest,
+    DocumentEmbeddingResponse,
+    QueryEmbeddingRequest,
+    QueryEmbeddingResponse,
+    SuggestContextsRequest,
+    SuggestContextsResponse,
+    StructurizeNoteRequest,
+    StructurizeNoteResponse,
+    QARequest,
+    QAResponse,
+    AIError
+} from './types';
 import {
     documentEmbeddingPrompt,
     queryEmbeddingPrompt,
