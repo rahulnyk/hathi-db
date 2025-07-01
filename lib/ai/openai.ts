@@ -5,6 +5,10 @@ import {
     SuggestContextsResponse,
     EmbeddingRequest,
     EmbeddingResponse,
+    DocumentEmbeddingRequest,
+    DocumentEmbeddingResponse,
+    QueryEmbeddingRequest,
+    QueryEmbeddingResponse,
     StructurizeNoteRequest,
     StructurizeNoteResponse,
     AIError,
@@ -28,6 +32,11 @@ import {
     qaSystemPrompt,
     qaUserPrompt,
 } from "../prompts/qa-prompts";
+
+import {
+    documentEmbeddingPrompt,
+    queryEmbeddingPrompt,
+} from "../prompts/embedding-prompts";
 
 export class OpenAIProvider implements AIProvider {
     private client: OpenAI;
@@ -79,6 +88,47 @@ export class OpenAIProvider implements AIProvider {
             const response = await this.client.embeddings.create({
                 model: "text-embedding-3-small",
                 input: request.content,
+            });
+            return {
+                embedding: response.data[0].embedding,
+            };
+        } catch (error) {
+            throw this.handleOpenAIError(error);
+        }
+    }
+
+    async generateDocumentEmbedding(
+        request: DocumentEmbeddingRequest
+    ): Promise<DocumentEmbeddingResponse> {
+        try {
+            const prompt = documentEmbeddingPrompt(
+                request.content,
+                request.contexts,
+                request.tags,
+                request.noteType
+            );
+
+            const response = await this.client.embeddings.create({
+                model: "text-embedding-3-small",
+                input: prompt,
+            });
+            return {
+                embedding: response.data[0].embedding,
+            };
+        } catch (error) {
+            throw this.handleOpenAIError(error);
+        }
+    }
+
+    async generateQueryEmbedding(
+        request: QueryEmbeddingRequest
+    ): Promise<QueryEmbeddingResponse> {
+        try {
+            const prompt = queryEmbeddingPrompt(request.question);
+
+            const response = await this.client.embeddings.create({
+                model: "text-embedding-3-small",
+                input: prompt,
             });
             return {
                 embedding: response.data[0].embedding,
@@ -170,7 +220,7 @@ export class OpenAIProvider implements AIProvider {
                     suggestion.trim().length > 0
             );
 
-            // Limit to 5 suggestions and ensure they"re properly formatted
+            // Limit to 5 suggestions and ensure they're properly formatted
             return suggestions
                 .slice(0, 5)
                 .map((suggestion: string) => suggestion.trim().toLowerCase());
@@ -181,22 +231,21 @@ export class OpenAIProvider implements AIProvider {
     }
 
     private handleOpenAIError(error: unknown): AIError {
-        if (typeof error === "object" && error !== null && "status" in error) {
-            const status = (error as { status: number }).status;
+        console.error("OpenAI API error:", error);
 
-            if (status === 429) {
-                return new AIRateLimitError();
-            }
-
-            if (status === 402) {
-                return new AIQuotaExceededError();
-            }
+        // Handle rate limiting
+        if (error && typeof error === "object" && "status" in error && error.status === 429) {
+            return new AIRateLimitError("OpenAI API rate limit exceeded");
         }
 
-        if (error instanceof Error) {
-            return new AIError(error.message);
+        // Handle quota exceeded
+        if (error && typeof error === "object" && "status" in error && error.status === 402) {
+            return new AIQuotaExceededError("OpenAI API quota exceeded");
         }
 
-        return new AIError("Unknown OpenAI error");
+        // Handle other errors
+        return new AIError(
+            error instanceof Error ? error.message : "An error occurred with the OpenAI API"
+        );
     }
 }
