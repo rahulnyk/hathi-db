@@ -58,7 +58,7 @@ export function CardHeader({ note }: CardHeaderProps) {
                 structuredContent: aiStructurizedState.structuredContent,
                 contexts: note.contexts,
                 tags: note.tags,
-                noteType: note.note_type || undefined,
+                noteType: note.note_type || "note",
             })
         );
     };
