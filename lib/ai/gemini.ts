@@ -33,15 +33,17 @@ import {
 } from "../prompts/qa-prompts";
 import { AI_MODEL_CONFIG } from '../constants/ai-config';
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
-export class GeminiProvider implements AIProvider {
+export class GeminiAI implements AIProvider {
     private genAI: GoogleGenAI;
     private textModel: string;
     private embeddingModelName: string;
 
-    constructor() {
-        this.genAI = genAI;
+    constructor(apiKey: string) {
+        if (!apiKey) {
+            throw new Error('Google AI API key is required. Set GOOGLE_AI_API_KEY environment variable or pass it to the constructor.');
+        }
+        this.genAI = new GoogleGenAI({ apiKey });
         this.textModel = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
         this.embeddingModelName = AI_MODEL_CONFIG.GEMINI.embedding.model;
     }
