@@ -33,17 +33,15 @@ import {
 } from "../prompts/qa-prompts";
 import { AI_MODEL_CONFIG } from '../constants/ai-config';
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
+const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
 export class GeminiProvider implements AIProvider {
-    private model: typeof GoogleGenAI.prototype.models.generateContent;
-    private embeddingModel: typeof GoogleGenAI.prototype.models.embedContent;
+    private genAI: GoogleGenAI;
     private textModel: string;
     private embeddingModelName: string;
 
     constructor() {
-        this.model = genAI.models.generateContent;
-        this.embeddingModel = genAI.models.embedContent;
+        this.genAI = genAI;
         this.textModel = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
         this.embeddingModelName = AI_MODEL_CONFIG.GEMINI.embedding.model;
     }
@@ -53,7 +51,7 @@ export class GeminiProvider implements AIProvider {
         const userPrompt = suggestContextUserPrompt(request.content, request.userContexts);
 
         try {
-            const result = await this.model({
+            const result = await this.genAI.models.generateContent({
                 model: this.textModel,
                 contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
             });
@@ -67,7 +65,7 @@ export class GeminiProvider implements AIProvider {
 
     async generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse> {
         try {
-            const result = await this.embeddingModel({
+            const result = await this.genAI.models.embedContent({
                 model: this.embeddingModelName,
                 contents: [{ text: request.content }],
                 config: {
@@ -98,7 +96,7 @@ export class GeminiProvider implements AIProvider {
                 request.noteType
             );
 
-            const result = await this.embeddingModel({
+            const result = await this.genAI.models.embedContent({
                 model: this.embeddingModelName,
                 contents: [{ text: prompt }],
                 config: {
@@ -124,7 +122,7 @@ export class GeminiProvider implements AIProvider {
         try {
             const prompt = queryEmbeddingPrompt(request.question);
 
-            const result = await this.embeddingModel({
+            const result = await this.genAI.models.embedContent({
                 model: this.embeddingModelName,
                 contents: [{ text: prompt }],
                 config: {
@@ -149,7 +147,7 @@ export class GeminiProvider implements AIProvider {
         const userPrompt = structurizeUserPrompt(request.content, request.userContexts);
 
         try {
-            const result = await this.model({
+            const result = await this.genAI.models.generateContent({
                 model: this.textModel,
                 contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
             });
@@ -165,7 +163,7 @@ export class GeminiProvider implements AIProvider {
         const userPrompt = qaUserPrompt(request.question, request.context, request.userContexts);
 
         try {
-            const result = await this.model({
+            const result = await this.genAI.models.generateContent({
                 model: this.textModel,
                 contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
             });
