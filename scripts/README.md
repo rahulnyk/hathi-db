@@ -17,7 +17,7 @@ The `seed-notes.ts` script populates your database with sample notes and generat
 
 2. **Database**: Run migrations first:
    ```bash
-   pnpm migrate
+   yarn migrate
    ```
 
 3. **User ID**: Update the `SAMPLE_USER_ID` in the script with a real user ID from your `auth.users` table.
@@ -26,7 +26,7 @@ The `seed-notes.ts` script populates your database with sample notes and generat
 
 Run the seed script:
 ```bash
-pnpm seed
+yarn seed
 ```
 
 ### What it does
