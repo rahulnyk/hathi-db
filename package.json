@@ -9,7 +9,7 @@
     "migrate:create": "./scripts/migrate.sh create",
     "migrate:reset": "./scripts/migrate.sh reset",
     "seed": "tsx scripts/seed-notes.ts",
-    "regenerate-embeddings": "tsx scripts/regenerate-embeddings.ts"
+    "re-embed": "tsx scripts/regenerate-embeddings.ts"
   },
   "dependencies": {
     "@google/genai": "^1.7.0",
