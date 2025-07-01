@@ -69,7 +69,7 @@ export class GeminiProvider implements AIProvider {
                 model: this.embeddingModelName,
                 contents: [{ text: request.content }],
                 config: {
-                    outputDimensionality: 1536
+                    outputDimensionality: AI_MODEL_CONFIG.GEMINI.embedding.dimensions
                 }
             });
             if (!result.embeddings || !result.embeddings[0]?.values) {
@@ -100,7 +100,7 @@ export class GeminiProvider implements AIProvider {
                 model: this.embeddingModelName,
                 contents: [{ text: prompt }],
                 config: {
-                    outputDimensionality: 1536
+                    outputDimensionality: AI_MODEL_CONFIG.GEMINI.embedding.dimensions
                 }
             });
             if (!result.embeddings || !result.embeddings[0]?.values) {
@@ -126,7 +126,7 @@ export class GeminiProvider implements AIProvider {
                 model: this.embeddingModelName,
                 contents: [{ text: prompt }],
                 config: {
-                    outputDimensionality: 1536
+                    outputDimensionality: AI_MODEL_CONFIG.GEMINI.embedding.dimensions
                 }
             });
             if (!result.embeddings || !result.embeddings[0]?.values) {
