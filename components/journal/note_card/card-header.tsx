@@ -21,6 +21,11 @@ export function CardHeader({ note }: CardHeaderProps) {
         (state) => state.ai.structurizedNote[note.id]
     );
 
+    // Get all user contexts from the store
+    const allUserContexts = useAppSelector((state) =>
+        state.notesMetadata.contexts.map(ctx => ctx.context)
+    );
+
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         const options: Intl.DateTimeFormatOptions = {
@@ -35,14 +40,11 @@ export function CardHeader({ note }: CardHeaderProps) {
     };
 
     const handleStructurize = () => {
-        // Get user contexts from the note's contexts
-        const userContexts = note.contexts || [];
-
         dispatch(
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
-                userContexts,
+                userContexts: allUserContexts,
             })
         );
     };
