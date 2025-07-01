@@ -36,7 +36,7 @@ export const AI_MODEL_CONFIG = {
     GEMINI: {
         // Text generation model
         textGeneration: {
-            model: 'gemini-1.5-flash'
+            model: 'gemini-2.0-flash'
         },
         // Embedding model - gemini-embedding-exp-03-07 produces 1536 dimensions
         embedding: {
