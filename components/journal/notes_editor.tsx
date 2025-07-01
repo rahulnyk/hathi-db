@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically, patchNote } from "@/store/notesSlice"; // Removed exitEditMode, updateEditingContent
 import { setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
@@ -134,9 +134,11 @@ export function NotesEditor({
         noteId ? state.notes.notes.find((note) => note.id === noteId) : null
     );
 
-    // Get all user contexts from the store
-    const allUserContexts = useAppSelector((state) =>
-        state.notesMetadata.contexts.map(ctx => ctx.context)
+    // Get all user contexts from the store - memoized in place
+    const contexts = useAppSelector((state) => state.notesMetadata.contexts);
+    const allUserContexts = useMemo(() =>
+        contexts.map(ctx => ctx.context),
+        [contexts]
     );
 
     // Initialize content when entering edit mode
