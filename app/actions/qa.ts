@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { aiProvider } from "@/lib/ai";
+import { generateQueryEmbedding } from "@/app/actions/ai";
 import { formatNotesForContext } from "@/lib/prompts/qa-prompts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QA_SEARCH_LIMITS, DEFAULT_SEARCH_LIMIT } from "@/lib/constants/qa";
@@ -43,14 +44,14 @@ export async function answerQuestion(question: string): Promise<QAResult> {
             // Check authentication
             const user = await getAuthUser(supabase);
 
-            // Generate embedding for the question
+            // Generate optimized query embedding for the question
             let questionEmbedding;
             try {
-                questionEmbedding = await aiProvider.generateEmbedding({
-                    content: question,
+                questionEmbedding = await generateQueryEmbedding({
+                    question,
                 });
             } catch (embeddingError) {
-                console.error("Error generating embedding:", embeddingError);
+                console.error("Error generating query embedding:", embeddingError);
                 // Fallback to basic search if embedding generation fails
                 return await fallbackToBasicSearch(question, supabase);
             }
@@ -59,7 +60,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
             const { data: relevantNotes, error: searchError } =
                 await supabase.rpc("search_notes_by_similarity", {
                     p_user_id: user.id,
-                    p_query_embedding: questionEmbedding.embedding,
+                    p_query_embedding: questionEmbedding,
                     p_similarity_threshold:
                         QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
                     p_limit: DEFAULT_SEARCH_LIMIT,
@@ -77,7 +78,7 @@ export async function answerQuestion(question: string): Promise<QAResult> {
                     "search_notes_by_similarity",
                     {
                         p_user_id: user.id,
-                        p_query_embedding: questionEmbedding.embedding,
+                        p_query_embedding: questionEmbedding,
                         p_similarity_threshold:
                             QA_SEARCH_LIMITS.LOW_SIMILARITY_THRESHOLD,
                         p_limit: DEFAULT_SEARCH_LIMIT,

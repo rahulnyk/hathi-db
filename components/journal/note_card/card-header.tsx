@@ -35,10 +35,14 @@ export function CardHeader({ note }: CardHeaderProps) {
     };
 
     const handleStructurize = () => {
+        // Get user contexts from the note's contexts
+        const userContexts = note.contexts || [];
+
         dispatch(
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
+                userContexts,
             })
         );
     };
@@ -50,6 +54,9 @@ export function CardHeader({ note }: CardHeaderProps) {
             acceptStructurizedNoteThunk({
                 noteId: note.id,
                 structuredContent: aiStructurizedState.structuredContent,
+                contexts: note.contexts,
+                tags: note.tags,
+                noteType: note.note_type || undefined,
             })
         );
     };

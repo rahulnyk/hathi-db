@@ -19,7 +19,7 @@
 ### 🚀 Core Functionality
 
 -   **Smart Journaling**: Create and organize notes with context-based categorization
--   **AI Integration**: Powered by OpenAI for intelligent note suggestions and insights
+-   **AI Integration**: Powered by Google Gemini for intelligent note suggestions and insights
 -   **Context Management**: Organize notes by contexts with pagination and search
 -   **Real-time Sync**: All data synced in real-time with Supabase
 -   **Performance Monitoring**: Built-in performance logging and optimization
@@ -50,7 +50,7 @@
 
 -   **Frontend**: Next.js 15 with App Router, React 19
 -   **Backend**: Supabase (PostgreSQL, Auth, Real-time)
--   **AI**: OpenAI API integration
+-   **AI**: Google Gemini API integration (flash-2.5 model)
 -   **Styling**: Tailwind CSS, shadcn/ui components
 -   **State Management**: Redux Toolkit
 -   **Database**: PostgreSQL with custom functions and triggers
@@ -63,7 +63,7 @@
 
 -   Node.js 18+
 -   A [Supabase](https://supabase.com) account and project
--   An [OpenAI API](https://platform.openai.com) key
+-   A [Google AI](https://aistudio.google.com/) API key
 
 ### 1. Clone the Repository
 
@@ -75,7 +75,7 @@ cd hathi-3
 ### 2. Install Dependencies
 
 ```bash
-yarn install
+pnpm install
 ```
 
 ### 3. Set Up Environment Variables
@@ -93,21 +93,22 @@ yarn install
     NEXT_PUBLIC_SUPABASE_URL=your-project-url
     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-    # OpenAI Configuration
-    OPENAI_API_KEY=your-openai-api-key
+    # Google AI Configuration
+    GOOGLE_AI_API_KEY=your-google-ai-api-key
 
     # Optional: Performance Logging
     LOG_PERF_TO_CSV=false
     ```
 
     You can find your Supabase credentials in your [project's API settings](https://supabase.com/dashboard/project/_/settings/api).
+    You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
 
 ### 4. Set Up the Database
 
 Run the database migrations to set up the required tables and functions:
 
 ```bash
-yarn migrate
+pnpm migrate
 ```
 
 This will create:
@@ -115,13 +116,13 @@ This will create:
 -   Notes table with RLS policies
 -   Context and tags support
 -   User statistics functions
--   Embedding support for AI features
+-   Embedding support for AI features (768-dimensional vectors for Google embedding-001)
 -   Pagination functions
 
 ### 5. Start the Development Server
 
 ```bash
-yarn dev
+pnpm dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see your application.
@@ -130,13 +131,13 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application.
 
 ### Available Scripts
 
--   `yarn dev` - Start development server with Turbopack
--   `yarn build` - Build for production
--   `yarn start` - Start production server
--   `yarn lint` - Run ESLint
--   `yarn migrate` - Run database migrations
--   `yarn migrate:create` - Create a new migration
--   `yarn migrate:reset` - Reset database and run all migrations
+-   `pnpm dev` - Start development server with Turbopack
+-   `pnpm build` - Build for production
+-   `pnpm start` - Start production server
+-   `pnpm lint` - Run ESLint
+-   `pnpm migrate` - Run database migrations
+-   `pnpm migrate:create` - Create a new migration
+-   `pnpm migrate:reset` - Reset database and run all migrations
 
 ### Project Structure
 
@@ -196,7 +197,7 @@ Ensure these environment variables are set in your production environment:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
-OPENAI_API_KEY=your-openai-api-key
+GOOGLE_AI_API_KEY=your-google-ai-api-key
 ```
 
 ### Database Setup for Production
@@ -219,4 +220,4 @@ This project is private and proprietary.
 
 ---
 
-Built with ❤️ using Next.js, Supabase, and OpenAI
+Built with ❤️ using Next.js, Supabase, and Google AI

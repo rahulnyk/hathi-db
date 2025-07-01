@@ -61,7 +61,12 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     return (
         <div className="flex flex-col gap-1 px-2 py-1">
             {/* Context List */}
-            {contexts.map((contextStat: ContextStatParams) => (
+            {contexts
+                .filter((contextStat, index, self) =>
+                    // Remove duplicates based on context value
+                    index === self.findIndex(c => c.context === contextStat.context)
+                )
+                .map((contextStat: ContextStatParams) => (
                 <div
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}

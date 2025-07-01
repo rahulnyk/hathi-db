@@ -17,6 +17,26 @@ export interface EmbeddingResponse {
     embedding: number[];
 }
 
+// New types for optimized embeddings
+export interface DocumentEmbeddingRequest {
+    content: string;
+    contexts?: string[];
+    tags?: string[];
+    noteType?: string;
+}
+
+export interface QueryEmbeddingRequest {
+    question: string;
+}
+
+export interface DocumentEmbeddingResponse {
+    embedding: number[];
+}
+
+export interface QueryEmbeddingResponse {
+    embedding: number[];
+}
+
 export interface StructurizeNoteRequest {
     content: string;
     userContexts: string[];
@@ -42,6 +62,8 @@ export interface QAResponse {
 export interface AIProvider {
     suggestContexts(request: SuggestContextsRequest): Promise<SuggestContextsResponse>;
     generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
+    generateDocumentEmbedding(request: DocumentEmbeddingRequest): Promise<DocumentEmbeddingResponse>;
+    generateQueryEmbedding(request: QueryEmbeddingRequest): Promise<QueryEmbeddingResponse>;
     structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse>;
     answerQuestion(request: QARequest): Promise<QAResponse>;
 }

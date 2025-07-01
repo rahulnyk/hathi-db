@@ -52,10 +52,14 @@ export function NoteCard({ note }: { note: Note }) {
             : note.content;
 
     const handleStructurize = () => {
+        // Get user contexts from the note's contexts
+        const userContexts = note.contexts || [];
+
         dispatch(
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
+                userContexts,
             })
         );
     };
@@ -163,10 +167,14 @@ export function NoteCard({ note }: { note: Note }) {
             <NoteStatusIndicator
                 note={note}
                 onRefreshContextSuggestions={() => {
+                    // Get user contexts from the note's contexts
+                    const userContexts = note.contexts || [];
+
                     dispatch(
                         generateSuggestedContexts({
                             noteId: note.id,
                             content: note.content,
+                            userContexts,
                         })
                     );
                 }}
