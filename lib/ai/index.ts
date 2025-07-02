@@ -1,9 +1,12 @@
 import { AIProvider } from "./types";
-import { OpenAIProvider } from "./openai";
+import { GeminiAI } from "./gemini";
 
 // Export the AI provider interface and types
 export * from "./types";
 
-// Create and export the default AI provider
-// This can be easily changed to use a different provider
-export const aiProvider: AIProvider = new OpenAIProvider();
+// Create and export the default AI provider based on configuration
+function createAIProvider(): AIProvider {
+    return new GeminiAI(process.env.GOOGLE_AI_API_KEY!);
+}
+
+export const aiProvider: AIProvider = createAIProvider();

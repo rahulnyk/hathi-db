@@ -97,10 +97,12 @@ const notesMetadataSlice = createSlice({
                 state.isLoadingMore = false;
 
                 if (action.payload.isLoadingMore) {
-                    // Append new contexts to existing ones
+                    // Append new contexts to existing ones, removing duplicates
+                    const existingContexts = new Set(state.contexts.map(c => c.context));
+                    const newContexts = action.payload.contexts.filter(c => !existingContexts.has(c.context));
                     state.contexts = [
                         ...state.contexts,
-                        ...action.payload.contexts,
+                        ...newContexts,
                     ];
                 } else {
                     // Replace contexts (initial load or reset)

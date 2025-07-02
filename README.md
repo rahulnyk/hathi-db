@@ -19,7 +19,7 @@
 ### 🚀 Core Functionality
 
 -   **Smart Journaling**: Create and organize notes with context-based categorization
--   **AI Integration**: Powered by OpenAI for intelligent note suggestions and insights
+-   **AI Integration**: Powered by Google Gemini for intelligent note suggestions and insights
 -   **Context Management**: Organize notes by contexts with pagination and search
 -   **Real-time Sync**: All data synced in real-time with Supabase
 -   **Performance Monitoring**: Built-in performance logging and optimization
@@ -52,7 +52,7 @@
 
 -   **Frontend**: Next.js 15 with App Router, React 19
 -   **Backend**: Supabase (PostgreSQL, Auth, Real-time)
--   **AI**: OpenAI API integration
+-   **AI**: Google Gemini API integration (flash-2.5 model)
 -   **Styling**: Tailwind CSS, shadcn/ui components
 -   **State Management**: Redux Toolkit
 -   **Database**: PostgreSQL with custom functions and triggers
@@ -65,7 +65,7 @@
 
 -   Node.js 18+
 -   A [Supabase](https://supabase.com) account and project
--   An [OpenAI API](https://platform.openai.com) key
+-   A [Google AI](https://aistudio.google.com/) API key
 
 ### 1. Clone the Repository
 
@@ -95,14 +95,15 @@ yarn install
     NEXT_PUBLIC_SUPABASE_URL=your-project-url
     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-    # OpenAI Configuration
-    OPENAI_API_KEY=your-openai-api-key
+    # Google AI Configuration
+    GOOGLE_AI_API_KEY=your-google-ai-api-key
 
     # Optional: Performance Logging
     LOG_PERF_TO_CSV=false
     ```
 
     You can find your Supabase credentials in your [project's API settings](https://supabase.com/dashboard/project/_/settings/api).
+    You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
 
 ### 4. Set Up the Database
 
@@ -117,7 +118,7 @@ This will create:
 -   Notes table with RLS policies
 -   Context and tags support
 -   User statistics functions
--   Embedding support for AI features
+-   Embedding support for AI features (1536-dimensional vectors for Google gemini-embedding-exp-03-07)
 -   Pagination functions
 
 ### 5. Start the Development Server
@@ -198,7 +199,7 @@ Ensure these environment variables are set in your production environment:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
-OPENAI_API_KEY=your-openai-api-key
+GOOGLE_AI_API_KEY=your-google-ai-api-key
 ```
 
 ### Database Setup for Production
@@ -221,4 +222,4 @@ This project is private and proprietary.
 
 ---
 
-Built with ❤️ using Next.js, Supabase, and OpenAI
+Built with ❤️ using Next.js, Supabase, and Google AI
