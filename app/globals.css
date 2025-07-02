@@ -14,6 +14,15 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+
+    /* Line clamp utilities for text truncation */
+    .line-clamp-3 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+    }
 }
 /* Custom accent font styles */
 .accent-font {
