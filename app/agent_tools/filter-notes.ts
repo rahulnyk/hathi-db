@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/app/actions/get-auth-user";
 import { measureExecutionTime } from "@/lib/performance";
 import type { Note } from "@/store/notesSlice";
+import type { SearchResultNote } from "./types";
 
 /**
  * Filters interface for the filterNotes function
@@ -29,7 +30,7 @@ export interface NotesFilter {
  * Result interface for the filterNotes function
  */
 export interface FilterNotesResult {
-    notes: Note[];
+    notes: SearchResultNote[];
     totalCount: number;
     appliedFilters: {
         createdAfter?: string;
