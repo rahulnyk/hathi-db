@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
     suggestContexts as suggestContextsAction,
-    generateEmbedding as generateEmbeddingAction,
+    generateDocumentEmbedding as generateDocumentEmbeddingAction,
     structurizeNote as structurizeNoteAction,
 } from "@/app/actions/ai";
 import { patchNote } from "@/app/actions/notes";
@@ -10,6 +10,7 @@ import {
     updateNoteContent,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
+import { getCurrentEmbeddingConfig } from "@/lib/constants/ai-config";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
@@ -57,9 +58,11 @@ export const generateSuggestedContexts = createAsyncThunk(
         {
             noteId,
             content,
+            userContexts,
         }: {
             noteId: string;
             content: string;
+            userContexts: string[];
         },
         { rejectWithValue, dispatch }
     ) => {
@@ -69,6 +72,7 @@ export const generateSuggestedContexts = createAsyncThunk(
         try {
             const suggestionsResponse = await suggestContextsAction({
                 content,
+                userContexts,
             });
 
             // Slugify each suggestion using sentenceCaseToSlug
@@ -110,15 +114,18 @@ export const structurizeNoteThunk = createAsyncThunk(
         {
             noteId,
             content,
+            userContexts,
         }: {
             noteId: string;
             content: string;
+            userContexts: string[];
         },
         { rejectWithValue }
     ) => {
         try {
             const structuredContent = await structurizeNoteAction({
                 content,
+                userContexts,
             });
 
             // Return both original and structured content for preview mode
@@ -139,15 +146,25 @@ export const generateEmbeddingThunk = createAsyncThunk(
         {
             noteId,
             content,
+            contexts,
+            tags,
+            noteType,
         }: {
             noteId: string;
             content: string;
+            contexts?: string[];
+            tags?: string[];
+            noteType?: string;
         },
         { rejectWithValue }
     ) => {
         try {
-            const embedding = await generateEmbeddingAction({
+            // Use optimized document embedding for better retrieval
+            const embedding = await generateDocumentEmbeddingAction({
                 content,
+                contexts,
+                tags,
+                noteType,
             });
 
             // Update the note directly in the database without triggering frontend updates
@@ -156,7 +173,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
                 noteId,
                 patches: {
                     embedding: embedding,
-                    embedding_model: "text-embedding-3-small",
+                    embedding_model: getCurrentEmbeddingConfig().model,
                     embedding_created_at: new Date().toISOString(),
                 },
             });
@@ -178,9 +195,15 @@ export const acceptStructurizedNoteThunk = createAsyncThunk(
         {
             noteId,
             structuredContent,
+            contexts,
+            tags,
+            noteType,
         }: {
             noteId: string;
             structuredContent: string;
+            contexts?: string[];
+            tags?: string[];
+            noteType?: string;
         },
         { rejectWithValue, dispatch }
     ) => {
@@ -195,6 +218,17 @@ export const acceptStructurizedNoteThunk = createAsyncThunk(
 
             // Update the note content in Redux store
             dispatch(updateNoteContent({ noteId, content: structuredContent }));
+
+            // Regenerate embedding with updated content
+            dispatch(
+                generateEmbeddingThunk({
+                    noteId,
+                    content: structuredContent,
+                    contexts,
+                    tags,
+                    noteType,
+                })
+            );
 
             return { noteId };
         } catch (error: any) {
