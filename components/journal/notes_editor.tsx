@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
 import { addNote, addNoteOptimistically, patchNote } from "@/store/notesSlice"; // Removed exitEditMode, updateEditingContent
 import { setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
@@ -132,6 +132,13 @@ export function NotesEditor({
     // Get current note data for edit mode
     const currentNote = useAppSelector((state) =>
         noteId ? state.notes.notes.find((note) => note.id === noteId) : null
+    );
+
+    // Get all user contexts from the store - memoized in place
+    const contexts = useAppSelector((state) => state.notesMetadata.contexts);
+    const allUserContexts = useMemo(() =>
+        contexts.map(ctx => ctx.context),
+        [contexts]
     );
 
     // Initialize content when entering edit mode
@@ -286,7 +293,7 @@ export function NotesEditor({
         try {
             // Extract the question by removing the command prefix using the pattern
             const question = content.trim().replace(QA_COMMAND_PATTERN, '').trim();
-            
+
             if (!question) {
                 console.error(`No question provided after ${QA_COMMAND} command`);
                 return;
@@ -294,7 +301,7 @@ export function NotesEditor({
 
             // Call the Q&A action
             const result = await answerQuestion(question);
-            
+
             if (result.answer) {
                 // Create an AI answer note that appears in the timeline
                 const aiAnswerNote = createOptimisticNote(
@@ -308,7 +315,7 @@ export function NotesEditor({
 
                 // Add the AI answer to the timeline
                 dispatch(addNoteOptimistically(aiAnswerNote));
-                
+
                 // Mark this note as an AI answer in the AI slice
                 dispatch(markAsAIAnswer({
                     noteId: aiAnswerNote.id,
@@ -316,7 +323,7 @@ export function NotesEditor({
                     answer: result.answer,
                     relevantSources: result.relevantSources
                 }));
-                
+
                 // Clear the input
                 setContent("");
             } else {
@@ -390,6 +397,7 @@ export function NotesEditor({
                 generateSuggestedContexts({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
+                    userContexts: allUserContexts,
                 })
             );
 
@@ -399,6 +407,9 @@ export function NotesEditor({
                 generateEmbeddingThunk({
                     noteId: persistedNote.id,
                     content: persistedNote.content,
+                    contexts: persistedNote.contexts,
+                    tags: persistedNote.tags,
+                    noteType: persistedNote.note_type || "note",
                 })
             );
         }
@@ -435,6 +446,17 @@ export function NotesEditor({
                         contexts: mergedContexts,
                         tags: mergedTags,
                     },
+                })
+            );
+
+            // Regenerate embedding with updated content and metadata
+            dispatch(
+                generateEmbeddingThunk({
+                    noteId,
+                    content,
+                    contexts: mergedContexts,
+                    tags: mergedTags,
+                    noteType: currentNote?.note_type || "note",
                 })
             );
 

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Loader2, X, Check } from "lucide-react";
 import { useAppDispatch } from "@/store";
 import { patchNote, Note } from "@/store/notesSlice";
+import { generateEmbeddingThunk } from "@/store/aiSlice";
 import { slugToSentenceCase, sentenceCaseToSlug } from "@/lib/utils";
 
 interface contextContainerProps {
@@ -31,7 +32,18 @@ export function ContextContainer({ note }: contextContainerProps) {
                     contexts: updatedContexts,
                 },
             })
-        ).finally(() => {
+        ).then(() => {
+            // Regenerate embedding with updated contexts
+            dispatch(
+                generateEmbeddingThunk({
+                    noteId: note.id,
+                    content: note.content,
+                    contexts: updatedContexts,
+                    tags: note.tags,
+                    noteType: note.note_type || undefined,
+                })
+            );
+        }).finally(() => {
             // Clear loading state when request completes
             setContextToBeAdded(null);
         });
@@ -61,6 +73,17 @@ export function ContextContainer({ note }: contextContainerProps) {
                     },
                 })
             ).unwrap();
+
+            // Regenerate embedding with updated contexts
+            dispatch(
+                generateEmbeddingThunk({
+                    noteId: note.id,
+                    content: note.content,
+                    contexts: updatedContexts,
+                    tags: note.tags,
+                    noteType: note.note_type || undefined,
+                })
+            );
 
             // Clear form and hide input
             setCustomContext("");

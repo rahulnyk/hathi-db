@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Step 2: Add embedding column using pgvector
--- text-embedding-3-small produces 1536-dimensional vectors
+-- gemini-embedding-exp-03-07 outputs to 1536-dimensional vectors as per our config
 ALTER TABLE notes ADD COLUMN IF NOT EXISTS embedding vector(1536) DEFAULT NULL;
 
 -- Step 3: Add metadata columns
