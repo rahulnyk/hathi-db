@@ -7,7 +7,7 @@ The Q&A feature allows users to ask questions about their notes and get intellig
 
 ### 1. **Inline Q&A Workflow**
 1. User types `/q [question]` in the note editor
-2. Generate embedding for the question using OpenAI
+2. Generate embedding for the question using Google Gemini
 3. Search user's notes using vector similarity (cosine distance)
 4. Retrieve most relevant notes based on semantic similarity
 5. Feed relevant notes to LLM with the question for answer generation
@@ -56,7 +56,7 @@ order by created_at DESC
 - **AI Slice**: Dedicated Redux slice for tracking Q&A state
 
 ### **AI Integration**
-- Uses existing OpenAI provider
+- Uses existing Google Gemini provider
 - Generates embeddings for semantic search
 - Custom Q&A prompts optimized for clean answers (no note IDs in response)
 - Includes user's contexts for better understanding

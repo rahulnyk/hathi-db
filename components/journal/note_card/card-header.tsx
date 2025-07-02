@@ -3,6 +3,7 @@
 import { Note } from "@/store/notesSlice"; // Removed deleteNote, markNoteAsDeleting
 import { Loader2, Sparkles, Check, Undo } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DeleteNoteButton } from "./delete-note-button"; // Import DeleteNoteButton
 import {
@@ -19,6 +20,13 @@ export function CardHeader({ note }: CardHeaderProps) {
     const dispatch = useAppDispatch();
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
+    );
+
+    // Get all user contexts from the store - memoized in place
+    const contexts = useAppSelector((state) => state.notesMetadata.contexts);
+    const allUserContexts = useMemo(() =>
+        contexts.map(ctx => ctx.context),
+        [contexts]
     );
 
     const formatDate = (dateString: string) => {
@@ -39,6 +47,7 @@ export function CardHeader({ note }: CardHeaderProps) {
             structurizeNoteThunk({
                 noteId: note.id,
                 content: note.content,
+                userContexts: allUserContexts,
             })
         );
     };
@@ -50,6 +59,9 @@ export function CardHeader({ note }: CardHeaderProps) {
             acceptStructurizedNoteThunk({
                 noteId: note.id,
                 structuredContent: aiStructurizedState.structuredContent,
+                contexts: note.contexts,
+                tags: note.tags,
+                noteType: note.note_type || "note",
             })
         );
     };
