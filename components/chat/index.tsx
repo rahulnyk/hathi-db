@@ -149,6 +149,7 @@ function ChatMessage({
     message,
     displayToolInfo,
 }: {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     message: any;
     displayToolInfo: boolean;
 }) {
@@ -191,6 +192,7 @@ function MessageContent({
     message,
     displayToolInfo,
 }: {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     message: any;
     displayToolInfo: boolean;
 }) {
