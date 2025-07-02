@@ -2,9 +2,10 @@
 
 import { fetchNotesByIds } from "@/app/actions/notes";
 import type { Note } from "@/store/notesSlice";
-import { openai } from "@ai-sdk/openai";
+// import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { gemini } from "@/lib/ai";
 
 /**
  * Schema for AI-generated summary structure
@@ -88,7 +89,7 @@ export async function summarizeNotes(
 
         // Generate AI summary
         const { object: aiSummary } = await generateObject({
-            model: openai("gpt-4o-mini"),
+            model: gemini("gemini-2.5-flash"),
             schema: summarySchema,
             prompt: `Summarize the following ${notes.length} notes. Focus on:
 - Important insights and takeaways
