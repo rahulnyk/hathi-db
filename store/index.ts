@@ -4,6 +4,7 @@ import notesReducer from "./notesSlice";
 import uiReducer from "./uiSlice";
 import notesMetadataReducer from "./notesMetadataSlice";
 import aiReducer from "./aiSlice";
+import { notesMiddleware } from "./middleware/notesMiddleware";
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,8 @@ export const store = configureStore({
         notesMetadata: notesMetadataReducer,
         ai: aiReducer,
     },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().prepend(notesMiddleware.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

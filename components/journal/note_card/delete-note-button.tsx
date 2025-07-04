@@ -34,7 +34,7 @@ export function DeleteNoteButton({ note, className }: DeleteNoteButtonProps) {
                 "p-1 h-auto", // Base styling for consistency
                 isDeleting
                     ? "text-muted-foreground" // Standard text color for "Deleting..."
-                    : "text-red-500 hover:text-red-700", // Red for delete icon
+                    : "text-red-900/40 hover:text-red-900/60 dark:text-red-200/40 dark:hover:text-red-200/60", // Red for delete icon
                 "h-8 w-8 rounded-full opacity-70 hover:opacity-100 data-[disabled]:opacity-50",
                 className // Allow parent to pass additional classes
             )}

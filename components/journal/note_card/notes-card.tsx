@@ -1,7 +1,7 @@
 "use client";
 
-import { Note } from "@/store/notesSlice"; // Removed enterEditMode
-import { setActiveNoteId, setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
+import { Note } from "@/store/notesSlice";
+import { setEditingNoteId } from "@/store/uiSlice";
 import ReactMarkdown from "react-markdown";
 
 import remarkGfm from "remark-gfm";
@@ -10,20 +10,32 @@ import remarkContextPlugin from "@/lib/remark_context_plugin";
 import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 
 import { cn } from "@/lib/utils";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { setCurrentContext } from "@/store/notesSlice";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
 } from "@/store/aiSlice";
-import { ContextContainer } from "./context-container";
+// import { ContextContainer } from "./context-container";
 import { CodeBlock } from "./code-block";
 import { NotesEditor } from "../notes_editor";
-import { NoteStatusIndicator } from "./note-status-indicator"; // Import the new component
+import { NoteStatusIndicator } from "./note-status-indicator";
 import { CardHeader } from "./card-header";
 
-export function NoteCard({ note }: { note: Note }) {
+export interface NoteCardProps {
+    note: Note;
+    textSize?: "normal" | "small" | "smaller";
+    // disableContextContainer?: boolean;
+    disableCardHeader?: boolean;
+}
+
+export function NoteCard({
+    note,
+    textSize = "normal",
+    // disableContextContainer = false,
+    disableCardHeader = false,
+}: NoteCardProps) {
     const dispatch = useAppDispatch();
     const activeNoteId = useAppSelector((state) => state.ui.activeNoteId);
     const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
@@ -34,29 +46,40 @@ export function NoteCard({ note }: { note: Note }) {
 
     // Get all user contexts from the store - memoized in place
     const contexts = useAppSelector((state) => state.notesMetadata.contexts);
-    const allUserContexts = useMemo(() =>
-        contexts.map(ctx => ctx.context),
+    const allUserContexts = useMemo(
+        () => contexts.map((ctx) => ctx.context),
         [contexts]
     );
 
-    // Determine if note is of type 'ai-note' (AI notes are handled by AiNoteCard component)
     const isAiNote = note.note_type === "ai-note";
-    // Determine if the current note is active
-    const isNoteActive = note.id === activeNoteId;
-    // Determine if the current note is being edited
+    // const isNoteActive = note.id === activeNoteId;
     const isNoteEditing = note.id === editingNoteId;
 
-    // Determine if the ContextContainer should be visible
-    const showContextContainer = isNoteActive || isNoteEditing;
-    // Determine if the CardHeader should be visible
-    const showCardHeader = isNoteActive && !isNoteEditing;
+    // const showContextContainer =
+    //     (isNoteActive || isNoteEditing) && !disableContextContainer;
+    const showCardHeader = !isNoteEditing && !disableCardHeader;
 
-    // Determine which content to display
     const displayContent =
         aiStructurizedState?.status === "succeeded" &&
         aiStructurizedState.structuredContent
             ? aiStructurizedState.structuredContent
             : note.content;
+
+    // const handleContextsChange = (newContexts: string[]) => {
+    //     dispatch(
+    //         updateNoteOptimistically({
+    //             noteId: note.id,
+    //             patches: { contexts: newContexts },
+    //         })
+    //     );
+    // };
+
+    // const handleCardClick = () => {
+    //     if (isAiNote) return;
+    //     if (note.id !== activeNoteId) {
+    //         dispatch(setActiveNoteId(note.id));
+    //     }
+    // };
 
     const handleStructurize = () => {
         dispatch(
@@ -68,28 +91,31 @@ export function NoteCard({ note }: { note: Note }) {
         );
     };
 
-    const handleCardClick = () => {
-        if (isAiNote) {
-            return; // Don't allow interaction with AI-generated notes
-        }
-        if (note.id !== activeNoteId) {
-            dispatch(setActiveNoteId(note.id));
-        }
+    const handleDoubleClick = () => {
+        console.log(note.persistenceStatus);
+        if (isAiNote) return;
+        if (note.persistenceStatus !== "persisted") return;
+        dispatch(setEditingNoteId(note.id));
     };
 
-    const handleDoubleClick = () => {
-        if (isAiNote) {
-            return; // Don't allow editing of AI-generated notes
+    // Mobile double-tap handling
+    const lastTouchTime = useRef(0);
+    const touchCount = useRef(0);
+
+    const handleTouchStart = (event: React.TouchEvent) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTouchTime.current;
+
+        if (tapLength < 500 && tapLength > 0) {
+            // Double tap detected
+            event.preventDefault();
+            handleDoubleClick();
+        } else {
+            // Reset for new tap sequence
+            touchCount.current = 1;
         }
-        if (
-            note.persistenceStatus === "pending" ||
-            note.persistenceStatus === "failed" ||
-            isAiNote // Don't allow editing AI notes (they use separate AiNoteCard component)
-        ) {
-            return; // Don't allow editing of notes that haven't been saved yet or AI notes
-        }
-        // Dispatch setEditingNoteId instead of enterEditMode
-        dispatch(setEditingNoteId(note.id));
+
+        lastTouchTime.current = currentTime;
     };
 
     useEffect(() => {
@@ -120,34 +146,36 @@ export function NoteCard({ note }: { note: Note }) {
         return () => document.removeEventListener("click", handleClick);
     }, [dispatch]);
 
+    const textSizeClass = {
+        normal: "text-base",
+        small: "text-sm",
+        smaller: "text-xs",
+    }[textSize];
+
     return (
         <div
             data-note-id={note.id}
-            onClick={handleCardClick}
+            // onClick={handleCardClick}
             onDoubleClick={handleDoubleClick}
+            onTouchStart={handleTouchStart}
             className={cn(
                 "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
-                isNoteEditing && // Use isNoteEditing here
-                    "ring-2 ring-zinc-300 bg-zinc-100 dark:ring-zinc-600 dark:bg-zinc-900/30 my-0",
-                isNoteActive &&
-                    "border-l-4 border-zinc-300 dark:border-zinc-600 rounded-none my-0"
+                isNoteEditing &&
+                    "ring-1 ring-zinc-300/50 dark:ring-zinc-600/50 my-0"
             )}
         >
-            {/* Top right buttons */}
             {showCardHeader && <CardHeader note={note} />}
 
-            {/* Note content - show editor if editing, otherwise show markdown */}
-            {isNoteEditing ? ( // Use isNoteEditing here
-                <div className="mb-2">
-                    <NotesEditor
-                        isEditMode={true} // This prop might be redundant now or could signify a specific UI variant
-                        noteId={note.id}
-                        initialContent={note.content} // Pass initial content for the editor
-                    />
+            {isNoteEditing ? (
+                <div className="mb-0">
+                    <NotesEditor note={note} />
                 </div>
             ) : (
                 <div
-                    className="prose prose-sm dark:prose-invert max-w-none mb-2 text-base mt-0 cursor-pointer"
+                    className={cn(
+                        "prose prose-sm dark:prose-invert max-w-none mb-2 mt-0 cursor-pointer",
+                        textSizeClass
+                    )}
                     title="Double-click to edit"
                 >
                     <ReactMarkdown
@@ -157,8 +185,12 @@ export function NoteCard({ note }: { note: Note }) {
                             remarkHashtagPlugin,
                         ]}
                         components={{
-                            code: CodeBlock, // Use custom CodeBlock component
-                            // Add any other custom components here if needed
+                            code: CodeBlock,
+                            p: ({ children }) => (
+                                <p style={{ whiteSpace: "pre-wrap" }}>
+                                    {children}
+                                </p>
+                            ),
                         }}
                     >
                         {displayContent}
@@ -166,7 +198,13 @@ export function NoteCard({ note }: { note: Note }) {
                 </div>
             )}
 
-            {showContextContainer && <ContextContainer note={note} />}
+            {/* {showContextContainer && !isNoteEditing && (
+                <ContextContainer
+                    contexts={note.contexts || []}
+                    suggestedContexts={note.suggested_contexts || []}
+                    onContextsChange={handleContextsChange}
+                />
+            )} */}
 
             <NoteStatusIndicator
                 note={note}

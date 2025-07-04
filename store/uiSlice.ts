@@ -2,11 +2,18 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type DeviceType = "mobile" | "tablet" | "desktop";
 
+interface OriginalNoteState {
+    content: string;
+    contexts: string[];
+    tags: string[];
+}
+
 interface UIState {
     deviceType: DeviceType;
     datePickerSelectedDate: string; // Store as ISO string to ensure serialization
     activeNoteId: string | null;
     editingNoteId: string | null; // Added for tracking the note being edited
+    originalNoteStates: Record<string, OriginalNoteState>; // Store original states by note ID
 }
 
 const initialState: UIState = {
@@ -14,6 +21,7 @@ const initialState: UIState = {
     datePickerSelectedDate: new Date().toISOString(),
     activeNoteId: null,
     editingNoteId: null, // Initialize editingNoteId
+    originalNoteStates: {}, // Initialize empty original note states
 };
 
 const uiSlice = createSlice({
@@ -46,6 +54,20 @@ const uiSlice = createSlice({
                 state.activeNoteId = null;
             }
         },
+        storeOriginalNoteState: (
+            state,
+            action: PayloadAction<{
+                noteId: string;
+                originalState: OriginalNoteState;
+            }>
+        ) => {
+            const { noteId, originalState } = action.payload;
+            state.originalNoteStates[noteId] = originalState;
+        },
+        clearOriginalNoteState: (state, action: PayloadAction<string>) => {
+            const noteId = action.payload;
+            delete state.originalNoteStates[noteId];
+        },
     },
 });
 
@@ -55,5 +77,7 @@ export const {
     resetDatePickerToToday,
     setActiveNoteId,
     setEditingNoteId, // Export the new action
+    storeOriginalNoteState,
+    clearOriginalNoteState,
 } = uiSlice.actions;
 export default uiSlice.reducer;
