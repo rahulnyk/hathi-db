@@ -16,7 +16,6 @@ import { HashLoader } from "react-spinners";
 import { answerQuestion } from "@/app/actions/qa";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
-import { areArraysEqual } from "@/lib/utils";
 import { ContextContainer } from "./note_card/context-container";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -118,42 +117,28 @@ export function NotesEditor({ note }: NotesEditorProps) {
     );
 
     // Sync local state with note prop (one-way: Redux → local state)
+    // Only runs when entering edit mode or switching between notes
     useEffect(() => {
-        if (note) {
+        if (note?.id) {
             setContent(note.content);
             setContexts(note.contexts || []);
         }
-    }, [note?.id]); // Only depend on note.id, not the entire note object
+    }, [note?.id, note?.content, note?.contexts]); // Include the properties we're using
 
-    // Debounced dispatch for optimistic updates using use-debounce
-    const debouncedDispatch = useDebouncedCallback((patches: any) => {
-        if (note) {
-            dispatch(
-                updateNoteOptimistically({
-                    noteId: note.id,
-                    patches,
-                })
-            );
-        }
-    }, 300); // 300ms debounce
-
-    // Handle content changes with debounced dispatch
-    useEffect(() => {
-        if (isEditMode && note && content !== note.content) {
-            debouncedDispatch({ content });
-        }
-    }, [content, isEditMode, note?.content, debouncedDispatch]);
-
-    // Handle context changes with debounced dispatch
-    useEffect(() => {
-        if (
-            isEditMode &&
-            note &&
-            !areArraysEqual(contexts, note.contexts || [])
-        ) {
-            debouncedDispatch({ contexts });
-        }
-    }, [contexts, isEditMode, note?.contexts, debouncedDispatch]);
+    // Debounced update function for any note patches
+    const debouncedUpdateNote = useDebouncedCallback(
+        (patches: Partial<Pick<Note, "content" | "contexts" | "tags">>) => {
+            if (note && isEditMode) {
+                dispatch(
+                    updateNoteOptimistically({
+                        noteId: note.id,
+                        patches,
+                    })
+                );
+            }
+        },
+        300
+    );
 
     useEffect(() => {
         if (isEditMode && textareaRef.current) {
@@ -161,7 +146,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
             const length = content.length;
             textareaRef.current.setSelectionRange(length, length);
         }
-    }, [isEditMode]);
+    }, [isEditMode, content.length]);
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -178,6 +163,28 @@ export function NotesEditor({ note }: NotesEditorProps) {
         const newSelectionEnd = event.target.selectionEnd;
 
         setContent(newFullValue);
+
+        // Trigger debounced update for edit mode
+        if (isEditMode) {
+            // Extract metadata from the content (contexts and tags)
+            const { contexts: extractedContexts, tags } =
+                extractMetadata(newFullValue);
+
+            // Merge extracted contexts with existing contexts
+            const mergedContexts = [
+                ...new Set([...contexts, ...extractedContexts]),
+            ];
+
+            // Update both content and extracted metadata
+            debouncedUpdateNote({
+                content: newFullValue,
+                contexts: mergedContexts,
+                tags,
+            });
+
+            // Also update local contexts state to reflect the merged contexts
+            setContexts(mergedContexts);
+        }
 
         if (newFullValue.length < content.length) {
             setActiveSelection({
@@ -255,6 +262,11 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     const handleContextsChange = (newContexts: string[]) => {
         setContexts(newContexts);
+
+        // Trigger debounced update for edit mode
+        if (isEditMode) {
+            debouncedUpdateNote({ contexts: newContexts });
+        }
     };
 
     const handleQAQuestion = async () => {
@@ -350,17 +362,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         if (!note) return;
         // Optimistic update already handled by useEffect
         // Just exit edit mode
-        dispatch(setEditingNoteId(null));
-    };
-
-    const handleCancelEdit = () => {
-        if (!note) return;
-
-        // Revert local state
-        setContent(note.content);
-        setContexts(note.contexts || []);
-
-        // Exit edit mode
         dispatch(setEditingNoteId(null));
     };
 

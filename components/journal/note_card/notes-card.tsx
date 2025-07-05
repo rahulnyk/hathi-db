@@ -37,7 +37,6 @@ export function NoteCard({
     disableCardHeader = false,
 }: NoteCardProps) {
     const dispatch = useAppDispatch();
-    const activeNoteId = useAppSelector((state) => state.ui.activeNoteId);
     const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
     const aiStructurizedState = useAppSelector(
