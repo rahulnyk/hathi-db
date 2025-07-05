@@ -2,97 +2,59 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Loader2, X, Check } from "lucide-react";
-import { useAppDispatch } from "@/store";
-import { patchNote, Note } from "@/store/notesSlice";
-import { generateEmbeddingThunk } from "@/store/aiSlice";
 import { slugToSentenceCase, sentenceCaseToSlug } from "@/lib/utils";
 
-interface contextContainerProps {
-    note: Note;
+interface ContextContainerProps {
+    contexts: string[];
+    suggestedContexts?: string[];
+    onContextsChange?: (newContexts: string[]) => void;
+    className?: string;
+    readOnly?: boolean;
 }
 
-export function ContextContainer({ note }: contextContainerProps) {
-    const dispatch = useAppDispatch();
-    const [contextToBeAdded, setContextToBeAdded] = useState<string | null>(
-        null
-    );
+export function ContextContainer({
+    contexts,
+    suggestedContexts = [],
+    onContextsChange,
+    className,
+    readOnly = false,
+}: ContextContainerProps) {
     const [showCustomInput, setShowCustomInput] = useState(false);
     const [customContext, setCustomContext] = useState("");
     const [isAddingCustom, setIsAddingCustom] = useState(false);
 
-    const handleContextAdd = (context: string) => () => {
-        // Set loading state for this context
-        setContextToBeAdded(context);
-        // Add this context to the note's contexts
-        const updatedContexts = [...(note.contexts || []), context];
-        dispatch(
-            patchNote({
-                noteId: note.id,
-                patches: {
-                    contexts: updatedContexts,
-                },
-            })
-        ).then(() => {
-            // Regenerate embedding with updated contexts
-            dispatch(
-                generateEmbeddingThunk({
-                    noteId: note.id,
-                    content: note.content,
-                    contexts: updatedContexts,
-                    tags: note.tags,
-                    noteType: note.note_type || undefined,
-                })
+    const handleAddContext = (context: string) => {
+        if (onContextsChange) {
+            const newContexts = [...contexts, context];
+            onContextsChange(newContexts);
+        }
+    };
+
+    const handleRemoveContext = (contextToRemove: string) => {
+        if (onContextsChange) {
+            const newContexts = contexts.filter(
+                (context) => context !== contextToRemove
             );
-        }).finally(() => {
-            // Clear loading state when request completes
-            setContextToBeAdded(null);
-        });
+            onContextsChange(newContexts);
+        }
     };
 
     const handleCustomContextSubmit = async () => {
-        if (!customContext.trim()) return;
+        if (!customContext.trim() || !onContextsChange) return;
 
         const contextSlug = sentenceCaseToSlug(customContext.trim());
 
-        // Check if context already exists
-        if (note.contexts?.includes(contextSlug)) {
+        if (contexts.includes(contextSlug)) {
             setCustomContext("");
             setShowCustomInput(false);
             return;
         }
 
         setIsAddingCustom(true);
-
-        try {
-            const updatedContexts = [...(note.contexts || []), contextSlug];
-            await dispatch(
-                patchNote({
-                    noteId: note.id,
-                    patches: {
-                        contexts: updatedContexts,
-                    },
-                })
-            ).unwrap();
-
-            // Regenerate embedding with updated contexts
-            dispatch(
-                generateEmbeddingThunk({
-                    noteId: note.id,
-                    content: note.content,
-                    contexts: updatedContexts,
-                    tags: note.tags,
-                    noteType: note.note_type || undefined,
-                })
-            );
-
-            // Clear form and hide input
-            setCustomContext("");
-            setShowCustomInput(false);
-        } catch (error) {
-            console.error("Failed to add custom context:", error);
-        } finally {
-            setIsAddingCustom(false);
-        }
+        onContextsChange([...contexts, contextSlug]);
+        setCustomContext("");
+        setShowCustomInput(false);
+        setIsAddingCustom(false);
     };
 
     const handleCustomContextCancel = () => {
@@ -110,86 +72,100 @@ export function ContextContainer({ note }: contextContainerProps) {
     };
 
     return (
-        <div className="mt-3 flex flex-wrap items-center gap-1 pb-2">
-            {/* Actual contexts */}
-            {note.contexts &&
-                note.contexts.length > 0 &&
-                note.contexts.map((context, index) => (
-                    <span key={index} className="context-pill">
-                        {slugToSentenceCase(context)}
-                    </span>
-                ))}
-            {/* Suggested contexts */}
-            {note.suggested_contexts &&
-                note.suggested_contexts.length > 0 &&
-                note.suggested_contexts
-                    .filter((context) => !note.contexts?.includes(context))
-                    .map((context, index) => (
+        <div
+            className={`flex flex-wrap items-center gap-1 pb-2 ${
+                className || ""
+            }`}
+        >
+            {/* Existing contexts */}
+            {contexts.map((context, index) => (
+                <span key={index} className="context-pill group relative">
+                    {slugToSentenceCase(context)}
+                    {!readOnly && onContextsChange && (
+                        <button
+                            onClick={() => handleRemoveContext(context)}
+                            className="absolute -top-1 -right-1 bg-zinc-200 dark:bg-zinc-700 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <X className="h-2 w-2 text-zinc-600 dark:text-zinc-300" />
+                        </button>
+                    )}
+                </span>
+            ))}
+
+            {!readOnly && (
+                <>
+                    {/* Suggested contexts */}
+                    {suggestedContexts
+                        .filter((context) => !contexts.includes(context))
+                        .map((context, index) => (
+                            <Button
+                                key={index}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
+                                onClick={() => handleAddContext(context)}
+                            >
+                                {slugToSentenceCase(context)}
+                                <Plus className="h-3 w-3 ml-1 text-zinc-500 dark:text-zinc-300" />
+                            </Button>
+                        ))}
+
+                    {/* Add custom context button */}
+                    {!showCustomInput && (
                         <Button
-                            key={index}
+                            type="button"
                             variant="outline"
                             size="sm"
-                            className="suggested-context-pill h-6 px-2 text-xs rounded-lg"
-                            onClick={handleContextAdd(context)}
-                            disabled={contextToBeAdded === context}
+                            className="h-6 px-2 text-xs rounded-lg"
+                            onClick={() => setShowCustomInput(true)}
                         >
-                            {contextToBeAdded === context ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                                <>
-                                    {slugToSentenceCase(context)}
-                                    <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
-                                </>
-                            )}
+                            <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
                         </Button>
-                    ))}
-            {/* Add custom context button */}
-            {!showCustomInput && (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs rounded-lg"
-                    onClick={() => setShowCustomInput(true)}
-                >
-                    <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
-                </Button>
-            )}
-            {/* Custom context input */}
-            {showCustomInput && (
-                <>
-                    <div className="flex items-center gap-1">
-                        <Input
-                            value={customContext}
-                            onChange={(e) => setCustomContext(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Add custom context"
-                            className="h-6 w-18 text-xs px-2 py-0 border-zinc-300 dark:border-zinc-600"
-                            autoFocus
-                            disabled={isAddingCustom}
-                        />
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleCustomContextSubmit}
-                            disabled={!customContext.trim() || isAddingCustom}
-                            className="h-6 w-6 p-0"
-                        >
-                            {isAddingCustom ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                                <Check className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
-                            )}
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleCustomContextCancel}
-                            disabled={isAddingCustom}
-                            className="h-6 w-6 p-0"
-                        >
-                            <X className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
-                        </Button>
-                    </div>
+                    )}
+
+                    {/* Custom context input */}
+                    {showCustomInput && (
+                        <div className="flex items-center gap-1">
+                            <Input
+                                value={customContext}
+                                onChange={(e) =>
+                                    setCustomContext(e.target.value)
+                                }
+                                onKeyDown={handleKeyDown}
+                                placeholder="Add context"
+                                className="h-6 w-24 text-xs px-2 py-0 border-zinc-300 dark:border-zinc-600"
+                                autoFocus
+                                disabled={isAddingCustom}
+                            />
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCustomContextSubmit}
+                                disabled={
+                                    !customContext.trim() || isAddingCustom
+                                }
+                                className="h-6 w-6 p-0"
+                            >
+                                {isAddingCustom ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <Check className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCustomContextCancel}
+                                disabled={isAddingCustom}
+                                className="h-6 w-6 p-0"
+                            >
+                                <X className="h-3 w-3 text-zinc-500 dark:text-zinc-300" />
+                            </Button>
+                        </div>
+                    )}
                 </>
             )}
         </div>

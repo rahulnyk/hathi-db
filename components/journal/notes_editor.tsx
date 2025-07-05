@@ -1,32 +1,25 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useAppDispatch, useAppSelector } from "@/store"; // Import useAppSelector
-import { addNote, addNoteOptimistically, patchNote } from "@/store/notesSlice"; // Removed exitEditMode, updateEditingContent
-import { setEditingNoteId } from "@/store/uiSlice"; // Import setEditingNoteId
+import { useState, useRef, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
 import {
-    generateSuggestedContexts,
-    generateEmbeddingThunk,
-    markAsAIAnswer,
-} from "@/store/aiSlice";
-import { createOptimisticNote } from "@/lib/noteUtils";
+    updateNoteOptimistically,
+    createNoteOptimistically,
+    Note,
+} from "@/store/notesSlice";
+import { setEditingNoteId } from "@/store/uiSlice";
+import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, X, Check } from "lucide-react";
+import { ArrowUp, Check, X } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { answerQuestion } from "@/app/actions/qa";
-
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
-import { extractMetadata } from "@/lib/noteUtils";
-import { areArraysEqual } from "@/lib/utils";
+import { ContextContainer } from "./note_card/context-container";
 
 interface NotesEditorProps {
-    isEditMode?: boolean;
-    noteId?: string;
-    initialContent?: string;
-    onCancel?: () => void;
-    onSave?: () => void;
+    note?: Note;
 }
 
 const BRACKET_PAIRS: Record<string, string> = {
@@ -105,87 +98,57 @@ function handleAutoDeleteBracketPair(
     return null;
 }
 
-export function NotesEditor({
-    isEditMode,
-    noteId,
-    initialContent,
-    onCancel,
-    onSave,
-}: NotesEditorProps) {
+export function NotesEditor({ note }: NotesEditorProps) {
+    const isEditMode = !!note;
     const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [content, setContent] = useState(initialContent || ""); // This is the source of truth for the textarea's value
+    const isUserInteracting = useRef(false);
+    const [content, setContent] = useState(note?.content || "");
+    const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeSelection, setActiveSelection] = useState({
         start: 0,
         end: 0,
     });
-    const [hasModifications, setHasModifications] = useState(false);
-    const [originalContexts, setOriginalContexts] = useState<string[]>([]);
-    const hasInitializedRef = useRef(false);
-    const initialContentLengthRef = useRef(initialContent?.length || 0);
+
     const dispatch = useAppDispatch();
-    const currentContext = useAppSelector(
+    const currentKeyContext = useAppSelector(
         (state) => state.notes.currentContext
     );
-
-    // Get current note data for edit mode
-    const currentNote = useAppSelector((state) =>
-        noteId ? state.notes.notes.find((note) => note.id === noteId) : null
+    const originalNoteState = useAppSelector((state) =>
+        note?.id ? state.ui.originalNoteStates[note.id] : null
     );
 
-    // Get all user contexts from the store - memoized in place
-    const contexts = useAppSelector((state) => state.notesMetadata.contexts);
-    const allUserContexts = useMemo(() =>
-        contexts.map(ctx => ctx.context),
-        [contexts]
-    );
-
-    // Initialize content when entering edit mode
     useEffect(() => {
-        if (
-            isEditMode &&
-            initialContent !== undefined &&
-            !hasInitializedRef.current
-        ) {
-            setContent(initialContent);
-            setHasModifications(false);
-            // Store original contexts when entering edit mode
-            setOriginalContexts(currentNote?.contexts || []);
-            initialContentLengthRef.current = initialContent.length;
-            hasInitializedRef.current = true;
-        } else if (!isEditMode) {
-            hasInitializedRef.current = false;
+        if (note?.id) {
+            setContent(note.content);
+            setContexts(note.contexts || []);
         }
-    }, [isEditMode, initialContent, currentNote?.contexts]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [note?.id]); // Important!! // Only run when note ID changes, not content or contexts
 
-    // Check for modifications when content or contexts change
-    useEffect(() => {
-        if (isEditMode && initialContent !== undefined) {
-            const contentModified = content !== initialContent;
-            const contextsModified = !areArraysEqual(
-                currentNote?.contexts || [],
-                originalContexts
+    const saveNote = (
+        patches: Partial<Pick<Note, "content" | "contexts" | "tags">>
+    ) => {
+        if (note && isEditMode) {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId: note.id,
+                    patches,
+                })
             );
-            setHasModifications(contentModified || contextsModified);
         }
-    }, [
-        content,
-        initialContent,
-        isEditMode,
-        currentNote?.contexts,
-        originalContexts,
-    ]);
+    };
 
-    // Focus textarea when entering edit mode
+    // Focus textarea and set cursor to end when entering edit mode
     useEffect(() => {
-        if (isEditMode && textareaRef.current) {
+        if (isEditMode && textareaRef.current && !isUserInteracting.current) {
             textareaRef.current.focus();
-            // Set cursor to end of content
-            const length = initialContentLengthRef.current;
+            // Set cursor to end of content when entering edit mode
+            const length = textareaRef.current.value.length;
             textareaRef.current.setSelectionRange(length, length);
         }
-    }, [isEditMode]);
+    }, [isEditMode]); // Only run when entering/exiting edit mode
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -197,39 +160,35 @@ export function NotesEditor({
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
+        isUserInteracting.current = true;
         const newFullValue = event.target.value;
         const newSelectionStart = event.target.selectionStart;
         const newSelectionEnd = event.target.selectionEnd;
 
-        // Update local state
         setContent(newFullValue);
 
-        if (newFullValue.length < content.length) {
-            // Handles deletions
-            setActiveSelection({
-                start: newSelectionStart,
-                end: newSelectionEnd,
-            });
-            return;
-        }
+        // Always update active selection to track cursor position
+        setActiveSelection({
+            start: newSelectionStart,
+            end: newSelectionEnd,
+        });
 
-        // For any other change (additions, modifications not handled by onKeyDown)
-        if (newFullValue !== content) {
-            // activeSelection will be updated by the onSelect handler naturally.
-        }
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            isUserInteracting.current = false;
+        }, 10);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const pressedKey = event.key;
 
-        // If an opening bracket is pressed (e.g., '[', '(', '{')
         if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
-            event.preventDefault(); // Prevent default character insertion
+            event.preventDefault();
 
             const result = handleBracketInsertion(
                 pressedKey,
-                content, // Current content from state
-                activeSelection, // Current selection from state {start, end}
+                content,
+                activeSelection,
                 BRACKET_PAIRS
             );
 
@@ -241,17 +200,15 @@ export function NotesEditor({
                         result.newSelectionStart,
                         result.newSelectionEnd
                     );
-                    // Update activeSelection state to keep it synchronized
                     setActiveSelection({
                         start: result.newSelectionStart,
                         end: result.newSelectionEnd,
                     });
                 }
             });
-            return; // Bracket insertion handled
+            return;
         }
 
-        // Handle auto-deletion of bracket pairs on Backspace
         if (pressedKey === "Backspace") {
             const currentValue = content;
             const cursorPosition = event.currentTarget.selectionStart;
@@ -275,6 +232,7 @@ export function NotesEditor({
             if (deleteResult) {
                 event.preventDefault();
                 setContent(deleteResult.newValue);
+
                 requestAnimationFrame(() => {
                     if (textareaRef.current) {
                         textareaRef.current.setSelectionRange(
@@ -286,52 +244,53 @@ export function NotesEditor({
                 return;
             }
         }
-        // Default behavior for other keys or if auto-delete didn't apply
+    };
+
+    const handleContextsChange = (newContexts: string[]) => {
+        setContexts(newContexts);
+
+        // Only update local state - save happens when exiting edit mode
     };
 
     const handleQAQuestion = async () => {
         try {
-            // Extract the question by removing the command prefix using the pattern
-            const question = content.trim().replace(QA_COMMAND_PATTERN, '').trim();
+            const question = content
+                .trim()
+                .replace(QA_COMMAND_PATTERN, "")
+                .trim();
 
             if (!question) {
-                console.error(`No question provided after ${QA_COMMAND} command`);
+                console.error(
+                    `No question provided after ${QA_COMMAND} command`
+                );
                 return;
             }
 
-            // Call the Q&A action
             const result = await answerQuestion(question);
 
             if (result.answer) {
-                // Create an AI answer note that appears in the timeline
                 const aiAnswerNote = createOptimisticNote(
                     `**Q:** ${question}\n\n**A:** ${result.answer}`,
                     user.id,
-                    currentContext,
-                    "ai-note", // Use AI note type to identify AI answers
-                    [], // No contexts extracted from AI answers
-                    [] // No special tags needed
+                    currentKeyContext,
+                    "ai-note",
+                    [],
+                    []
                 );
 
-                // Add the AI answer to the timeline
-                dispatch(addNoteOptimistically(aiAnswerNote));
+                dispatch(
+                    createNoteOptimistically({
+                        tempNote: aiAnswerNote,
+                        autoSave: true,
+                    })
+                );
 
-                // Mark this note as an AI answer in the AI slice
-                dispatch(markAsAIAnswer({
-                    noteId: aiAnswerNote.id,
-                    question: question,
-                    answer: result.answer,
-                    relevantSources: result.relevantSources
-                }));
-
-                // Clear the input
                 setContent("");
             } else {
-                console.error('Failed to get AI answer:', result.error);
-                // Could show an error message to the user here
+                console.error("Failed to get AI answer:", result.error);
             }
         } catch (error) {
-            console.error('Error handling Q&A question:', error);
+            console.error("Error handling Q&A question:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -341,11 +300,9 @@ export function NotesEditor({
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
-        if (isEditMode && noteId) {
-            // Handle edit mode save
-            await handleSaveEdit();
+        if (isEditMode) {
+            handleSaveEdit();
         } else {
-            // Handle create mode
             await handleCreateNote();
         }
     };
@@ -353,141 +310,58 @@ export function NotesEditor({
     const handleCreateNote = async () => {
         setIsSubmitting(true);
 
-        // Check if this is a Q&A question using the pattern
         if (QA_COMMAND_PATTERN.test(content.trim())) {
             await handleQAQuestion();
             return;
         }
 
-        // extract contexts and tags from the note content
-        const { contexts, tags } = extractMetadata(content);
+        const { contexts: extractedContexts, tags } = extractMetadata(content);
+        const mergedContexts = [
+            ...new Set([...contexts, ...extractedContexts]),
+        ];
 
-        // Create optimistic note with "pending" status, passing currentContext
         const optimisticNote = createOptimisticNote(
             content,
-            user.id, // TODO Remove this and have server action automatically add user id.
-            currentContext,
+            user.id,
+            currentKeyContext,
             "note",
-            contexts,
+            mergedContexts,
             tags
         );
 
-        // Add to UI immediately
-        dispatch(addNoteOptimistically(optimisticNote));
-
-        // Clear input
-        setContent("");
-
-        // Then try to persist to server
-        const addNoteResult = await dispatch(
-            addNote({
-                tempId: optimisticNote.id,
-                key_context: currentContext, // Ensure key_context is set
-                ...optimisticNote,
+        dispatch(
+            createNoteOptimistically({
+                tempNote: optimisticNote,
+                autoSave: true,
             })
         );
 
-        // If note was successfully added, generate context suggestions and embedding
-        if (addNote.fulfilled.match(addNoteResult)) {
-            const persistedNote = addNoteResult.payload.note;
-
-            // Fire-and-forget: Dispatch context suggestions generation
-            // NoteCard will handle the AI state management
-            dispatch(
-                generateSuggestedContexts({
-                    noteId: persistedNote.id,
-                    content: persistedNote.content,
-                    userContexts: allUserContexts,
-                })
-            );
-
-            // Fire-and-forget: Dispatch embedding generation
-            // NoteCard will handle the AI state management
-            dispatch(
-                generateEmbeddingThunk({
-                    noteId: persistedNote.id,
-                    content: persistedNote.content,
-                    contexts: persistedNote.contexts,
-                    tags: persistedNote.tags,
-                    noteType: persistedNote.note_type || "note",
-                })
-            );
-        }
-
+        setContent("");
+        setContexts([]);
         setIsSubmitting(false);
     };
 
-    const handleSaveEdit = async () => {
-        if (!noteId) return;
+    const handleSaveEdit = () => {
+        if (!note) return;
 
-        setIsSubmitting(true);
+        saveNote({
+            content,
+            contexts,
+        });
 
-        try {
-            // Extract new contexts and tags from the updated content
-            const { contexts: newContexts, tags: newTags } =
-                extractMetadata(content);
-
-            // Merge existing contexts with new ones, removing duplicates
-            const existingContexts = currentNote?.contexts || [];
-            const mergedContexts = [
-                ...new Set([...existingContexts, ...newContexts]),
-            ];
-
-            // Merge existing tags with new ones, removing duplicates
-            const existingTags = currentNote?.tags || [];
-            const mergedTags = [...new Set([...existingTags, ...newTags])];
-
-            // Send patch request to server FIRST
-            await dispatch(
-                patchNote({
-                    noteId,
-                    patches: {
-                        content,
-                        contexts: mergedContexts,
-                        tags: mergedTags,
-                    },
-                })
-            );
-
-            // Regenerate embedding with updated content and metadata
-            dispatch(
-                generateEmbeddingThunk({
-                    noteId,
-                    content,
-                    contexts: mergedContexts,
-                    tags: mergedTags,
-                    noteType: currentNote?.note_type || "note",
-                })
-            );
-
-            // Only exit edit mode AFTER successful save
-            dispatch(setEditingNoteId(null));
-
-            // Call onSave callback if provided
-            if (onSave) {
-                onSave();
-            }
-        } catch (error) {
-            console.error("Error saving note:", error);
-        } finally {
-            setIsSubmitting(false);
-        }
+        // Exit edit mode
+        dispatch(setEditingNoteId(null));
     };
 
     const handleCancelEdit = () => {
-        if (!noteId) return;
+        if (!note || !originalNoteState) return;
 
-        // Reset content to original (initialContent prop)
-        if (initialContent !== undefined) {
-            setContent(initialContent);
-        }
-        // Dispatch setEditingNoteId(null) to exit edit mode
+        // Restore original state to local state
+        setContent(originalNoteState.content);
+        setContexts(originalNoteState.contexts);
+
+        // Exit edit mode without saving
         dispatch(setEditingNoteId(null));
-
-        // Call onCancel callback if provided
-        if (onCancel) {
-            onCancel();
-        }
     };
 
     return (
@@ -501,7 +375,7 @@ export function NotesEditor({
                     onSelect={handleSelect}
                     placeholder={
                         isEditMode
-                            ? "Edit your note content..."
+                            ? "Edit your note..."
                             : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                     className={
@@ -510,62 +384,61 @@ export function NotesEditor({
                             : "w-full"
                     }
                 />
-                <div className="flex justify-end m-0 mb-1 gap-2">
-                    {isEditMode ? (
+                <div className="flex justify-between items-end m-0 mb-1 gap-2">
+                    {isEditMode && (
                         <>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isSubmitting}
-                                className={`flex items-center gap-2 rounded-xl ${
-                                    hasModifications
-                                        ? "text-zinc-700 dark:text-zinc-100"
-                                        : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-100"
-                                }`}
-                                size="sm"
-                            >
-                                <X strokeWidth={3} className="h-4 w-4" />
-                                <span>Cancel</span>
-                            </Button>
+                            <ContextContainer
+                                contexts={contexts}
+                                suggestedContexts={
+                                    note.suggested_contexts || []
+                                }
+                                onContextsChange={handleContextsChange}
+                                readOnly={false}
+                                className="flex-1"
+                            />
+                            <div className="flex justify-end items-end pb-2 gap-2">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleCancelEdit}
+                                    className="flex items-center gap-2 rounded-xl"
+                                    size="icon"
+                                >
+                                    <X strokeWidth={3} size={14} />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={handleSaveEdit}
+                                    disabled={isSubmitting || !content.trim()}
+                                    className="flex items-center gap-2 rounded-xl"
+                                    size="icon"
+                                >
+                                    {isSubmitting ? (
+                                        <HashLoader size={14} />
+                                    ) : (
+                                        <Check strokeWidth={3} size={14} />
+                                    )}
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                    {!isEditMode && (
+                        <div className="flex justify-end w-full">
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !content.trim()}
-                                className={`flex items-center gap-2 rounded-xl ${
-                                    hasModifications
-                                        ? "bg-zinc-600 dark:bg-zinc-100"
-                                        : "bg-zinc-500 hover:bg-zinc-600 dark:bg-zinc-500 dark:hover:bg-zinc-100"
-                                }`}
-                                size="sm"
+                                className="flex items-center gap-2 rounded-xl"
+                                size="icon"
                             >
                                 {isSubmitting ? (
                                     <HashLoader size={16} />
                                 ) : (
                                     <>
-                                        <Check
-                                            strokeWidth={3}
-                                            className="h-4 w-4"
-                                        />
-                                        <span>Save</span>
+                                        <ArrowUp strokeWidth={3} size={16} />
                                     </>
                                 )}
                             </Button>
-                        </>
-                    ) : (
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting || !content.trim()}
-                            className="flex items-center gap-2 rounded-xl"
-                            size="icon"
-                        >
-                            {isSubmitting ? (
-                                <HashLoader size={16} />
-                            ) : (
-                                <>
-                                    <ArrowUp strokeWidth={3} size={16} />
-                                </>
-                            )}
-                        </Button>
+                        </div>
                     )}
                 </div>
             </form>
