@@ -24,11 +24,7 @@ import { RootState } from "../index";
 // Create the listener middleware
 export const notesMiddleware = createListenerMiddleware();
 
-const debounceDelay = 1000; // 1 second debounce delay
-// Map to store debounce timers for each note
-const debounceTimers = new Map<string, NodeJS.Timeout>();
-
-// Handle optimistic note editing with debounced persistence
+// Handle optimistic note editing with immediate persistence
 notesMiddleware.startListening({
     actionCreator: updateNoteOptimistically,
     effect: async (action, listenerApi) => {
@@ -39,74 +35,60 @@ notesMiddleware.startListening({
         const note = state.notes.notes.find((n) => n.id === noteId);
         if (!note) return;
 
-        // Clear any existing debounce timer for this note
-        if (debounceTimers.has(noteId)) {
-            clearTimeout(debounceTimers.get(noteId)!);
-        }
+        try {
+            // Get the latest state to ensure we have the most recent data
+            const currentState = listenerApi.getState() as RootState;
+            const currentNote = currentState.notes.notes.find(
+                (n) => n.id === noteId
+            );
 
-        // Set a new debounce timer
-        const timer = setTimeout(async () => {
-            try {
-                // Get the latest state to ensure we have the most recent data
-                const currentState = listenerApi.getState() as RootState;
-                const currentNote = currentState.notes.notes.find(
-                    (n) => n.id === noteId
-                );
+            if (!currentNote) return;
 
-                if (!currentNote) return;
+            // Extract metadata from content if content was updated
+            let finalPatches = { ...patches };
+            if (patches.content) {
+                const { contexts: extractedContexts, tags: extractedTags } =
+                    extractMetadata(patches.content);
 
-                // Extract metadata from content if content was updated
-                let finalPatches = { ...patches };
-                if (patches.content) {
-                    const { contexts: extractedContexts, tags: extractedTags } =
-                        extractMetadata(patches.content);
+                // Merge existing contexts with extracted ones
+                const existingContexts = currentNote.contexts || [];
+                const mergedContexts = [
+                    ...new Set([...existingContexts, ...extractedContexts]),
+                ];
 
-                    // Merge existing contexts with extracted ones
-                    const existingContexts = currentNote.contexts || [];
-                    const mergedContexts = [
-                        ...new Set([...existingContexts, ...extractedContexts]),
-                    ];
+                // Merge existing tags with extracted ones
+                const existingTags = currentNote.tags || [];
+                const mergedTags = [
+                    ...new Set([...existingTags, ...extractedTags]),
+                ];
 
-                    // Merge existing tags with extracted ones
-                    const existingTags = currentNote.tags || [];
-                    const mergedTags = [
-                        ...new Set([...existingTags, ...extractedTags]),
-                    ];
-
-                    finalPatches = {
-                        ...finalPatches,
-                        contexts: mergedContexts,
-                        tags: mergedTags,
-                    };
-                }
-
-                // Persist to database
-                await listenerApi.dispatch(
-                    patchNote({
-                        noteId,
-                        patches: finalPatches,
-                    })
-                );
-
-                // Clean up the timer
-                debounceTimers.delete(noteId);
-            } catch (error) {
-                console.error("Failed to persist note update:", error);
-                listenerApi.dispatch(
-                    updateNotePersistenceStatus({
-                        id: noteId,
-                        status: "failed",
-                        errorMessage:
-                            error instanceof Error
-                                ? error.message
-                                : "Unknown error",
-                    })
-                );
-                debounceTimers.delete(noteId);
+                finalPatches = {
+                    ...finalPatches,
+                    contexts: mergedContexts,
+                    tags: mergedTags,
+                };
             }
-        }, debounceDelay); // 1 second debounce
 
-        debounceTimers.set(noteId, timer);
+            // Persist to database immediately
+            await listenerApi.dispatch(
+                patchNote({
+                    noteId,
+                    patches: finalPatches,
+                })
+            );
+        } catch (error) {
+            console.error("Failed to persist note update:", error);
+            listenerApi.dispatch(
+                updateNotePersistenceStatus({
+                    id: noteId,
+                    status: "failed",
+                    errorMessage:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                })
+            );
+        }
     },
 });
 
