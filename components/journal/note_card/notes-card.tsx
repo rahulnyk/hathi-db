@@ -39,8 +39,15 @@ export function NoteCard({
     const dispatch = useAppDispatch();
     const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
+    // Check if there's a version of this note in the Redux store
+    // If so, use that version to ensure edits are reflected in the UI
+    const storeNote = useAppSelector((state) =>
+        state.notes.notes.find((n) => n.id === note.id)
+    );
+    const currentNote = storeNote || note;
+
     const aiStructurizedState = useAppSelector(
-        (state) => state.ai.structurizedNote[note.id]
+        (state) => state.ai.structurizedNote[currentNote.id]
     );
 
     // Get all user contexts from the store - memoized in place
@@ -50,9 +57,9 @@ export function NoteCard({
         [contexts]
     );
 
-    const isAiNote = note.note_type === "ai-note";
-    // const isNoteActive = note.id === activeNoteId;
-    const isNoteEditing = note.id === editingNoteId;
+    const isAiNote = currentNote.note_type === "ai-note";
+    // const isNoteActive = currentNote.id === activeNoteId;
+    const isNoteEditing = currentNote.id === editingNoteId;
 
     // const showContextContainer =
     //     (isNoteActive || isNoteEditing) && !disableContextContainer;
@@ -62,7 +69,7 @@ export function NoteCard({
         aiStructurizedState?.status === "succeeded" &&
         aiStructurizedState.structuredContent
             ? aiStructurizedState.structuredContent
-            : note.content;
+            : currentNote.content;
 
     // const handleContextsChange = (newContexts: string[]) => {
     //     dispatch(
@@ -83,18 +90,18 @@ export function NoteCard({
     const handleStructurize = () => {
         dispatch(
             structurizeNoteThunk({
-                noteId: note.id,
-                content: note.content,
+                noteId: currentNote.id,
+                content: currentNote.content,
                 userContexts: allUserContexts,
             })
         );
     };
 
     const handleDoubleClick = () => {
-        console.log(note.persistenceStatus);
+        console.log(currentNote.persistenceStatus);
         if (isAiNote) return;
-        if (note.persistenceStatus !== "persisted") return;
-        dispatch(setEditingNoteId(note.id));
+        if (currentNote.persistenceStatus !== "persisted") return;
+        dispatch(setEditingNoteId(currentNote.id));
     };
 
     // Mobile double-tap handling
@@ -153,21 +160,22 @@ export function NoteCard({
 
     return (
         <div
-            data-note-id={note.id}
+            data-note-id={currentNote.id}
             // onClick={handleCardClick}
             onDoubleClick={handleDoubleClick}
             onTouchStart={handleTouchStart}
             className={cn(
                 "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
+                // isNoteEditing && "ring-1 ring-zinc-300/50 dark:ring-zinc-600/50 my-0"
                 isNoteEditing &&
-                    "ring-1 ring-zinc-300/50 dark:ring-zinc-600/50 my-0"
+                    "border-l-2 border-dashed border-blue-500 rounded-none"
             )}
         >
-            {showCardHeader && <CardHeader note={note} />}
+            {showCardHeader && <CardHeader note={currentNote} />}
 
             {isNoteEditing ? (
                 <div className="mb-0">
-                    <NotesEditor note={note} />
+                    <NotesEditor note={currentNote} />
                 </div>
             ) : (
                 <div
@@ -199,19 +207,19 @@ export function NoteCard({
 
             {/* {showContextContainer && !isNoteEditing && (
                 <ContextContainer
-                    contexts={note.contexts || []}
-                    suggestedContexts={note.suggested_contexts || []}
+                    contexts={currentNote.contexts || []}
+                    suggestedContexts={currentNote.suggested_contexts || []}
                     onContextsChange={handleContextsChange}
                 />
             )} */}
 
             <NoteStatusIndicator
-                note={note}
+                note={currentNote}
                 onRefreshContextSuggestions={() => {
                     dispatch(
                         generateSuggestedContexts({
-                            noteId: note.id,
-                            content: note.content,
+                            noteId: currentNote.id,
+                            content: currentNote.content,
                             userContexts: allUserContexts,
                         })
                     );

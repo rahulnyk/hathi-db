@@ -70,7 +70,10 @@ export async function searchNotesBySimilarity({
             const searchResults = notes || [];
 
             return {
-                notes: searchResults,
+                notes: searchResults.map((note: SearchResultNote) => ({
+                    ...note,
+                    persistenceStatus: "persisted" as const,
+                })),
                 totalCount: searchResults.length,
                 message:
                     searchResults.length > 0

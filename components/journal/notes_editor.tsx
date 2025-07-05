@@ -378,11 +378,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
                             ? "Edit your note..."
                             : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
-                    className={
-                        isEditMode
-                            ? "w-full border border-zinc-300 dark:border-zinc-600 focus:ring-0 focus:border-zinc-400 dark:focus:border-zinc-400 bg-transparent"
-                            : "w-full"
-                    }
                 />
                 <div className="flex justify-between items-end m-0 mb-1 gap-2">
                     {isEditMode && (

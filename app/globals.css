@@ -42,7 +42,7 @@
 }
 
 .context-pill-inline {
-    @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
+    @apply inline-block bg-blue-700/10 dark:bg-blue-400/10 text-blue-900 dark:text-blue-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
 }
 
 .context-pill {

@@ -125,7 +125,10 @@ export async function filterNotes(
             };
 
             return {
-                notes: (data as Note[]) || [],
+                notes: ((data as Note[]) || []).map((note) => ({
+                    ...note,
+                    persistenceStatus: "persisted" as const,
+                })),
                 totalCount: count || 0,
                 appliedFilters,
             };

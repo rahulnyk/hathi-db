@@ -32,6 +32,7 @@ export type Note = {
     embedding?: number[];
     embedding_model?: string;
     embedding_created_at?: string;
+    isSearchResult?: boolean; // Flag for notes from agent search results
 };
 
 interface NotesState {
@@ -284,6 +285,39 @@ const notesSlice = createSlice({
             const { tempNote } = action.payload;
             state.notes.unshift(tempNote);
         },
+        // Add search result notes to the store
+        addSearchResultNotes: (state, action: PayloadAction<Note[]>) => {
+            const searchResultNotes = action.payload.map((note) => ({
+                ...note,
+                isSearchResult: true,
+                persistenceStatus: "persisted" as PersistenceStatus,
+            }));
+
+            // Remove any existing search result notes first
+            state.notes = state.notes.filter((note) => !note.isSearchResult);
+
+            // Add new search result notes to the beginning
+            state.notes.unshift(...searchResultNotes);
+        },
+        // Remove search result notes (useful when leaving chat)
+        clearSearchResultNotes: (
+            state,
+            action: PayloadAction<string[] | undefined>
+        ) => {
+            if (action.payload) {
+                // Remove specific search result notes by ID
+                state.notes = state.notes.filter(
+                    (note) =>
+                        !note.isSearchResult ||
+                        !action.payload!.includes(note.id)
+                );
+            } else {
+                // Remove all search result notes
+                state.notes = state.notes.filter(
+                    (note) => !note.isSearchResult
+                );
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -388,6 +422,8 @@ export const {
     updateNoteContent,
     updateNoteOptimistically,
     createNoteOptimistically,
+    addSearchResultNotes,
+    clearSearchResultNotes,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;
