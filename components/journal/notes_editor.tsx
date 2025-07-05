@@ -11,13 +11,12 @@ import { setEditingNoteId } from "@/store/uiSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Check } from "lucide-react";
+import { ArrowUp, Check, X } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { answerQuestion } from "@/app/actions/qa";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 import { ContextContainer } from "./note_card/context-container";
-import { useDebouncedCallback } from "use-debounce";
 
 interface NotesEditorProps {
     note?: Note;
@@ -103,6 +102,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const isEditMode = !!note;
     const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const isUserInteracting = useRef(false);
     const [content, setContent] = useState(note?.content || "");
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,38 +115,40 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const currentKeyContext = useAppSelector(
         (state) => state.notes.currentContext
     );
+    const originalNoteState = useAppSelector((state) =>
+        note?.id ? state.ui.originalNoteStates[note.id] : null
+    );
 
-    // Sync local state with note prop (one-way: Redux → local state)
-    // Only runs when entering edit mode or switching between notes
     useEffect(() => {
         if (note?.id) {
             setContent(note.content);
             setContexts(note.contexts || []);
         }
-    }, [note?.id, note?.content, note?.contexts]); // Include the properties we're using
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [note?.id]); // Important!! // Only run when note ID changes, not content or contexts
 
-    // Debounced update function for any note patches
-    const debouncedUpdateNote = useDebouncedCallback(
-        (patches: Partial<Pick<Note, "content" | "contexts" | "tags">>) => {
-            if (note && isEditMode) {
-                dispatch(
-                    updateNoteOptimistically({
-                        noteId: note.id,
-                        patches,
-                    })
-                );
-            }
-        },
-        300
-    );
+    const saveNote = (
+        patches: Partial<Pick<Note, "content" | "contexts" | "tags">>
+    ) => {
+        if (note && isEditMode) {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId: note.id,
+                    patches,
+                })
+            );
+        }
+    };
 
+    // Focus textarea and set cursor to end when entering edit mode
     useEffect(() => {
-        if (isEditMode && textareaRef.current) {
+        if (isEditMode && textareaRef.current && !isUserInteracting.current) {
             textareaRef.current.focus();
-            const length = content.length;
+            // Set cursor to end of content when entering edit mode
+            const length = textareaRef.current.value.length;
             textareaRef.current.setSelectionRange(length, length);
         }
-    }, [isEditMode, content.length]);
+    }, [isEditMode]); // Only run when entering/exiting edit mode
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
         setActiveSelection({
@@ -158,40 +160,23 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
+        isUserInteracting.current = true;
         const newFullValue = event.target.value;
         const newSelectionStart = event.target.selectionStart;
         const newSelectionEnd = event.target.selectionEnd;
 
         setContent(newFullValue);
 
-        // Trigger debounced update for edit mode
-        if (isEditMode) {
-            // Extract metadata from the content (contexts and tags)
-            const { contexts: extractedContexts, tags } =
-                extractMetadata(newFullValue);
+        // Always update active selection to track cursor position
+        setActiveSelection({
+            start: newSelectionStart,
+            end: newSelectionEnd,
+        });
 
-            // Merge extracted contexts with existing contexts
-            const mergedContexts = [
-                ...new Set([...contexts, ...extractedContexts]),
-            ];
-
-            // Update both content and extracted metadata
-            debouncedUpdateNote({
-                content: newFullValue,
-                contexts: mergedContexts,
-                tags,
-            });
-
-            // Also update local contexts state to reflect the merged contexts
-            setContexts(mergedContexts);
-        }
-
-        if (newFullValue.length < content.length) {
-            setActiveSelection({
-                start: newSelectionStart,
-                end: newSelectionEnd,
-            });
-        }
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            isUserInteracting.current = false;
+        }, 10);
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -247,6 +232,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
             if (deleteResult) {
                 event.preventDefault();
                 setContent(deleteResult.newValue);
+
                 requestAnimationFrame(() => {
                     if (textareaRef.current) {
                         textareaRef.current.setSelectionRange(
@@ -263,10 +249,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const handleContextsChange = (newContexts: string[]) => {
         setContexts(newContexts);
 
-        // Trigger debounced update for edit mode
-        if (isEditMode) {
-            debouncedUpdateNote({ contexts: newContexts });
-        }
+        // Only update local state - save happens when exiting edit mode
     };
 
     const handleQAQuestion = async () => {
@@ -360,8 +343,24 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     const handleSaveEdit = () => {
         if (!note) return;
-        // Optimistic update already handled by useEffect
-        // Just exit edit mode
+
+        saveNote({
+            content,
+            contexts,
+        });
+
+        // Exit edit mode
+        dispatch(setEditingNoteId(null));
+    };
+
+    const handleCancelEdit = () => {
+        if (!note || !originalNoteState) return;
+
+        // Restore original state to local state
+        setContent(originalNoteState.content);
+        setContexts(originalNoteState.contexts);
+
+        // Exit edit mode without saving
         dispatch(setEditingNoteId(null));
     };
 
@@ -397,10 +396,18 @@ export function NotesEditor({ note }: NotesEditorProps) {
                                 readOnly={false}
                                 className="flex-1"
                             />
-                            <div className="flex justify-end items-end pb-2">
+                            <div className="flex justify-end items-end pb-2 gap-2">
                                 <Button
                                     type="button"
-                                    // variant="ghost"
+                                    variant="ghost"
+                                    onClick={handleCancelEdit}
+                                    className="flex items-center gap-2 rounded-xl"
+                                    size="icon"
+                                >
+                                    <X strokeWidth={3} size={14} />
+                                </Button>
+                                <Button
+                                    type="button"
                                     onClick={handleSaveEdit}
                                     disabled={isSubmitting || !content.trim()}
                                     className="flex items-center gap-2 rounded-xl"

@@ -33,7 +33,7 @@
 }
 
 .context-pill-inline {
-    @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
+    @apply inline-block bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
 }
 
 .context-pill {
@@ -45,7 +45,7 @@
 }
 
 .hashtag-pill {
-    @apply inline-block bg-yellow-500/30 text-amber-800 dark:text-amber-200 rounded-sm px-1 py-0 mx-0 tracking-wide text-base;
+    @apply inline-block bg-yellow-500/30 text-amber-800 dark:text-amber-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
 }
 
 @layer base {
