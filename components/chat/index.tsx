@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,61 @@ import { Send, User, Bot, Loader2, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NoteCard } from "@/components/journal/note_card/notes-card";
 import ReactMarkdown from "react-markdown";
+import { useAppDispatch } from "@/store";
+import {
+    addSearchResultNotes,
+    clearSearchResultNotes,
+} from "@/store/notesSlice";
 import {
     SearchToolResponse,
     SearchResultNote,
     SummarizeToolResponse,
     AnswerToolResponse,
 } from "@/app/agent_tools/types";
+
+// Component to handle search results and temporary notes
+function SearchResultsDisplay({
+    searchResult,
+    toolInfoHeader,
+}: {
+    searchResult: SearchToolResponse;
+    toolInfoHeader: React.ReactNode;
+}) {
+    const dispatch = useAppDispatch();
+
+    // Add search results to the store as search result notes so they can be edited
+    useEffect(() => {
+        const tempNotes = searchResult.notes.map((note: SearchResultNote) => ({
+            ...note,
+            persistenceStatus: "persisted" as const,
+        }));
+        dispatch(addSearchResultNotes(tempNotes));
+
+        // Cleanup function to remove these specific search result notes when component unmounts
+        return () => {
+            const noteIds = tempNotes.map((note) => note.id);
+            dispatch(clearSearchResultNotes(noteIds));
+        };
+    }, [searchResult.notes, dispatch]);
+
+    return (
+        <div>
+            {toolInfoHeader}
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+                {searchResult.notes.map((note: SearchResultNote) => (
+                    <div key={note.id} className="relative">
+                        <NoteCard note={note} />
+                        {note.similarity && (
+                            <div className="absolute top-2 right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
+                                {(note.similarity * 100).toFixed(0)}% match
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 // Tool invocation data types
 interface ToolInvocationData {
@@ -361,28 +410,12 @@ function ToolResultPart({
             );
         }
 
+        // Add search results to the store as temporary notes so they can be edited
         return (
-            <div>
-                {toolInfoHeader}
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {searchResult.notes.map((note: SearchResultNote) => (
-                        <div key={note.id} className="relative">
-                            <NoteCard
-                                note={{
-                                    ...note,
-                                    user_id: "",
-                                    persistenceStatus: "persisted" as const,
-                                }}
-                            />
-                            {note.similarity && (
-                                <div className="absolute top-2 right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
-                                    {(note.similarity * 100).toFixed(0)}% match
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <SearchResultsDisplay
+                searchResult={searchResult}
+                toolInfoHeader={toolInfoHeader}
+            />
         );
     }
 

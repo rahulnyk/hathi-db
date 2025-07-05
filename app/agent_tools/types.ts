@@ -14,6 +14,8 @@ import type { Note } from "@/store/notesSlice";
 export interface SearchResultNote
     extends Pick<
         Note,
+        | "user_id"
+        | "persistenceStatus"
         | "id"
         | "content"
         | "key_context"
