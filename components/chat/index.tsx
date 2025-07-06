@@ -20,6 +20,9 @@ import {
     AnswerToolResponse,
 } from "@/app/agent_tools/types";
 
+import { hasNonEmptyParts } from "./utils";
+import { UIMessage } from "ai";
+
 // Component to handle search results and temporary notes
 function SearchResultsDisplay({
     searchResult,
@@ -242,10 +245,10 @@ function MessageContent({
     displayToolInfo,
 }: {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    message: any;
+    message: UIMessage;
     displayToolInfo: boolean;
 }) {
-    if (message.parts && message.parts.length > 0) {
+    if (hasNonEmptyParts(message)) {
         return (
             <div className="space-y-3">
                 {renderMessageParts(message.parts, displayToolInfo)}
