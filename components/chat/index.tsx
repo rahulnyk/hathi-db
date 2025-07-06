@@ -1,120 +1,84 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Bot, Loader2, Settings } from "lucide-react";
+import { Send, User, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NoteCard } from "@/components/journal/note_card/notes-card";
-import ReactMarkdown from "react-markdown";
-import { useAppDispatch } from "@/store";
-import {
-    addSearchResultNotes,
-    clearSearchResultNotes,
-} from "@/store/notesSlice";
-import {
-    SearchToolResponse,
-    SearchResultNote,
-    SummarizeToolResponse,
-    AnswerToolResponse,
-} from "@/app/agent_tools/types";
-
-import { hasNonEmptyParts } from "./utils";
 import { UIMessage } from "ai";
+import { MessagePart, messageHasParts } from "./utils";
+import { ToolInvocationUIPart } from "@ai-sdk/ui-utils";
+import { HashLoader } from "react-spinners";
+import { useAppDispatch, useAppSelector } from "@/store";
+import {
+    setStatus,
+    toggleDisplayToolInfo,
+    selectDisplayToolInfo,
+    selectIsProcessing,
+    AgentStatus,
+} from "@/store/agentSlice";
 
-// Component to handle search results and temporary notes
-function SearchResultsDisplay({
-    searchResult,
-    toolInfoHeader,
-}: {
-    searchResult: SearchToolResponse;
-    toolInfoHeader: React.ReactNode;
-}) {
-    const dispatch = useAppDispatch();
-
-    // Add search results to the store as search result notes so they can be edited
-    useEffect(() => {
-        const tempNotes = searchResult.notes.map((note: SearchResultNote) => ({
-            ...note,
-            persistenceStatus: "persisted" as const,
-        }));
-        dispatch(addSearchResultNotes(tempNotes));
-
-        // Cleanup function to remove these specific search result notes when component unmounts
-        return () => {
-            const noteIds = tempNotes.map((note) => note.id);
-            dispatch(clearSearchResultNotes(noteIds));
-        };
-    }, [searchResult.notes, dispatch]);
-
-    return (
-        <div>
-            {toolInfoHeader}
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-                {searchResult.notes.map((note: SearchResultNote) => (
-                    <div key={note.id} className="relative">
-                        <NoteCard note={note} />
-                        {note.similarity && (
-                            <div className="absolute top-2 right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
-                                {(note.similarity * 100).toFixed(0)}% match
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// Tool invocation data types
-interface ToolInvocationData {
-    toolName: string;
-    state: "call" | "result";
-    result?: unknown;
-    args?: Record<string, unknown>;
-}
-
-// Message part types
-interface ToolInvocationPart {
-    type: "tool-invocation";
-    toolInvocation: ToolInvocationData;
-}
-
-interface TextPart {
-    type: "text";
-    text: string;
-}
-
-type MessagePart =
-    | ToolInvocationPart
-    | TextPart
-    | { type: string; [key: string]: unknown };
-
+import { HathiIcon } from "../icon";
+import { TextPartRenderer } from "./renderers/text-part-renderer";
+import { ToolResultRenderer } from "./renderers/tool-results-renderer";
 export function ChatComponent() {
-    const [displayToolInfo, setDisplayToolInfo] = useState(false);
+    const dispatch = useAppDispatch();
+    const displayToolInfo = useAppSelector(selectDisplayToolInfo);
+    const isProcessing = useAppSelector(selectIsProcessing);
 
     const { messages, input, handleInputChange, handleSubmit, status } =
         useChat({
             api: "/api/chat",
         });
+    console.log("Chat status:", status);
+    console.log("Chat messages:", messages);
 
-    const isProcessing = status === "submitted" || status === "streaming";
+    // Update Redux state when chat status changes
+    useEffect(() => {
+        dispatch(setStatus(status as AgentStatus));
+    }, [status, dispatch]);
 
     return (
         <div className="w-full max-w-4xl mx-auto h-[700px] flex flex-col">
             {/* Header with settings */}
-            <div className="border-b p-4 flex justify-between items-center">
-                <h2 className="text-lg font-semibold">AI Assistant</h2>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDisplayToolInfo(!displayToolInfo)}
-                    className="flex items-center gap-2"
-                >
-                    <Settings className="h-4 w-4" />
-                    {displayToolInfo ? "Hide" : "Show"} Tool Info
-                </Button>
+            <div className="border-b p-4 flex justify-between items-center min-h-[60px]">
+                <div className="flex items-center gap-3">
+                    <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
+                    {isProcessing && (
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="text-xs whitespace-nowrap">
+                                {status === "submitted"
+                                    ? "Thinking..."
+                                    : "Generating response..."}
+                            </span>
+                            <HashLoader
+                                size={20}
+                                color="currentColor"
+                                loading={true}
+                            />
+                        </div>
+                    )}
+                </div>
+                <div className="flex items-center">
+                    <div className="flex items-center">
+                        <span className="text-sm mr-2">Tool Info</span>
+                        <button
+                            onClick={() => dispatch(toggleDisplayToolInfo())}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                                displayToolInfo ? "bg-primary" : "bg-input"
+                            }`}
+                        >
+                            <span
+                                className={`inline-block h-4 w-4 rounded-full bg-background transition-transform ${
+                                    displayToolInfo
+                                        ? "translate-x-6"
+                                        : "translate-x-1"
+                                }`}
+                            />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Messages area */}
@@ -138,34 +102,13 @@ export function ChatComponent() {
                         </div>
                     )}
 
-                    {messages.map((message) => (
+                    {messages.map((message: UIMessage) => (
                         <ChatMessage
                             key={message.id}
                             message={message}
                             displayToolInfo={displayToolInfo}
                         />
                     ))}
-
-                    {isProcessing && (
-                        <div className="flex gap-3 p-3 rounded-lg bg-muted mr-8">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted-foreground text-muted flex items-center justify-center">
-                                <Bot className="h-4 w-4" />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                                <div className="text-sm text-muted-foreground">
-                                    AI Assistant
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    <span className="text-muted-foreground">
-                                        {status === "submitted"
-                                            ? "Thinking..."
-                                            : "Generating response..."}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -196,13 +139,12 @@ export function ChatComponent() {
     );
 }
 
-// Individual chat message component
+// Chat message component
 function ChatMessage({
     message,
     displayToolInfo,
 }: {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    message: any;
+    message: UIMessage;
     displayToolInfo: boolean;
 }) {
     return (
@@ -244,14 +186,19 @@ function MessageContent({
     message,
     displayToolInfo,
 }: {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     message: UIMessage;
     displayToolInfo: boolean;
 }) {
-    if (hasNonEmptyParts(message)) {
+    if (messageHasParts(message)) {
         return (
             <div className="space-y-3">
-                {renderMessageParts(message.parts, displayToolInfo)}
+                {message.parts.map((part, index) => (
+                    <MessagePartRenderer
+                        key={index}
+                        part={part}
+                        displayToolInfo={displayToolInfo}
+                    />
+                ))}
             </div>
         );
     }
@@ -267,81 +214,97 @@ function MessageContent({
     return null;
 }
 
-// Render message parts with deduplication
-function renderMessageParts(parts: MessagePart[], displayToolInfo: boolean) {
-    const processedTools = new Map<string, ToolInvocationData>();
-    const renderedParts: React.ReactElement[] = [];
+// Message part renderer with switch case
+function MessagePartRenderer({
+    part,
+    displayToolInfo,
+}: {
+    part: MessagePart;
+    displayToolInfo: boolean;
+}) {
+    const displayText = {
+        reasoning: "Thinking",
+        source: "...",
+        file: "...",
+        "step-start": "Thinking...",
+    };
+    switch (part.type) {
+        case "text":
+            return <TextPartRenderer part={part} />;
 
-    // First pass: identify final tool states
-    parts.forEach((part) => {
-        if (isToolInvocationPart(part)) {
-            const { toolName, state, result } = part.toolInvocation;
-            if (state === "result" && result) {
-                processedTools.set(toolName, part.toolInvocation);
-            }
-        }
-    });
+        case "tool-invocation":
+            return (
+                <ToolInvocationPartComponent
+                    part={part as ToolInvocationUIPart}
+                    displayToolInfo={displayToolInfo}
+                />
+            );
 
-    // Check if we have a provideAnswer tool result
-    const hasProvideAnswer = processedTools.has("provideAnswer");
+        case "reasoning":
+        case "source":
+        case "file":
+        case "step-start":
+            // Handle other part types if needed
+            return displayToolInfo ? (
+                <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20">
+                    {displayText[part.type]} - {part.type}
+                </div>
+            ) : null;
 
-    // Second pass: render parts without duplicates
-    const shownToolResults = new Set<string>();
-
-    parts.forEach((part, index) => {
-        if (part.type === "text" && "text" in part) {
-            // Skip text parts if we have a provideAnswer tool result,
-            // as the provideAnswer tool contains the final response
-            if (!hasProvideAnswer) {
-                renderedParts.push(
-                    <TextMessagePart
-                        key={`text-${index}`}
-                        part={part as TextPart}
-                    />
-                );
-            }
-        } else if (isToolInvocationPart(part)) {
-            const { toolName, state } = part.toolInvocation;
-
-            if (state === "call" && displayToolInfo) {
-                renderedParts.push(
-                    <ToolCallPart
-                        key={`tool-call-${toolName}-${index}`}
-                        toolName={toolName}
-                    />
-                );
-            } else if (state === "result" && !shownToolResults.has(toolName)) {
-                const finalResult = processedTools.get(toolName);
-                if (finalResult) {
-                    renderedParts.push(
-                        <ToolResultPart
-                            key={`tool-result-${toolName}`}
-                            toolInvocation={finalResult}
-                            displayToolInfo={displayToolInfo}
-                        />
-                    );
-                    shownToolResults.add(toolName);
-                }
-            }
-        }
-    });
-
-    return renderedParts;
+        default:
+            return (
+                <div className="text-xs text-muted-foreground">
+                    Unknown part type
+                </div>
+            );
+    }
 }
 
-// Text message part component
-function TextMessagePart({ part }: { part: TextPart }) {
-    if (!part.text) return null;
+// Tool invocation part component
+function ToolInvocationPartComponent({
+    part,
+    displayToolInfo,
+}: {
+    part: ToolInvocationUIPart;
+    displayToolInfo: boolean;
+}) {
+    const { toolName, state } = part.toolInvocation;
+    const result =
+        "result" in part.toolInvocation
+            ? part.toolInvocation.result
+            : undefined;
 
-    return (
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-            {part.text}
-        </div>
-    );
+    // Show tool call indicator if enabled
+    if (state === "call" && displayToolInfo) {
+        return <ToolCallIndicator toolName={toolName} />;
+    }
+
+    if (toolName === "answer") {
+        return (
+            <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                <span className="text-sm font-medium">Hathi:</span> Done
+            </div>
+        );
+    }
+
+    // Show tool result
+    if (state === "result" && result) {
+        return (
+            <ToolResultRenderer
+                toolName={toolName}
+                result={result}
+                displayToolInfo={displayToolInfo}
+            />
+        );
+    }
+
+    return null;
 }
 
-// Tool call indicator component
-function ToolCallPart({ toolName }: { toolName: string }) {
+// Tool call indicator
+function ToolCallIndicator({ toolName }: { toolName: string }) {
+    // const agentStatus = useAppSelector((state) => state.agent.status);
+    const agentStatus = useAppSelector((state) => state.agent.status);
     const getToolMessage = (tool: string) => {
         switch (tool) {
             case "filterNotes":
@@ -352,8 +315,8 @@ function ToolCallPart({ toolName }: { toolName: string }) {
                 return "Getting available filter options...";
             case "summarizeNotes":
                 return "Generating summary...";
-            case "provideAnswer":
-                return "Preparing response...";
+            case "answer":
+                return "Done";
             default:
                 return "Processing...";
         }
@@ -361,147 +324,13 @@ function ToolCallPart({ toolName }: { toolName: string }) {
 
     return (
         <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded flex items-center gap-2">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {getToolMessage(toolName)}
+            {agentStatus != "error" && agentStatus != "idle" && (
+                <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {getToolMessage(toolName)}
+                </>
+            )}
         </div>
-    );
-}
-
-// Tool result component
-function ToolResultPart({
-    toolInvocation,
-    displayToolInfo,
-}: {
-    toolInvocation: ToolInvocationData;
-    displayToolInfo: boolean;
-}) {
-    const { toolName, result } = toolInvocation;
-
-    // Tool info header (only shown if displayToolInfo is true)
-    const toolInfoHeader = displayToolInfo && (
-        <>
-            <div className="text-xs text-muted-foreground/60 font-mono mb-2">
-                {toolName}
-            </div>
-            <hr className="border-t border-muted-foreground/20 mb-3" />
-        </>
-    );
-
-    // Handle search tools - render note cards
-    if (toolName === "filterNotes" || toolName === "searchNotesBySimilarity") {
-        const searchResult = result as SearchToolResponse;
-
-        if (!searchResult?.success) {
-            return (
-                <div>
-                    {toolInfoHeader}
-                    <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
-                        {searchResult?.message || "Failed to search notes"}
-                    </div>
-                </div>
-            );
-        }
-
-        if (!searchResult.notes || searchResult.notes.length === 0) {
-            return (
-                <div>
-                    {toolInfoHeader}
-                    <div className="text-sm text-muted-foreground text-center py-4 bg-muted/30 rounded">
-                        No notes found matching your criteria
-                    </div>
-                </div>
-            );
-        }
-
-        // Add search results to the store as temporary notes so they can be edited
-        return (
-            <SearchResultsDisplay
-                searchResult={searchResult}
-                toolInfoHeader={toolInfoHeader}
-            />
-        );
-    }
-
-    // Handle getFilterOptions - don't display to user
-    if (toolName === "getFilterOptions") {
-        return null;
-    }
-
-    // Handle summarizeNotes - render as markdown
-    if (toolName === "summarizeNotes") {
-        const summarizeResult = result as SummarizeToolResponse;
-
-        if (!summarizeResult?.success || !summarizeResult.summary) {
-            return (
-                <div>
-                    {toolInfoHeader}
-                    <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
-                        {summarizeResult?.message ||
-                            "Failed to generate summary"}
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div>
-                {toolInfoHeader}
-                <div className="prose prose-sm max-w-none dark:prose-invert p-3 bg-card rounded border">
-                    <ReactMarkdown>{summarizeResult.summary}</ReactMarkdown>
-                </div>
-            </div>
-        );
-    }
-
-    // Handle provideAnswer - render as markdown
-    if (toolName === "provideAnswer") {
-        const answerResult = result as AnswerToolResponse;
-
-        if (!answerResult?.success || !answerResult.answer) {
-            return (
-                <div>
-                    {toolInfoHeader}
-                    <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
-                        Failed to provide answer
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div>
-                {toolInfoHeader}
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <ReactMarkdown>{answerResult.answer}</ReactMarkdown>
-                </div>
-            </div>
-        );
-    }
-
-    // Fallback for unknown tools
-    return displayToolInfo ? (
-        <div>
-            {toolInfoHeader}
-            <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                Unknown tool result
-            </div>
-        </div>
-    ) : null;
-}
-
-// Type guard for tool invocation parts
-function isToolInvocationPart(part: MessagePart): part is ToolInvocationPart {
-    return (
-        typeof part === "object" &&
-        part !== null &&
-        part.type === "tool-invocation" &&
-        "toolInvocation" in part &&
-        typeof part.toolInvocation === "object" &&
-        part.toolInvocation !== null &&
-        "toolName" in part.toolInvocation &&
-        "state" in part.toolInvocation &&
-        typeof part.toolInvocation.toolName === "string" &&
-        typeof part.toolInvocation.state === "string"
     );
 }
 
