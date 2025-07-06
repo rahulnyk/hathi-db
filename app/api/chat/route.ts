@@ -17,7 +17,7 @@ export async function POST(req: Request) {
             model: gemini("gemini-2.5-flash"),
             messages,
             system: agentSystemPrompt(),
-            maxSteps: 4,
+            maxSteps: 3,
             toolChoice: "auto", // let the agent decide when to use tools vs respond directly
             tools,
         });

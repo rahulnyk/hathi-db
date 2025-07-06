@@ -8,7 +8,7 @@ import {
     StepStartUIPart,
 } from "@ai-sdk/ui-utils";
 
-type Parts =
+export type MessagePart =
     | TextUIPart
     | ReasoningUIPart
     | ToolInvocationUIPart
@@ -16,10 +16,6 @@ type Parts =
     | FileUIPart
     | StepStartUIPart;
 
-export const hasNonEmptyParts = (message: UIMessage): boolean => {
+export const messageHasParts = (message: UIMessage): boolean => {
     return !!(message.parts && message.parts.length > 0);
 };
-
-function isToolInvocationPart(part: Parts): part is ToolInvocationUIPart {
-    return part.type === "tool-invocation";
-}
