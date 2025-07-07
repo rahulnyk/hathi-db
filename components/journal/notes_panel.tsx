@@ -3,12 +3,18 @@
 import { Thread } from "./thread";
 import { InputPanel } from "./input_panel";
 import { AssistantPanel } from "./assistant-panel";
-import { NotesPanelHeader } from "./notes-panel-header"; // Import NotesPanelHeader
+import { NotesPanelHeader } from "./notes-panel-header";
 import { useAppSelector } from "@/store";
 import { cn } from "@/lib/utils";
+import { useChat } from "@ai-sdk/react";
 
 export function NotesPanel() {
     const chatMode = useAppSelector((state) => state.ui.chatMode);
+
+    // Create chat hook for assistant mode
+    const chatHook = useChat({
+        api: "/api/chat",
+    });
 
     return (
         <div
@@ -16,9 +22,9 @@ export function NotesPanel() {
                 "flex flex-col h-screen w-full md:max-w-screen-lg md:mx-auto"
             )}
         >
-            <NotesPanelHeader /> {/* Add NotesPanelHeader here */}
-            {chatMode ? <AssistantPanel /> : <Thread />}
-            <InputPanel />
+            <NotesPanelHeader />
+            {chatMode ? <AssistantPanel chatHook={chatHook} /> : <Thread />}
+            <InputPanel chatHook={chatHook} />
         </div>
     );
 }
