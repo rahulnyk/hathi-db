@@ -14,6 +14,7 @@ interface UIState {
     activeNoteId: string | null;
     editingNoteId: string | null; // Added for tracking the note being edited
     originalNoteStates: Record<string, OriginalNoteState>; // Store original states by note ID
+    chatMode: boolean; // Track if the editor is in chat mode
 }
 
 const initialState: UIState = {
@@ -22,6 +23,7 @@ const initialState: UIState = {
     activeNoteId: null,
     editingNoteId: null, // Initialize editingNoteId
     originalNoteStates: {}, // Initialize empty original note states
+    chatMode: false, // Initialize chat mode to false
 };
 
 const uiSlice = createSlice({
@@ -68,6 +70,9 @@ const uiSlice = createSlice({
             const noteId = action.payload;
             delete state.originalNoteStates[noteId];
         },
+        setChatMode: (state, action: PayloadAction<boolean>) => {
+            state.chatMode = action.payload;
+        },
     },
 });
 
@@ -79,5 +84,6 @@ export const {
     setEditingNoteId, // Export the new action
     storeOriginalNoteState,
     clearOriginalNoteState,
+    setChatMode,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -2,11 +2,14 @@
 
 import { Thread } from "./thread";
 import { InputPanel } from "./input_panel";
+import { AssistantPanel } from "./assistant-panel";
 import { NotesPanelHeader } from "./notes-panel-header"; // Import NotesPanelHeader
+import { useAppSelector } from "@/store";
 import { cn } from "@/lib/utils";
 
 export function NotesPanel() {
-    // Removed hidden prop
+    const chatMode = useAppSelector((state) => state.ui.chatMode);
+
     return (
         <div
             className={cn(
@@ -14,7 +17,7 @@ export function NotesPanel() {
             )}
         >
             <NotesPanelHeader /> {/* Add NotesPanelHeader here */}
-            <Thread />
+            {chatMode ? <AssistantPanel /> : <Thread />}
             <InputPanel />
         </div>
     );
