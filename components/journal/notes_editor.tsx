@@ -179,8 +179,22 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }, 10);
     };
 
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = async (
+        event: React.KeyboardEvent<HTMLTextAreaElement>
+    ) => {
         const pressedKey = event.key;
+
+        if (pressedKey === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            if (!content.trim() || isSubmitting) return;
+
+            if (isEditMode) {
+                handleSaveEdit();
+            } else {
+                await handleCreateNote();
+            }
+            return;
+        }
 
         if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
             event.preventDefault();
