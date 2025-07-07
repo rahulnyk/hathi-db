@@ -6,7 +6,6 @@ import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentConte
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
 import { HathiIcon } from "@/components/icon"; // Import HathiIcon
-import { Button } from "@/components/ui/button"; // Import Button for toggle
 
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
