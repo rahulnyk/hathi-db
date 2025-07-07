@@ -22,15 +22,23 @@ import {
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
 import { ToolResultRenderer } from "./renderers/tool-results-renderer";
-export function ChatComponent() {
+
+export interface ChatComponentProps {
+    chatHook?: ReturnType<typeof useChat>;
+    className?: string;
+}
+
+export function ChatComponent({ chatHook, className }: ChatComponentProps) {
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
 
     const { messages, input, handleInputChange, handleSubmit, status } =
+        chatHook ||
         useChat({
             api: "/api/chat",
         });
+
     console.log("Chat status:", status);
     console.log("Chat messages:", messages);
 
@@ -40,46 +48,55 @@ export function ChatComponent() {
     }, [status, dispatch]);
 
     return (
-        <div className="w-full max-w-4xl mx-auto h-[700px] flex flex-col">
-            {/* Header with settings */}
-            <div className="border-b p-4 flex justify-between items-center min-h-[60px]">
-                <div className="flex items-center gap-3">
-                    <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
-                    {isProcessing && (
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="text-xs whitespace-nowrap">
-                                {status === "submitted"
-                                    ? "Thinking..."
-                                    : "Generating response..."}
-                            </span>
-                            <HashLoader
-                                size={20}
-                                color="currentColor"
-                                loading={true}
-                            />
-                        </div>
-                    )}
-                </div>
-                <div className="flex items-center">
+        <div
+            className={cn(
+                "w-full flex flex-col",
+                className || "max-w-4xl mx-auto h-[700px]"
+            )}
+        >
+            {!chatHook && (
+                <div className="border-b p-4 flex justify-between items-center min-h-[60px]">
+                    {/* Header with settings */}
+                    <div className="flex items-center gap-3">
+                        <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
+                        {isProcessing && (
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="text-xs whitespace-nowrap">
+                                    {status === "submitted"
+                                        ? "Thinking..."
+                                        : "Generating response..."}
+                                </span>
+                                <HashLoader
+                                    size={20}
+                                    color="currentColor"
+                                    loading={true}
+                                />
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center">
-                        <span className="text-sm mr-2">Tool Info</span>
-                        <button
-                            onClick={() => dispatch(toggleDisplayToolInfo())}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                                displayToolInfo ? "bg-primary" : "bg-input"
-                            }`}
-                        >
-                            <span
-                                className={`inline-block h-4 w-4 rounded-full bg-background transition-transform ${
-                                    displayToolInfo
-                                        ? "translate-x-6"
-                                        : "translate-x-1"
+                        <div className="flex items-center">
+                            <span className="text-sm mr-2">Tool Info</span>
+                            <button
+                                onClick={() =>
+                                    dispatch(toggleDisplayToolInfo())
+                                }
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                                    displayToolInfo ? "bg-primary" : "bg-input"
                                 }`}
-                            />
-                        </button>
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 rounded-full bg-background transition-transform ${
+                                        displayToolInfo
+                                            ? "translate-x-6"
+                                            : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Messages area */}
             <div className="flex-1 p-4 overflow-y-auto">
@@ -113,28 +130,30 @@ export function ChatComponent() {
             </div>
 
             {/* Input area */}
-            <div className="border-t p-4">
-                <form onSubmit={handleSubmit} className="flex gap-2">
-                    <Input
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder="Ask me to find your notes... (e.g., 'show me notes from last week about work')"
-                        disabled={isProcessing}
-                        className="flex-1"
-                    />
-                    <Button
-                        type="submit"
-                        disabled={isProcessing || !input.trim()}
-                        size="icon"
-                    >
-                        {isProcessing ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Send className="h-4 w-4" />
-                        )}
-                    </Button>
-                </form>
-            </div>
+            {!chatHook && (
+                <div className="border-t p-4">
+                    <form onSubmit={handleSubmit} className="flex gap-2">
+                        <Input
+                            value={input}
+                            onChange={handleInputChange}
+                            placeholder="Ask me to find your notes... (e.g., 'show me notes from last week about work')"
+                            disabled={isProcessing}
+                            className="flex-1"
+                        />
+                        <Button
+                            type="submit"
+                            disabled={isProcessing || !input.trim()}
+                            size="icon"
+                        >
+                            {isProcessing ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Send className="h-4 w-4" />
+                            )}
+                        </Button>
+                    </form>
+                </div>
+            )}
         </div>
     );
 }

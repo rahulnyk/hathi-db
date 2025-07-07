@@ -17,9 +17,11 @@ import { answerQuestion } from "@/app/actions/qa";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 import { ContextContainer } from "./note_card/context-container";
+import { useChat } from "@ai-sdk/react";
 
 interface NotesEditorProps {
     note?: Note;
+    chatHook?: ReturnType<typeof useChat>;
 }
 
 const BRACKET_PAIRS: Record<string, string> = {
@@ -98,7 +100,7 @@ function handleAutoDeleteBracketPair(
     return null;
 }
 
-export function NotesEditor({ note }: NotesEditorProps) {
+export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     const isEditMode = !!note;
     const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -115,6 +117,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const currentKeyContext = useAppSelector(
         (state) => state.notes.currentContext
     );
+    const chatMode = useAppSelector((state) => state.ui.chatMode);
     const originalNoteState = useAppSelector((state) =>
         note?.id ? state.ui.originalNoteStates[note.id] : null
     );
@@ -126,6 +129,16 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [note?.id]); // Important!! // Only run when note ID changes, not content or contexts
+
+    // Sync content with chatHook's input when in chat mode
+    useEffect(() => {
+        if (chatMode && chatHook && !isEditMode) {
+            // Only sync if the chat input differs from our content
+            if (chatHook.input !== content) {
+                setContent(chatHook.input);
+            }
+        }
+    }, [chatMode, chatHook, isEditMode, chatHook?.input]);
 
     const saveNote = (
         patches: Partial<Pick<Note, "content" | "contexts" | "tags">>
@@ -156,7 +169,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
             end: event.currentTarget.selectionEnd,
         });
     };
-
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
@@ -166,6 +178,14 @@ export function NotesEditor({ note }: NotesEditorProps) {
         const newSelectionEnd = event.target.selectionEnd;
 
         setContent(newFullValue);
+
+        // Sync with chatHook's input when in chat mode
+        if (chatMode && chatHook && !isEditMode) {
+            // Only sync if the values are different to avoid infinite loops
+            if (chatHook.input !== newFullValue) {
+                chatHook.handleInputChange(event);
+            }
+        }
 
         // Check for mode switching commands (only when not in edit mode)
         // Only trigger if the input is exactly the command (not part of other text)
@@ -181,6 +201,10 @@ export function NotesEditor({ note }: NotesEditorProps) {
                 setTimeout(() => {
                     dispatch(setChatMode(true));
                     setContent(""); // Clear the content after triggering
+                    // Clear chat input if chatHook is available
+                    if (chatHook && typeof chatHook.setInput === "function") {
+                        chatHook.setInput("");
+                    }
                 }, 100);
                 return; // Exit early to prevent further processing
             }
@@ -194,6 +218,10 @@ export function NotesEditor({ note }: NotesEditorProps) {
                 setTimeout(() => {
                     dispatch(setChatMode(false));
                     setContent(""); // Clear the content after triggering
+                    // Clear chat input if chatHook is available
+                    if (chatHook && typeof chatHook.setInput === "function") {
+                        chatHook.setInput("");
+                    }
                 }, 100);
                 return; // Exit early to prevent further processing
             }
@@ -219,6 +247,17 @@ export function NotesEditor({ note }: NotesEditorProps) {
         if (pressedKey === "Enter" && !event.shiftKey) {
             event.preventDefault();
             if (!content.trim() || isSubmitting) return;
+
+            // If in chat mode and chatHook is provided, use chat instead of creating notes
+            if (chatMode && chatHook && !isEditMode) {
+                // Directly append the message to the chat
+                chatHook.append({
+                    role: "user",
+                    content: content.trim(),
+                });
+                setContent(""); // Clear the content after sending to chat
+                return;
+            }
 
             if (isEditMode) {
                 handleSaveEdit();
@@ -346,6 +385,16 @@ export function NotesEditor({ note }: NotesEditorProps) {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
+        // If in chat mode and chatHook is provided, use chat instead of creating notes
+        if (chatMode && chatHook && !isEditMode) {
+            chatHook.append({
+                role: "user",
+                content: content.trim(),
+            });
+            setContent(""); // Clear the content after sending to chat
+            return;
+        }
+
         if (isEditMode) {
             handleSaveEdit();
         } else {
@@ -422,6 +471,8 @@ export function NotesEditor({ note }: NotesEditorProps) {
                     placeholder={
                         isEditMode
                             ? "Edit your note..."
+                            : chatMode
+                            ? "Ask me to find your notes... (e.g., 'show me notes from last week about work')"
                             : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                 />
