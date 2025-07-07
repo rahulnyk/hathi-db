@@ -10,16 +10,13 @@ import { useAppDispatch } from "@/store";
 import { setCurrentContext } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-    ChevronDownIcon,
-    ChevronRightIcon,
-    Bot as BotIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { DeleteNoteButton } from "./delete-note-button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { CodeBlock } from "./code-block";
 import { SourceNotesList } from "./source-notes-list";
+import { HathiIcon } from "@/components/icon";
 
 interface AiNoteCardProps {
     note: Note;
@@ -86,7 +83,7 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
                     )}
                 >
                     {/* BotIcon styling will be updated via CSS for blue theme */}
-                    <BotIcon
+                    <HathiIcon
                         size={22}
                         className="mr-2 ai-note-icon-color flex-shrink-0"
                     />

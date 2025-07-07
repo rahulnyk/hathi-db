@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import { answerQuestion } from "@/app/actions/qa";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
 import { ContextContainer } from "./note_card/context-container";
@@ -134,10 +133,7 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     // Sync content with chatHook's input when in chat mode
     useEffect(() => {
         if (chatMode && chatHook && !isEditMode) {
-            // Only sync if the chat input differs from our content
-            if (chatHook.input !== content) {
-                setContent(chatHook.input);
-            }
+            setContent(chatHook.input);
         }
     }, [chatMode, chatHook, isEditMode, chatHook?.input]);
 
@@ -180,12 +176,9 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
         setContent(newFullValue);
 
-        // Sync with chatHook's input when in chat mode
+        // In chat mode, delegate to chatHook's handleInputChange
         if (chatMode && chatHook && !isEditMode) {
-            // Only sync if the values are different to avoid infinite loops
-            if (chatHook.input !== newFullValue) {
-                chatHook.handleInputChange(event);
-            }
+            chatHook.handleInputChange(event);
         }
 
         // Check for mode switching commands (only when not in edit mode)
@@ -251,12 +244,13 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
             // If in chat mode and chatHook is provided, use chat instead of creating notes
             if (chatMode && chatHook && !isEditMode) {
-                // Directly append the message to the chat
-                chatHook.append({
-                    role: "user",
-                    content: content.trim(),
-                });
-                setContent(""); // Clear the content after sending to chat
+                // Create a synthetic form submit event
+                event.preventDefault();
+                const form = event.currentTarget.form;
+                if (form) {
+                    // Trigger form submission which will be handled by handleSubmit
+                    form.requestSubmit();
+                }
                 return;
             }
 
@@ -334,53 +328,7 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
     const handleContextsChange = (newContexts: string[]) => {
         setContexts(newContexts);
-
-        // Only update local state - save happens when exiting edit mode
     };
-
-    // const handleQAQuestion = async () => {
-    //     try {
-    //         const question = content
-    //             .trim()
-    //             .replace(QA_COMMAND_PATTERN, "")
-    //             .trim();
-
-    //         if (!question) {
-    //             console.error(
-    //                 `No question provided after ${QA_COMMAND} command`
-    //             );
-    //             return;
-    //         }
-
-    //         const result = await answerQuestion(question);
-
-    //         if (result.answer) {
-    //             const aiAnswerNote = createOptimisticNote(
-    //                 `**Q:** ${question}\n\n**A:** ${result.answer}`,
-    //                 user.id,
-    //                 currentKeyContext,
-    //                 "ai-note",
-    //                 [],
-    //                 []
-    //             );
-
-    //             dispatch(
-    //                 createNoteOptimistically({
-    //                     tempNote: aiAnswerNote,
-    //                     autoSave: true,
-    //                 })
-    //             );
-
-    //             setContent("");
-    //         } else {
-    //             console.error("Failed to get AI answer:", result.error);
-    //         }
-    //     } catch (error) {
-    //         console.error("Error handling Q&A question:", error);
-    //     } finally {
-    //         setIsSubmitting(false);
-    //     }
-    // };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -388,11 +336,8 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
         // If in chat mode and chatHook is provided, use chat instead of creating notes
         if (chatMode && chatHook && !isEditMode) {
-            chatHook.append({
-                role: "user",
-                content: content.trim(),
-            });
-            setContent(""); // Clear the content after sending to chat
+            // Use chatHook's handleSubmit method
+            chatHook.handleSubmit(e);
             return;
         }
 
@@ -405,11 +350,6 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
     const handleCreateNote = async () => {
         setIsSubmitting(true);
-
-        // if (QA_COMMAND_PATTERN.test(content.trim())) {
-        //     await handleQAQuestion();
-        //     return;
-        // }
 
         const { contexts: extractedContexts, tags } = extractMetadata(content);
         const mergedContexts = [

@@ -32,12 +32,12 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
+    const chat = useChat({
+        api: "/api/chat",
+    });
 
     const { messages, input, handleInputChange, handleSubmit, status } =
-        chatHook ||
-        useChat({
-            api: "/api/chat",
-        });
+        chatHook || chat;
 
     console.log("Chat status:", status);
     console.log("Chat messages:", messages);
@@ -57,23 +57,6 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
             {!chatHook && (
                 <div className="border-b p-4 flex justify-between items-center min-h-[60px]">
                     {/* Header with settings */}
-                    <div className="flex items-center gap-3">
-                        <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
-                        {isProcessing && (
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span className="text-xs whitespace-nowrap">
-                                    {status === "submitted"
-                                        ? "Thinking..."
-                                        : "Generating response..."}
-                                </span>
-                                <HashLoader
-                                    size={20}
-                                    color="currentColor"
-                                    loading={true}
-                                />
-                            </div>
-                        )}
-                    </div>
                     <div className="flex items-center">
                         <div className="flex items-center">
                             <span className="text-sm mr-2">Tool Info</span>
@@ -103,9 +86,9 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
                 <div className="space-y-4">
                     {messages.length === 0 && (
                         <div className="text-center text-muted-foreground py-8">
-                            <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <HathiIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                             <p className="mb-2">
-                                Start a conversation with the AI assistant
+                                Start a conversation with Hathi
                             </p>
                             <div className="text-xs space-y-1">
                                 <p>Try asking:</p>
@@ -128,6 +111,27 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
                     ))}
                 </div>
             </div>
+
+            {/* Footer with Hathi icon and input area */}
+            {isProcessing && (
+                <div className="flex items-center gap-3">
+                    <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
+                    {isProcessing && (
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="text-xs whitespace-nowrap">
+                                {status === "submitted"
+                                    ? "Thinking..."
+                                    : "Generating response..."}
+                            </span>
+                            <HashLoader
+                                size={20}
+                                color="currentColor"
+                                loading={true}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Input area */}
             {!chatHook && (
@@ -173,7 +177,7 @@ function ChatMessage({
                 message.role === "user" ? "bg-primary/10 ml-8" : "bg-muted mr-8"
             )}
         >
-            <div
+            {/* <div
                 className={cn(
                     "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
                     message.role === "user"
@@ -184,12 +188,12 @@ function ChatMessage({
                 {message.role === "user" ? (
                     <User className="h-4 w-4" />
                 ) : (
-                    <Bot className="h-4 w-4" />
+                    <HathiIcon className="h-4 w-4" />
                 )}
-            </div>
+            </div> */}
             <div className="flex-1 space-y-3">
-                <div className="text-sm text-muted-foreground">
-                    {message.role === "user" ? "You" : "AI Assistant"}
+                <div className={cn("accent-font text-bold")}>
+                    {message.role === "user" ? "You" : "Hathi"}
                 </div>
                 <MessageContent
                     message={message}
@@ -301,7 +305,7 @@ function ToolInvocationPartComponent({
     if (toolName === "answer") {
         return (
             <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                <span className="text-sm font-medium">Hathi:</span> Done
+                Done gathering logs <span className="text-lg"> 🪵 </span>
             </div>
         );
     }

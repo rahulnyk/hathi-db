@@ -8,6 +8,7 @@ import { SearchToolResponse, SearchResultNote } from "@/app/agent_tools/types";
 import { NoteCard } from "@/components/journal/note_card/notes-card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotebookText } from "lucide-react";
 // Search Results Component
 export function SearchResultsRenderer({
     result,
@@ -50,7 +51,7 @@ export function SearchResultsRenderer({
             <div>
                 {toolInfoHeader}
                 <div className="text-sm text-muted-foreground text-center py-4 bg-muted/30 rounded">
-                    No notes found matching your criteria
+                    🗒️ No notes found matching your criteria
                 </div>
             </div>
         );
@@ -67,6 +68,7 @@ export function SearchResultsRenderer({
                     className="w-full justify-between p-3 text-left font-normal h-auto"
                 >
                     <div className="flex items-center gap-2">
+                        <NotebookText className="inline-block" />
                         <span className="text-sm font-medium">
                             Found {result.notes.length} note
                             {result.notes.length === 1 ? "" : "s"}
