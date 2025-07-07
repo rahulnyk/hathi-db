@@ -3,17 +3,25 @@
 import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
 import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentContext
-import { Target, Home } from "lucide-react"; // Added Home icon
+import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
+import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
+import { HathiIcon } from "@/components/icon"; // Import HathiIcon
+import { Button } from "@/components/ui/button"; // Import Button for toggle
 
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
     const { currentContext } = useAppSelector((state) => state.notes);
+    const { chatMode } = useAppSelector((state) => state.ui);
     const todaysDateSlug = dateToSlug(new Date());
 
     const showHomeButton = currentContext !== todaysDateSlug;
 
     const handleGoToToday = () => {
         dispatch(setCurrentContext(todaysDateSlug));
+    };
+
+    const handleToggleChatMode = () => {
+        dispatch(setChatMode(!chatMode));
     };
 
     return (
@@ -44,20 +52,75 @@ export function NotesPanelHeader() {
                             "truncate text-center md:text-left"
                         )}
                     >
-                        {slugToSentenceCase(currentContext)}
+                        {chatMode
+                            ? "AI Assistant"
+                            : slugToSentenceCase(currentContext)}
                     </h2>
                 </div>
 
                 {/* Home button */}
-                {showHomeButton && (
+                {showHomeButton && !chatMode && (
                     <button
                         onClick={handleGoToToday}
-                        className="ml-auto accent-font" // Pushes the button to the right
+                        className="accent-font"
                         title="Go to Today"
                     >
                         <Home size={24} />
                     </button>
                 )}
+
+                {/* Toggle switch between Notes and Assistant */}
+                <div
+                    className={cn(
+                        "relative flex items-center p-1 rounded-lg cursor-pointer transition-all duration-300",
+                        "bg-muted border border-border",
+                        "w-16 h-4"
+                    )}
+                    onClick={handleToggleChatMode}
+                    title={chatMode ? "Switch to Notes" : "Switch to Assistant"}
+                >
+                    {/* Background track */}
+                    <div
+                        className={cn(
+                            "absolute inset-1 rounded-md transition-all duration-300 bg-primary/10"
+                        )}
+                    />
+
+                    {/* Sliding toggle */}
+                    <div
+                        className={cn(
+                            "relative z-10 flex items-center justify-center w-6 h-6 rounded-md transition-all duration-300 shadow-sm",
+                            "transform bg-primary text-primary-foreground",
+                            chatMode ? "translate-x-8" : "translate-x-0"
+                        )}
+                    >
+                        {chatMode ? (
+                            <HathiIcon size={14} />
+                        ) : (
+                            <NotebookPen size={14} />
+                        )}
+                    </div>
+
+                    {/* Labels */}
+                    <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
+                        <span
+                            className={cn(
+                                "text-xs font-medium transition-opacity duration-300",
+                                !chatMode ? "opacity-100" : "opacity-40"
+                            )}
+                        >
+                            {/* Notes label - hidden to save space */}
+                        </span>
+                        <span
+                            className={cn(
+                                "text-xs font-medium transition-opacity duration-300",
+                                chatMode ? "opacity-100" : "opacity-40"
+                            )}
+                        >
+                            {/* AI label - hidden to save space */}
+                        </span>
+                    </div>
+                </div>
             </div>
             {/* Removed Calendar menu div */}
         </div>

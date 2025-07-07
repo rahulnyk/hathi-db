@@ -7,7 +7,7 @@ import {
     createNoteOptimistically,
     Note,
 } from "@/store/notesSlice";
-import { setEditingNoteId } from "@/store/uiSlice";
+import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -166,6 +166,38 @@ export function NotesEditor({ note }: NotesEditorProps) {
         const newSelectionEnd = event.target.selectionEnd;
 
         setContent(newFullValue);
+
+        // Check for mode switching commands (only when not in edit mode)
+        // Only trigger if the input is exactly the command (not part of other text)
+        if (!isEditMode) {
+            const trimmedContent = newFullValue.trim().toLowerCase();
+
+            // Switch to assistant mode
+            if (
+                (trimmedContent === "/q" || trimmedContent === "qq") &&
+                newFullValue.length <= 3
+            ) {
+                // Add a small delay to show the command was recognized
+                setTimeout(() => {
+                    dispatch(setChatMode(true));
+                    setContent(""); // Clear the content after triggering
+                }, 100);
+                return; // Exit early to prevent further processing
+            }
+
+            // Switch to normal mode
+            if (
+                (trimmedContent === "/n" || trimmedContent === "nn") &&
+                newFullValue.length <= 3
+            ) {
+                // Add a small delay to show the command was recognized
+                setTimeout(() => {
+                    dispatch(setChatMode(false));
+                    setContent(""); // Clear the content after triggering
+                }, 100);
+                return; // Exit early to prevent further processing
+            }
+        }
 
         // Always update active selection to track cursor position
         setActiveSelection({
