@@ -32,8 +32,9 @@ const BRACKET_PAIRS: Record<string, string> = {
 };
 
 // Q&A command constants
-const QA_COMMAND = "/q ";
-const QA_COMMAND_PATTERN = /^\/q\s+/i;
+const QA_COMMAND = "/q or qq";
+const NOTES_COMMAND = "/n or nn";
+// const QA_COMMAND_PATTERN = /^\/q\s+/i;
 
 // New unified helper function for bracket insertion (wrapping selection or empty pair)
 function handleBracketInsertion(
@@ -337,49 +338,49 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
         // Only update local state - save happens when exiting edit mode
     };
 
-    const handleQAQuestion = async () => {
-        try {
-            const question = content
-                .trim()
-                .replace(QA_COMMAND_PATTERN, "")
-                .trim();
+    // const handleQAQuestion = async () => {
+    //     try {
+    //         const question = content
+    //             .trim()
+    //             .replace(QA_COMMAND_PATTERN, "")
+    //             .trim();
 
-            if (!question) {
-                console.error(
-                    `No question provided after ${QA_COMMAND} command`
-                );
-                return;
-            }
+    //         if (!question) {
+    //             console.error(
+    //                 `No question provided after ${QA_COMMAND} command`
+    //             );
+    //             return;
+    //         }
 
-            const result = await answerQuestion(question);
+    //         const result = await answerQuestion(question);
 
-            if (result.answer) {
-                const aiAnswerNote = createOptimisticNote(
-                    `**Q:** ${question}\n\n**A:** ${result.answer}`,
-                    user.id,
-                    currentKeyContext,
-                    "ai-note",
-                    [],
-                    []
-                );
+    //         if (result.answer) {
+    //             const aiAnswerNote = createOptimisticNote(
+    //                 `**Q:** ${question}\n\n**A:** ${result.answer}`,
+    //                 user.id,
+    //                 currentKeyContext,
+    //                 "ai-note",
+    //                 [],
+    //                 []
+    //             );
 
-                dispatch(
-                    createNoteOptimistically({
-                        tempNote: aiAnswerNote,
-                        autoSave: true,
-                    })
-                );
+    //             dispatch(
+    //                 createNoteOptimistically({
+    //                     tempNote: aiAnswerNote,
+    //                     autoSave: true,
+    //                 })
+    //             );
 
-                setContent("");
-            } else {
-                console.error("Failed to get AI answer:", result.error);
-            }
-        } catch (error) {
-            console.error("Error handling Q&A question:", error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    //             setContent("");
+    //         } else {
+    //             console.error("Failed to get AI answer:", result.error);
+    //         }
+    //     } catch (error) {
+    //         console.error("Error handling Q&A question:", error);
+    //     } finally {
+    //         setIsSubmitting(false);
+    //     }
+    // };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -405,10 +406,10 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     const handleCreateNote = async () => {
         setIsSubmitting(true);
 
-        if (QA_COMMAND_PATTERN.test(content.trim())) {
-            await handleQAQuestion();
-            return;
-        }
+        // if (QA_COMMAND_PATTERN.test(content.trim())) {
+        //     await handleQAQuestion();
+        //     return;
+        // }
 
         const { contexts: extractedContexts, tags } = extractMetadata(content);
         const mergedContexts = [
@@ -472,7 +473,7 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
                         isEditMode
                             ? "Edit your note..."
                             : chatMode
-                            ? "Ask me to find your notes... (e.g., 'show me notes from last week about work')"
+                            ? `Ask me to find your notes... (e.g., 'show me notes from last week about work'). Start with ${NOTES_COMMAND} to return to your notes!`
                             : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                 />
