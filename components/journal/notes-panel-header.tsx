@@ -40,11 +40,15 @@ export function NotesPanelHeader() {
                 {/* Context title */}
                 <div
                     className={cn(
-                        "flex flex-row items-center gap-2 min-w-0 flex-1 md:justify-start justify-center md:px-5 py-4",
+                        "flex flex-row items-center gap-4 min-w-0 flex-1 md:justify-start justify-center md:px-5 py-4",
                         "accent-font"
                     )}
                 >
-                    <Target size={22} className="hidden md:block" />
+                    {chatMode ? (
+                        <HathiIcon size={22} className="hidden md:block" />
+                    ) : (
+                        <Target size={22} className="hidden md:block" />
+                    )}
                     <h2
                         className={cn(
                             "text-2xl",
@@ -52,7 +56,7 @@ export function NotesPanelHeader() {
                         )}
                     >
                         {chatMode
-                            ? "AI Assistant"
+                            ? "Ask Hathi"
                             : slugToSentenceCase(currentContext)}
                     </h2>
                 </div>

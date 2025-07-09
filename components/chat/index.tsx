@@ -50,28 +50,31 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
     return (
         <div
             className={cn(
-                "w-full flex flex-col",
-                className || "max-w-4xl mx-auto h-[700px]"
+                "w-full flex flex-col min-h-0 overflow-hidden",
+                className ||
+                    "max-w-4xl mx-auto h-[100dvh] sm:h-[700px] sm:max-h-[80vh]"
             )}
         >
             {!chatHook && (
-                <div className="border-b p-4 flex justify-between items-center min-h-[60px]">
+                <div className="border-b p-2 sm:p-4 flex justify-between items-center min-h-[50px] sm:min-h-[60px] flex-shrink-0">
                     {/* Header with settings */}
                     <div className="flex items-center">
                         <div className="flex items-center">
-                            <span className="text-sm mr-2">Tool Info</span>
+                            <span className="text-xs sm:text-sm mr-2">
+                                Tool Info
+                            </span>
                             <button
                                 onClick={() =>
                                     dispatch(toggleDisplayToolInfo())
                                 }
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                                className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                                     displayToolInfo ? "bg-primary" : "bg-input"
                                 }`}
                             >
                                 <span
-                                    className={`inline-block h-4 w-4 rounded-full bg-background transition-transform ${
+                                    className={`inline-block h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-background transition-transform ${
                                         displayToolInfo
-                                            ? "translate-x-6"
+                                            ? "translate-x-5 sm:translate-x-6"
                                             : "translate-x-1"
                                     }`}
                                 />
@@ -82,12 +85,12 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
             )}
 
             {/* Messages area */}
-            <div className="flex-1 p-4 overflow-y-auto">
-                <div className="space-y-4">
+            <div className="flex-1 p-2 sm:p-4 overflow-y-auto min-h-0">
+                <div className="space-y-3 sm:space-y-4">
                     {messages.length === 0 && (
-                        <div className="text-center text-muted-foreground py-8">
-                            <HathiIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p className="mb-2">
+                        <div className="text-center text-muted-foreground py-4 sm:py-8 px-2">
+                            <HathiIcon className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                            <p className="mb-2 text-sm sm:text-base">
                                 Start a conversation with Hathi
                             </p>
                             <div className="text-xs space-y-1">
@@ -96,7 +99,9 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
                                     <p>• Show me notes from last week</p>
                                     <p>• Find notes about React</p>
                                     <p>• What contexts do I have?</p>
-                                    <p>• Show me all my todo notes</p>
+                                    <p className="hidden sm:block">
+                                        • Show me all my todo notes
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -114,19 +119,26 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
 
             {/* Footer with Hathi icon and input area */}
             {isProcessing && (
-                <div className="flex items-center gap-3">
-                    <HathiIcon className="hathi-icon h-8 w-8 text-muted-foreground" />
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
+                    <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
                     {isProcessing && (
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
                             <span className="text-xs whitespace-nowrap">
                                 {status === "submitted"
                                     ? "Thinking..."
-                                    : "Generating response..."}
+                                    : "Generating..."}
                             </span>
+                            <HashLoader
+                                size={16}
+                                color="currentColor"
+                                loading={true}
+                                className="sm:hidden"
+                            />
                             <HashLoader
                                 size={20}
                                 color="currentColor"
                                 loading={true}
+                                className="hidden sm:block"
                             />
                         </div>
                     )}
@@ -135,19 +147,20 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
 
             {/* Input area */}
             {!chatHook && (
-                <div className="border-t p-4">
+                <div className="border-t p-2 sm:p-4 flex-shrink-0">
                     <form onSubmit={handleSubmit} className="flex gap-2">
                         <Input
                             value={input}
                             onChange={handleInputChange}
-                            placeholder="Ask me to find your notes... (e.g., 'show me notes from last week about work')"
+                            placeholder="Ask about your notes..."
                             disabled={isProcessing}
-                            className="flex-1"
+                            className="flex-1 text-sm sm:text-base"
                         />
                         <Button
                             type="submit"
                             disabled={isProcessing || !input.trim()}
                             size="icon"
+                            className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
                         >
                             {isProcessing ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -173,8 +186,10 @@ function ChatMessage({
     return (
         <div
             className={cn(
-                "flex gap-3 p-3 rounded-lg",
-                message.role === "user" ? "bg-primary/10 ml-8" : "bg-muted mr-8"
+                "flex gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg",
+                message.role === "user"
+                    ? "bg-primary/10 ml-2 sm:ml-4 md:ml-8"
+                    : "bg-muted mr-2 sm:mr-4 md:mr-8"
             )}
         >
             {/* <div
@@ -191,13 +206,16 @@ function ChatMessage({
                     <HathiIcon className="h-4 w-4" />
                 )}
             </div> */}
-            <div className="flex-1 space-y-3">
-                <div className={cn("accent-font text-bold")}>
+            <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+                <div
+                    className={cn("accent-font text-bold text-sm sm:text-base")}
+                >
                     {message.role === "user" ? "You" : "Hathi"}
                 </div>
                 <MessageContent
                     message={message}
                     displayToolInfo={displayToolInfo}
+                    isUserMessage={message.role === "user"}
                 />
             </div>
         </div>
@@ -208,18 +226,21 @@ function ChatMessage({
 function MessageContent({
     message,
     displayToolInfo,
+    isUserMessage,
 }: {
     message: UIMessage;
     displayToolInfo: boolean;
+    isUserMessage: boolean;
 }) {
     if (messageHasParts(message)) {
         return (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
                 {message.parts.map((part, index) => (
                     <MessagePartRenderer
                         key={index}
                         part={part}
                         displayToolInfo={displayToolInfo}
+                        isUserMessage={isUserMessage}
                     />
                 ))}
             </div>
@@ -228,7 +249,7 @@ function MessageContent({
 
     if (message.content) {
         return (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base">
                 {message.content}
             </div>
         );
@@ -241,9 +262,11 @@ function MessageContent({
 function MessagePartRenderer({
     part,
     displayToolInfo,
+    isUserMessage,
 }: {
     part: MessagePart;
     displayToolInfo: boolean;
+    isUserMessage: boolean;
 }) {
     const displayText = {
         reasoning: "Thinking",
@@ -253,7 +276,9 @@ function MessagePartRenderer({
     };
     switch (part.type) {
         case "text":
-            return <TextPartRenderer part={part} />;
+            return (
+                <TextPartRenderer part={part} isUserMessage={isUserMessage} />
+            );
 
         case "tool-invocation":
             return (
@@ -269,14 +294,14 @@ function MessagePartRenderer({
         case "step-start":
             // Handle other part types if needed
             return displayToolInfo ? (
-                <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20">
+                <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20 break-words">
                     {displayText[part.type]} - {part.type}
                 </div>
             ) : null;
 
         default:
             return (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground break-words">
                     Unknown part type
                 </div>
             );
@@ -305,7 +330,8 @@ function ToolInvocationPartComponent({
     if (toolName === "answer") {
         return (
             <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                Done gathering logs <span className="text-lg"> 🪵 </span>
+                Done gathering logs{" "}
+                <span className="text-base sm:text-lg"> 🪵 </span>
             </div>
         );
     }
@@ -346,11 +372,11 @@ function ToolCallIndicator({ toolName }: { toolName: string }) {
     };
 
     return (
-        <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded flex items-center gap-2">
+        <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded flex items-center gap-1 sm:gap-2">
             {agentStatus != "error" && agentStatus != "idle" && (
                 <>
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    {getToolMessage(toolName)}
+                    <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
+                    <span className="truncate">{getToolMessage(toolName)}</span>
                 </>
             )}
         </div>

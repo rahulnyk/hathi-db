@@ -20,10 +20,10 @@ export function ToolResultRenderer({
     // Tool info header (only shown if displayToolInfo is true)
     const toolInfoHeader = displayToolInfo && (
         <>
-            <div className="text-xs text-muted-foreground/60 font-mono mb-2">
+            <div className="text-xs text-muted-foreground/60 font-mono mb-1 sm:mb-2 truncate">
                 {toolName}
             </div>
-            <hr className="border-t border-muted-foreground/20 mb-3" />
+            <hr className="border-t border-muted-foreground/20 mb-2 sm:mb-3" />
         </>
     );
 
@@ -61,7 +61,7 @@ export function ToolResultRenderer({
             return displayToolInfo ? (
                 <div>
                     {toolInfoHeader}
-                    <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                    <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded break-words">
                         Unknown tool: {toolName}
                     </div>
                 </div>

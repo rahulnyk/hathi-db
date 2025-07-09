@@ -22,7 +22,7 @@ export function AnswerRenderer({
     return (
         <div>
             {toolInfoHeader}
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base break-words">
                 <ReactMarkdown>{result.answer}</ReactMarkdown>
             </div>
         </div>
