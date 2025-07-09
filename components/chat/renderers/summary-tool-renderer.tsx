@@ -22,7 +22,7 @@ export function SummaryRenderer({
     return (
         <div>
             {toolInfoHeader}
-            <div className="prose prose-sm max-w-none dark:prose-invert p-3 bg-card rounded border">
+            <div className="prose prose-sm max-w-none dark:prose-invert p-2 sm:p-3 bg-card rounded border text-sm sm:text-base break-words">
                 <ReactMarkdown>{result.summary}</ReactMarkdown>
             </div>
         </div>

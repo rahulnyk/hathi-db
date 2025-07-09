@@ -16,6 +16,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaAutosizeProps>(
                     "bg-transparent border-none outline-none",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     "resize-none",
+                    "min-h-24 sm:min-h-20",
                     className
                 )}
                 ref={ref}

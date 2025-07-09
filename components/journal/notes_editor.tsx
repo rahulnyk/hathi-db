@@ -9,9 +9,16 @@ import {
 } from "@/store/notesSlice";
 import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Check, X } from "lucide-react";
+import {
+    ArrowUp,
+    Check,
+    X,
+    Quote,
+    LucideMessageCircleQuestion,
+} from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
@@ -413,8 +420,8 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
                         isEditMode
                             ? "Edit your note..."
                             : chatMode
-                            ? `Ask me to find your notes... (e.g., 'show me notes from last week about work'). Start with ${NOTES_COMMAND} to return to your notes!`
-                            : `Use Markdown to format your notes: **bold** for emphasis, * for lists, and # for headers. Write \`code\` between backticks. Start with ${QA_COMMAND} to ask questions about your notes!`
+                            ? `Ask me to find your notes... Start with ${NOTES_COMMAND} to return to your notes!`
+                            : `Use Markdown to format your notes. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                 />
                 <div className="flex justify-between items-end m-0 mb-1 gap-2">
@@ -460,14 +467,26 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !content.trim()}
-                                className="flex items-center gap-2 rounded-xl"
+                                className={cn(
+                                    "flex items-center gap-2 rounded-xl"
+                                )}
                                 size="icon"
                             >
                                 {isSubmitting ? (
                                     <HashLoader size={16} />
                                 ) : (
                                     <>
-                                        <ArrowUp strokeWidth={3} size={16} />
+                                        {chatMode ? (
+                                            <LucideMessageCircleQuestion
+                                                strokeWidth={3}
+                                                size={16}
+                                            />
+                                        ) : (
+                                            <ArrowUp
+                                                strokeWidth={3}
+                                                size={16}
+                                            />
+                                        )}
                                     </>
                                 )}
                             </Button>

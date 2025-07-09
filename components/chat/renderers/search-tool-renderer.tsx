@@ -65,38 +65,38 @@ export function SearchResultsRenderer({
                 <Button
                     variant="ghost"
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full justify-between p-3 text-left font-normal h-auto"
+                    className="w-full justify-between p-2 sm:p-3 text-left font-normal h-auto"
                 >
-                    <div className="flex items-center gap-2">
-                        <NotebookText className="inline-block" />
-                        <span className="text-sm font-medium">
+                    <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                        <NotebookText className="inline-block h-4 w-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium truncate">
                             Found {result.notes.length} note
                             {result.notes.length === 1 ? "" : "s"}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground hidden sm:block">
                             ({result.message})
                         </span>
                     </div>
                     {collapsed ? (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
                     ) : (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
                     )}
                 </Button>
 
                 {/* Collapsible Content */}
                 {!collapsed && (
-                    <div className="border-t p-3">
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <div className="border-t p-2 sm:p-3">
+                        <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
                             {result.notes.map((note: SearchResultNote) => (
                                 <div key={note.id} className="relative">
-                                    <NoteCard note={note} />
-                                    {note.similarity && (
-                                        <div className="absolute top-2 right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
+                                    <NoteCard note={note} disableCardHeader />
+                                    {/* {note.similarity && (
+                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-1 sm:px-2 py-1 rounded">
                                             {(note.similarity * 100).toFixed(0)}
                                             % match
                                         </div>
-                                    )}
+                                    )} */}
                                 </div>
                             ))}
                         </div>
