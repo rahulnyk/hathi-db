@@ -12,13 +12,7 @@ import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    ArrowUp,
-    Check,
-    X,
-    Quote,
-    LucideMessageCircleQuestion,
-} from "lucide-react";
+import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { useContext } from "react";
 import { UserContext } from "@/components/journal";
