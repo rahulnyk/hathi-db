@@ -21,12 +21,16 @@ export async function addNote({
     contexts,
     tags,
     note_type = "note",
+    deadline,
+    status,
 }: {
     content: string;
     key_context: string;
     contexts?: string[];
     tags?: string[];
     note_type?: NoteType;
+    deadline?: string | null;
+    status?: string | null; // Storing as string in DB, matching TodoStatus enum values
 }): Promise<Note> {
     return measureExecutionTime("addNote", async () => {
         const supabase = await createClient();
@@ -40,6 +44,8 @@ export async function addNote({
                 contexts: contexts || [],
                 tags: tags || [],
                 note_type,
+                deadline: deadline || null,
+                status: status || null,
             };
             const { data, error } = await supabase
                 .from("notes")
@@ -230,7 +236,7 @@ export async function patchNote({
     patches: Partial<
         Pick<
             Note,
-            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type"
+            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type" | "deadline" | "status"
         >
     > & {
         embedding?: number[];

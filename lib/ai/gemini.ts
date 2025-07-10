@@ -13,7 +13,9 @@ import {
     StructurizeNoteResponse,
     QARequest,
     QAResponse,
-    AIError
+    AIError,
+    ExtractDeadlineRequest,
+    ExtractDeadlineResponse
 } from './types';
 import {
     documentEmbeddingPrompt,
@@ -31,6 +33,10 @@ import {
     qaSystemPrompt,
     qaUserPrompt,
 } from "../prompts/qa-prompts";
+import {
+    extractDeadlineSystemPrompt,
+    extractDeadlineUserPrompt,
+} from "../prompts/extract-deadline-prompts";
 import { AI_MODEL_CONFIG } from '../constants/ai-config';
 
 
@@ -225,6 +231,45 @@ export class GeminiAI implements AIProvider {
             console.error("Failed to parse Gemini response as JSON:", error);
             console.error("Raw response:", suggestionsText);
             throw new AIError("Gemini did not return a valid JSON array");
+        }
+    }
+
+    async extractDeadline(request: ExtractDeadlineRequest): Promise<ExtractDeadlineResponse> {
+        const systemPrompt = extractDeadlineSystemPrompt();
+        const userPrompt = extractDeadlineUserPrompt(request.content);
+
+        try {
+            const result = await this.genAI.models.generateContent({
+                model: this.textModel, // Using the standard text model, can be switched to a cheaper one if available
+                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                config: {
+                    maxOutputTokens: 20, // YYYY-MM-DD is 10 chars, "null" is 4. 20 should be safe.
+                    temperature: 0.1, // Low temperature for deterministic output
+                    topP: 0.7,
+                }
+            });
+
+            const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+            if (!responseText || responseText.toLowerCase() === 'null') {
+                return { deadline: null };
+            }
+
+            // Validate if the response is a valid date in YYYY-MM-DD format
+            if (/^\d{4}-\d{2}-\d{2}$/.test(responseText)) {
+                // Further check if it's a plausible date, though AI should handle this
+                const date = new Date(responseText);
+                if (!isNaN(date.getTime())) {
+                    return { deadline: responseText };
+                }
+            }
+
+            // If response is not "null" and not a valid YYYY-MM-DD date, treat as no deadline found
+            console.warn(`Gemini returned an unexpected format for deadline: ${responseText}`);
+            return { deadline: null };
+
+        } catch (error) {
+            throw this.handleGeminiError(error);
         }
     }
 }

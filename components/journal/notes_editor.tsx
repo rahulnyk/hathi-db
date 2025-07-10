@@ -357,11 +357,17 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
             ...new Set([...contexts, ...extractedContexts]),
         ];
 
+        // Determine note_type for TODOs
+        let noteType: "note" | "todo" = "note";
+        if (content.toLowerCase().startsWith("todo")) {
+            noteType = "todo";
+        }
+
         const optimisticNote = createOptimisticNote(
             content,
             user.id,
             currentKeyContext,
-            "note",
+            noteType, // Pass determined note type
             mergedContexts,
             tags
         );
