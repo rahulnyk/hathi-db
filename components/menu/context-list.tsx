@@ -68,7 +68,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     className={cn(
                         "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-colors duration-150",
                         currentContext === contextStat.context
-                            ? "bg-cyan-100/50 dark:bg-cyan-900/50"
+                            ? "bg-blue-700/10 dark:bg-blue-400/10"
                             : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50"
                     )}
                 >
@@ -76,7 +76,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                         className={cn(
                             "text-sm font-medium truncate",
                             currentContext === contextStat.context
-                                ? "text-cyan-900 dark:text-cyan-200"
+                                ? "text-blue-900 dark:text-blue-200"
                                 : "text-neutral-700 dark:text-neutral-200"
                         )}
                         title={contextStat.context}
@@ -87,7 +87,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                         className={cn(
                             "ml-2 text-xs font-semibold rounded-full px-2 py-0.5",
                             currentContext === contextStat.context
-                                ? "text-cyan-700 bg-cyan-300/50 dark:bg-cyan-800/70 dark:text-cyan-200"
+                                ? "text-blue-900 bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200"
                                 : "text-neutral-500 bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300"
                         )}
                     >

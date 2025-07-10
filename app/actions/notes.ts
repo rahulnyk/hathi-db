@@ -159,7 +159,10 @@ export async function fetchNotes({
                 throw error;
             }
 
-            return data || [];
+            return (data || []).map((note) => ({
+                ...note,
+                persistenceStatus: "persisted" as const,
+            }));
         } catch (error) {
             console.error("Error fetching notes:", error);
             throw error;
@@ -196,7 +199,10 @@ export async function fetchNotesByIds(noteIds: string[]): Promise<Note[]> {
                 throw new Error(`Failed to fetch notes: ${fetchError.message}`);
             }
 
-            return (notes as Note[]) || [];
+            return ((notes as Note[]) || []).map((note) => ({
+                ...note,
+                persistenceStatus: "persisted" as const,
+            }));
         } catch (error) {
             const errorMessage =
                 error instanceof Error
