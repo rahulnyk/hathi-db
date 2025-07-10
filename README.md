@@ -45,6 +45,8 @@
 -   **Context Linking**: Smart context detection and suggestions
 -   **Note Types**: Support for different note categories
 -   **Search & Filter**: Advanced search capabilities across notes and contexts
+-   **AI Chat Integration**: Chat agent with powerful note filtering tools
+-   **Smart Note Discovery**: Filter by date, context, hashtags, content, and note type
 
 ## Tech Stack
 

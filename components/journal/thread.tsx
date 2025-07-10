@@ -73,7 +73,12 @@ export function Thread() {
                         note.note_type === "ai-note" ? (
                             <AiNoteCard key={note.id} note={note} />
                         ) : (
-                            <NoteCard key={note.id} note={note} />
+                            <NoteCard
+                                // Use unique key combining id and isSearchResult
+                                // This avoids the duplicate key warning in react.
+                                key={`${note.id}-${note.isSearchResult}`}
+                                note={note}
+                            />
                         )
                     )}
                 </div>
