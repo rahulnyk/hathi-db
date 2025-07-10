@@ -65,11 +65,11 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
 
     const getStatusIcon = (status: TodoStatus) => {
         switch (status) {
-            case TodoStatus.TODO: return <Circle className="h-4 w-4 mr-2" />;
-            case TodoStatus.DOING: return <Loader2 className="h-4 w-4 mr-2 animate-spin" />;
-            case TodoStatus.DONE: return <CheckCircle className="h-4 w-4 mr-2 text-green-500" />;
-            case TodoStatus.OBSOLETE: return <XCircle className="h-4 w-4 mr-2 text-gray-500" />;
-            default: return <Circle className="h-4 w-4 mr-2" />;
+            case TodoStatus.TODO: return <Circle className="h-4 w-4" />; // Removed mr-2
+            case TodoStatus.DOING: return <Loader2 className="h-4 w-4 animate-spin" />; // Removed mr-2
+            case TodoStatus.DONE: return <CheckCircle className="h-4 w-4 text-green-500" />; // Removed mr-2
+            case TodoStatus.OBSOLETE: return <XCircle className="h-4 w-4 text-gray-500" />; // Removed mr-2
+            default: return <Circle className="h-4 w-4" />; // Removed mr-2
         }
     };
 
@@ -94,12 +94,13 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
                 {/* Status Toggle Button - MOVED HERE */}
                 <Button
                     variant="outline"
-                    size="icon" // Using icon size for a compact look, can be adjusted
+                    size="sm" // Changed from icon to sm for text
                     onClick={handleStatusChange}
-                    className="h-6 w-6 flex-shrink-0 mt-1" // Adjusted size and margin
-                    title={`Change status from ${currentStatus}`}
+                    className="h-7 rounded-full px-3 py-1 flex-shrink-0 mt-0.5 flex items-center gap-1.5 text-xs" // Pill shape, padding, alignment
+                    title={`Change status: ${currentStatus}`}
                 >
                     {getStatusIcon(currentStatus)}
+                    <span>{currentStatus}</span>
                 </Button>
 
                 <div className="prose prose-sm dark:prose-invert max-w-none flex-grow">
@@ -109,7 +110,7 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs ml-8"> {/* Indent deadline to align with text */}
+            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs ml-24"> {/* Adjusted indent for deadline picker */}
                 {/* Deadline Picker */}
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
