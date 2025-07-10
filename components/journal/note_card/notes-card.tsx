@@ -33,7 +33,6 @@ export interface NoteCardProps {
 export function NoteCard({
     note,
     textSize = "normal",
-    // disableContextContainer = false,
     disableCardHeader = false,
 }: NoteCardProps) {
     const dispatch = useAppDispatch();
@@ -58,11 +57,8 @@ export function NoteCard({
     );
 
     const isAiNote = currentNote.note_type === "ai-note";
-    // const isNoteActive = currentNote.id === activeNoteId;
     const isNoteEditing = currentNote.id === editingNoteId;
 
-    // const showContextContainer =
-    //     (isNoteActive || isNoteEditing) && !disableContextContainer;
     const showCardHeader = !isNoteEditing && !disableCardHeader;
 
     const displayContent =
@@ -70,22 +66,6 @@ export function NoteCard({
         aiStructurizedState.structuredContent
             ? aiStructurizedState.structuredContent
             : currentNote.content;
-
-    // const handleContextsChange = (newContexts: string[]) => {
-    //     dispatch(
-    //         updateNoteOptimistically({
-    //             noteId: note.id,
-    //             patches: { contexts: newContexts },
-    //         })
-    //     );
-    // };
-
-    // const handleCardClick = () => {
-    //     if (isAiNote) return;
-    //     if (note.id !== activeNoteId) {
-    //         dispatch(setActiveNoteId(note.id));
-    //     }
-    // };
 
     const handleStructurize = () => {
         dispatch(
@@ -204,14 +184,6 @@ export function NoteCard({
                     </ReactMarkdown>
                 </div>
             )}
-
-            {/* {showContextContainer && !isNoteEditing && (
-                <ContextContainer
-                    contexts={currentNote.contexts || []}
-                    suggestedContexts={currentNote.suggested_contexts || []}
-                    onContextsChange={handleContextsChange}
-                />
-            )} */}
 
             <NoteStatusIndicator
                 note={currentNote}

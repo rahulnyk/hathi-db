@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User, Bot, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
 import { MessagePart, messageHasParts } from "./utils";
