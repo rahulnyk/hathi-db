@@ -6,3 +6,5 @@ export type {
 
 export { ContextSearchBox } from "./context-search-box";
 export type { ContextSearchBoxProps } from "./context-search-box";
+
+export { Popover, PopoverTrigger, PopoverContent } from "./popover";
