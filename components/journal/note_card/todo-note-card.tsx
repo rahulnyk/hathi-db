@@ -85,18 +85,31 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
             data-note-id={note.id}
             className={cn(
                 "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
-                "border-l-2 border-blue-500" // Specific styling for todo cards
+                "bg-orange-50 dark:bg-orange-900/40" // Light orange background
             )}
         >
             {!disableCardHeader && <CardHeader note={note} />}
 
-            <div className="prose prose-sm dark:prose-invert max-w-none mb-2 mt-0">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {displayContent}
-                </ReactMarkdown>
+            <div className="flex items-start gap-2 mt-1 mb-2"> {/* Flex container for button and content */}
+                {/* Status Toggle Button - MOVED HERE */}
+                <Button
+                    variant="outline"
+                    size="icon" // Using icon size for a compact look, can be adjusted
+                    onClick={handleStatusChange}
+                    className="h-6 w-6 flex-shrink-0 mt-1" // Adjusted size and margin
+                    title={`Change status from ${currentStatus}`}
+                >
+                    {getStatusIcon(currentStatus)}
+                </Button>
+
+                <div className="prose prose-sm dark:prose-invert max-w-none flex-grow">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {displayContent}
+                    </ReactMarkdown>
+                </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs ml-8"> {/* Indent deadline to align with text */}
                 {/* Deadline Picker */}
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
@@ -116,17 +129,6 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
                         />
                     </PopoverContent>
                 </Popover>
-
-                {/* Status Toggle Button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStatusChange}
-                    className="text-xs h-7 px-2 py-1 flex items-center"
-                >
-                    {getStatusIcon(currentStatus)}
-                    {currentStatus}
-                </Button>
             </div>
 
             {/* We can keep the existing NoteStatusIndicator or adapt parts of it if needed */}
