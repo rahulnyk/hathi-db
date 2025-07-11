@@ -14,9 +14,15 @@ import {
 
 interface CardHeaderProps {
     note: Note;
+    showDeleteButton?: boolean; // Optional prop to control delete button visibility
+    showStructurizeButton?: boolean; // Optional prop to control structurize button visibility
 }
 
-export function CardHeader({ note }: CardHeaderProps) {
+export function CardHeader({
+    note,
+    showDeleteButton = true,
+    showStructurizeButton = true,
+}: CardHeaderProps) {
     const dispatch = useAppDispatch();
     const aiStructurizedState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
@@ -24,8 +30,8 @@ export function CardHeader({ note }: CardHeaderProps) {
 
     // Get all user contexts from the store - memoized in place
     const contexts = useAppSelector((state) => state.notesMetadata.contexts);
-    const allUserContexts = useMemo(() =>
-        contexts.map(ctx => ctx.context),
+    const allUserContexts = useMemo(
+        () => contexts.map((ctx) => ctx.context),
         [contexts]
     );
 
@@ -79,7 +85,7 @@ export function CardHeader({ note }: CardHeaderProps) {
     return (
         <>
             {/* Header row with date and button group */}
-            <div className="flex items-center justify-between mb-0 gap-2">
+            <div className="flex items-center justify-between gap-2">
                 {/* Date */}
                 <div className="text-xs text-muted-foreground/50 flex-shrink-0">
                     {formatDate(note.created_at)}
@@ -88,30 +94,36 @@ export function CardHeader({ note }: CardHeaderProps) {
                 {/* Button Group */}
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {/* Direct Delete Button */}
-                    <DeleteNoteButton note={note} />
+                    {showDeleteButton && <DeleteNoteButton note={note} />}
                     {/* Structurize button - show when not in preview mode and not editing */}
-                    {!(
-                        aiStructurizedState?.status === "succeeded" &&
-                        aiStructurizedState.structuredContent
-                    ) && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                            onClick={handleStructurize}
-                            disabled={aiStructurizedState?.status === "loading"}
-                            title="Structurize note with AI"
-                        >
-                            {aiStructurizedState?.status === "loading" ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
-                            ) : (
-                                <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
-                            )}
-                            <span className="sr-only">Structurize note</span>
-                        </Button>
-                    )}
+                    {showStructurizeButton &&
+                        !(
+                            aiStructurizedState?.status === "succeeded" &&
+                            aiStructurizedState.structuredContent
+                        ) && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                                onClick={handleStructurize}
+                                disabled={
+                                    aiStructurizedState?.status === "loading"
+                                }
+                                title="Structurize note with AI"
+                            >
+                                {aiStructurizedState?.status === "loading" ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-zinc-500 dark:text-zinc-300" />
+                                ) : (
+                                    <Sparkles className="h-4 w-4 text-zinc-500 dark:text-zinc-300" />
+                                )}
+                                <span className="sr-only">
+                                    Structurize note
+                                </span>
+                            </Button>
+                        )}
                     {/* Accept/Reject buttons - show when in preview mode and not editing */}
-                    {aiStructurizedState?.status === "succeeded" &&
+                    {showStructurizeButton &&
+                        aiStructurizedState?.status === "succeeded" &&
                         aiStructurizedState.structuredContent && (
                             <div className="hidden md:flex items-center gap-1">
                                 <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">
@@ -151,7 +163,8 @@ export function CardHeader({ note }: CardHeaderProps) {
             </div>
 
             {/* Accept/Reject buttons for mobile - shown on a new row */}
-            {aiStructurizedState?.status === "succeeded" &&
+            {showStructurizeButton &&
+                aiStructurizedState?.status === "succeeded" &&
                 aiStructurizedState.structuredContent && (
                     <div className="md:hidden flex items-center justify-start gap-2 w-full">
                         <div className="text-xs text-muted-foreground px-2 rounded whitespace-nowrap flex items-center gap-1">

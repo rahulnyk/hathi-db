@@ -9,26 +9,46 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { CardHeader } from "./card-header";
-import { NoteStatusIndicator } from "./note-status-indicator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Assuming Popover exists
-import { CalendarIcon, Edit3Icon, CheckCircle, Circle, XCircle, Loader2 } from "lucide-react";
+import { NotesEditor } from "../notes_editor";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon, Circle, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { useRef } from "react";
+import { setEditingNoteId } from "@/store/uiSlice";
 
 export interface TodoNoteCardProps {
     note: Note;
     disableCardHeader?: boolean;
 }
 
-export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: TodoNoteCardProps) {
+export function TodoNoteCard({
+    note: initialNote,
+    disableCardHeader = false,
+}: TodoNoteCardProps) {
     const dispatch = useAppDispatch();
 
     // Ensure we are working with the latest version of the note from the store
     const storeNote = useAppSelector((state) =>
         state.notes.notes.find((n) => n.id === initialNote.id)
     );
-    const note = useMemo(() => storeNote || initialNote, [storeNote, initialNote]);
+    const note = useMemo(
+        () => storeNote || initialNote,
+        [storeNote, initialNote]
+    );
+
+    // Get editing state
+    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId);
+    const isNoteEditing = note.id === editingNoteId;
 
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+    // For mobile double-tap handling
+    const lastTouchTime = useRef(0);
+    const touchCount = useRef(0);
 
     const currentDeadline = useMemo(() => {
         return note.deadline ? new Date(note.deadline) : undefined;
@@ -42,35 +62,94 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
         setIsDatePickerOpen(false);
         if (newDate && newDate.toISOString() !== note.deadline) {
             const isoDate = newDate.toISOString();
-            dispatch(patchNote({ noteId: note.id, patches: { deadline: isoDate } }));
+            dispatch(
+                patchNote({ noteId: note.id, patches: { deadline: isoDate } })
+            );
         } else if (!newDate && note.deadline) {
-            dispatch(patchNote({ noteId: note.id, patches: { deadline: null } }));
+            dispatch(
+                patchNote({ noteId: note.id, patches: { deadline: null } })
+            );
+        }
+    };
+
+    const getStatusIcon = (status: TodoStatus) => {
+        switch (status) {
+            case TodoStatus.TODO:
+                return <Circle className="h-5 w-5 text-gray-400" />;
+            case TodoStatus.DOING:
+                return <Clock className="h-5 w-5 text-blue-500" />;
+            case TodoStatus.DONE:
+                return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+            default:
+                return <Circle className="h-5 w-5 text-gray-400" />;
+        }
+    };
+
+    const getStatusText = (status: TodoStatus) => {
+        switch (status) {
+            case TodoStatus.TODO:
+                return "To Do";
+            case TodoStatus.DOING:
+                return "In Progress";
+            case TodoStatus.DONE:
+                return "Done";
+            default:
+                return "To Do";
+        }
+    };
+
+    const getCardStyle = (status: TodoStatus) => {
+        switch (status) {
+            case TodoStatus.TODO:
+                return "bg-slate-50 dark:bg-gray-800";
+            case TodoStatus.DOING:
+                return "bg-blue-50 dark:bg-blue-900/10";
+            case TodoStatus.DONE:
+                return "bg-green-50 dark:bg-green-900/10";
+            default:
+                return "bg-white dark:bg-gray-800";
         }
     };
 
     const getNextStatus = (status: TodoStatus): TodoStatus => {
         switch (status) {
-            case TodoStatus.TODO: return TodoStatus.DOING;
-            case TodoStatus.DOING: return TodoStatus.DONE;
-            case TodoStatus.DONE: return TodoStatus.OBSOLETE;
-            case TodoStatus.OBSOLETE: return TodoStatus.TODO;
-            default: return TodoStatus.TODO;
+            case TodoStatus.TODO:
+                return TodoStatus.DOING;
+            case TodoStatus.DOING:
+                return TodoStatus.DONE;
+            case TodoStatus.DONE:
+                return TodoStatus.TODO;
+            default:
+                return TodoStatus.TODO;
         }
     };
 
     const handleStatusChange = () => {
         const nextStatus = getNextStatus(currentStatus);
-        dispatch(patchNote({ noteId: note.id, patches: { status: nextStatus } }));
+        dispatch(
+            patchNote({ noteId: note.id, patches: { status: nextStatus } })
+        );
     };
 
-    const getStatusIcon = (status: TodoStatus) => {
-        switch (status) {
-            case TodoStatus.TODO: return <Circle className="h-4 w-4" />; // Removed mr-2
-            case TodoStatus.DOING: return <Loader2 className="h-4 w-4 animate-spin" />; // Removed mr-2
-            case TodoStatus.DONE: return <CheckCircle className="h-4 w-4 text-green-500" />; // Removed mr-2
-            case TodoStatus.OBSOLETE: return <XCircle className="h-4 w-4 text-gray-500" />; // Removed mr-2
-            default: return <Circle className="h-4 w-4" />; // Removed mr-2
+    const handleDoubleClick = () => {
+        if (note.persistenceStatus !== "persisted") return;
+        dispatch(setEditingNoteId(note.id));
+    };
+
+    const handleTouchStart = (event: React.TouchEvent) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTouchTime.current;
+
+        if (tapLength < 500 && tapLength > 0) {
+            // Double tap detected
+            event.preventDefault();
+            handleDoubleClick();
+        } else {
+            // Reset for new tap sequence
+            touchCount.current = 1;
         }
+
+        lastTouchTime.current = currentTime;
     };
 
     const displayContent = note.content.toLowerCase().startsWith("todo ")
@@ -79,62 +158,102 @@ export function TodoNoteCard({ note: initialNote, disableCardHeader = false }: T
         ? note.content.substring(4)
         : note.content;
 
-
     return (
         <div
             data-note-id={note.id}
+            onDoubleClick={handleDoubleClick}
+            onTouchStart={handleTouchStart}
             className={cn(
-                "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
-                "bg-orange-50 dark:bg-orange-900/40" // Light orange background
+                "p-4 my-2 rounded-lg relative transition-all duration-200",
+                getCardStyle(currentStatus),
+                currentStatus === TodoStatus.DONE && "opacity-75",
+                isNoteEditing &&
+                    "border-l-2 border-dashed border-blue-500 rounded-none"
             )}
         >
-            {!disableCardHeader && <CardHeader note={note} />}
+            {!disableCardHeader && !isNoteEditing && (
+                <CardHeader
+                    note={note}
+                    showDeleteButton={false}
+                    showStructurizeButton={false}
+                />
+            )}
 
-            <div className="flex items-start gap-2 mt-1 mb-2"> {/* Flex container for button and content */}
-                {/* Status Toggle Button - MOVED HERE */}
-                <Button
-                    variant="outline"
-                    size="sm" // Changed from icon to sm for text
-                    onClick={handleStatusChange}
-                    className="h-7 rounded-full px-3 py-1 flex-shrink-0 mt-0.5 flex items-center gap-1.5 text-xs" // Pill shape, padding, alignment
-                    title={`Change status: ${currentStatus}`}
-                >
-                    {getStatusIcon(currentStatus)}
-                    <span>{currentStatus}</span>
-                </Button>
-
-                <div className="prose prose-sm dark:prose-invert max-w-none flex-grow">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {displayContent}
-                    </ReactMarkdown>
+            {isNoteEditing ? (
+                <div className="mb-0">
+                    <NotesEditor note={note} />
                 </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs ml-24"> {/* Adjusted indent for deadline picker */}
-                {/* Deadline Picker */}
-                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-7 px-2 py-1"
+            ) : (
+                <>
+                    {/* Main todo content */}
+                    <div className="flex items-start gap-3 mt-1">
+                        {/* Status checkbox */}
+                        <button
+                            onClick={handleStatusChange}
+                            className="flex-shrink-0 mt-1 hover:scale-110 transition-transform duration-150"
+                            title={`Change status to ${getStatusText(
+                                getNextStatus(currentStatus)
+                            )}`}
                         >
-                            <CalendarIcon className="h-3 w-3 mr-1.5" />
-                            {currentDeadline ? format(currentDeadline, "MMM dd, yyyy") : "Set Deadline"}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <DatePicker
-                            selectedDate={currentDeadline}
-                            onDateChange={handleDeadlineChange}
-                        />
-                    </PopoverContent>
-                </Popover>
-            </div>
+                            {getStatusIcon(currentStatus)}
+                        </button>
 
-            {/* We can keep the existing NoteStatusIndicator or adapt parts of it if needed */}
-            {/* For now, let's assume it might not be directly relevant or needs specific props */}
-            {/* <NoteStatusIndicator note={note} /> */}
+                        {/* Todo content */}
+                        <div className="flex-1 min-w-0">
+                            <div
+                                className={cn(
+                                    "prose prose-sm dark:prose-invert max-w-none cursor-pointer",
+                                    currentStatus === TodoStatus.DONE &&
+                                        "line-through opacity-60"
+                                )}
+                                title="Double-click to edit"
+                            >
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {displayContent}
+                                </ReactMarkdown>
+                            </div>
+
+                            {/* Todo metadata */}
+                            <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                {/* Deadline picker */}
+                                <Popover
+                                    open={isDatePickerOpen}
+                                    onOpenChange={setIsDatePickerOpen}
+                                >
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn(
+                                                "text-xs h-7 gap-1.5",
+                                                currentDeadline &&
+                                                    "text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-700"
+                                            )}
+                                        >
+                                            <CalendarIcon className="h-3 w-3" />
+                                            {currentDeadline
+                                                ? format(
+                                                      currentDeadline,
+                                                      "MMM dd"
+                                                  )
+                                                : "Add deadline"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <DatePicker
+                                            selectedDate={currentDeadline}
+                                            onDateChange={handleDeadlineChange}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
