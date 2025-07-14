@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/app/actions/get-auth-user";
 import { measureExecutionTime } from "@/lib/performance";
 import type { Note } from "@/store/notesSlice";
+import { TodoStatus } from "@/store/notesSlice";
 import type { SearchResultNote } from "./types";
 
 /**
@@ -20,6 +21,14 @@ export interface NotesFilter {
     hashtags?: string[];
     /** Filter by note type */
     noteType?: string;
+    /** Filter by deadline - notes with deadline after this date */
+    deadlineAfter?: string; // ISO date string
+    /** Filter by deadline - notes with deadline before this date */
+    deadlineBefore?: string; // ISO date string
+    /** Filter by deadline - notes with deadline on this specific date */
+    deadlineOn?: string; // ISO date string (YYYY-MM-DD format)
+    /** Filter by TODO status */
+    status?: TodoStatus;
     /** Search in note content (case-insensitive partial match) */
     // searchTerm?: string;
     /** Maximum number of notes to return (default: 20) */
@@ -38,6 +47,10 @@ export interface FilterNotesResult {
         contexts?: string[];
         // hashtags?: string[];
         noteType?: string;
+        deadlineAfter?: string;
+        deadlineBefore?: string;
+        deadlineOn?: string;
+        status?: TodoStatus;
         // searchTerm?: string;
         limit: number;
     };
@@ -94,6 +107,27 @@ export async function filterNotes(
                 query = query.eq("note_type", filters.noteType);
             }
 
+            // Apply deadline filters
+            if (filters.deadlineAfter) {
+                query = query.gte("deadline", filters.deadlineAfter);
+            }
+            if (filters.deadlineBefore) {
+                query = query.lte("deadline", filters.deadlineBefore);
+            }
+            if (filters.deadlineOn) {
+                // Filter for notes with deadline on a specific date
+                const startOfDay = `${filters.deadlineOn}T00:00:00.000Z`;
+                const endOfDay = `${filters.deadlineOn}T23:59:59.999Z`;
+                query = query
+                    .gte("deadline", startOfDay)
+                    .lte("deadline", endOfDay);
+            }
+
+            // Apply status filter
+            if (filters.status) {
+                query = query.eq("status", filters.status);
+            }
+
             // Apply limit
             query = query.limit(limit);
 
@@ -121,6 +155,14 @@ export async function filterNotes(
                 //         hashtags: filters.hashtags,
                 //     }),
                 ...(filters.noteType && { noteType: filters.noteType }),
+                ...(filters.deadlineAfter && {
+                    deadlineAfter: filters.deadlineAfter,
+                }),
+                ...(filters.deadlineBefore && {
+                    deadlineBefore: filters.deadlineBefore,
+                }),
+                ...(filters.deadlineOn && { deadlineOn: filters.deadlineOn }),
+                ...(filters.status && { status: filters.status }),
                 limit,
             };
 
@@ -147,6 +189,7 @@ export async function getFilterOptions(): Promise<{
     availableContexts: string[];
     availableHashtags: string[];
     availableNoteTypes: string[];
+    availableStatuses: TodoStatus[];
 }> {
     return measureExecutionTime("getFilterOptions", async () => {
         const supabase = await createClient();
@@ -156,7 +199,7 @@ export async function getFilterOptions(): Promise<{
             // Get all unique contexts, tags, and note types for this user
             const { data, error } = await supabase
                 .from("notes")
-                .select("contexts, tags, note_type")
+                .select("contexts, tags, note_type, status")
                 .eq("user_id", user.id);
 
             if (error) {
@@ -167,6 +210,7 @@ export async function getFilterOptions(): Promise<{
             const contextSet = new Set<string>();
             const tagSet = new Set<string>();
             const noteTypeSet = new Set<string>();
+            const statusSet = new Set<TodoStatus>();
 
             data?.forEach((note) => {
                 // Collect contexts
@@ -191,16 +235,28 @@ export async function getFilterOptions(): Promise<{
                 if (note.note_type?.trim()) {
                     noteTypeSet.add(note.note_type.trim());
                 }
+
+                // Collect statuses
+                if (
+                    note.status &&
+                    Object.values(TodoStatus).includes(
+                        note.status as TodoStatus
+                    )
+                ) {
+                    statusSet.add(note.status as TodoStatus);
+                }
             });
             console.log("Available filter options:", {
                 contexts: Array.from(contextSet),
                 hashtags: Array.from(tagSet),
                 noteTypes: Array.from(noteTypeSet),
+                statuses: Array.from(statusSet),
             });
             return {
                 availableContexts: Array.from(contextSet).sort(),
                 availableHashtags: Array.from(tagSet).sort(),
                 availableNoteTypes: Array.from(noteTypeSet).sort(),
+                availableStatuses: Array.from(statusSet).sort(),
             };
         } catch (error) {
             console.error("Error in getFilterOptions:", error);
