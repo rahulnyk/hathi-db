@@ -16,6 +16,7 @@ export async function POST(req: Request) {
         const result = streamText({
             model: gemini("gemini-2.5-flash"),
             messages,
+            maxRetries: 2,
             system: agentSystemPrompt(),
             maxSteps: 3,
             toolChoice: "auto", // let the agent decide when to use tools vs respond directly

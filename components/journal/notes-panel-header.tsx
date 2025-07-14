@@ -6,7 +6,7 @@ import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentConte
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
 import { HathiIcon } from "@/components/icon"; // Import HathiIcon
-
+import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
     const { currentContext } = useAppSelector((state) => state.notes);
@@ -44,11 +44,7 @@ export function NotesPanelHeader() {
                         "accent-font"
                     )}
                 >
-                    {chatMode ? (
-                        <HathiIcon size={22} className="hidden md:block" />
-                    ) : (
-                        <Target size={22} className="hidden md:block" />
-                    )}
+                    <Target size={22} className="hidden md:block" />
                     <h2
                         className={cn(
                             "text-2xl",
@@ -76,7 +72,7 @@ export function NotesPanelHeader() {
                 <div
                     className={cn(
                         "relative flex items-center p-1 rounded-lg cursor-pointer transition-all duration-300",
-                        "bg-muted border border-border",
+                        "bg-zinc-300 dark:bg-zinc-500 border border-zinc-300 dark:border-zinc-700",
                         "w-16 h-4"
                     )}
                     onClick={handleToggleChatMode}
@@ -85,22 +81,22 @@ export function NotesPanelHeader() {
                     {/* Background track */}
                     <div
                         className={cn(
-                            "absolute inset-1 rounded-md transition-all duration-300 bg-primary/10"
+                            "absolute inset-1 rounded-md transition-all duration-300 bg-background"
                         )}
                     />
 
                     {/* Sliding toggle */}
                     <div
                         className={cn(
-                            "relative z-10 flex items-center justify-center w-6 h-6 rounded-md transition-all duration-300 shadow-sm",
-                            "transform bg-primary text-primary-foreground",
+                            "relative z-10 flex items-center justify-center w-7 h-7 rounded-md transition-all duration-300 shadow-sm",
+                            "transform bg-blue-600 text-white",
                             chatMode ? "translate-x-8" : "translate-x-0"
                         )}
                     >
                         {chatMode ? (
-                            <HathiIcon size={14} />
+                            <LucideMessageCircleQuestion size={16} />
                         ) : (
-                            <NotebookPen size={14} />
+                            <NotebookPen size={16} />
                         )}
                     </div>
 
@@ -108,7 +104,7 @@ export function NotesPanelHeader() {
                     <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
                         <span
                             className={cn(
-                                "text-xs font-medium transition-opacity duration-300",
+                                "text-xs font-medium transition-opacity duration-300 text-blue-800",
                                 !chatMode ? "opacity-100" : "opacity-40"
                             )}
                         >
@@ -116,7 +112,7 @@ export function NotesPanelHeader() {
                         </span>
                         <span
                             className={cn(
-                                "text-xs font-medium transition-opacity duration-300",
+                                "text-xs font-medium transition-opacity duration-300 text-blue-800",
                                 chatMode ? "opacity-100" : "opacity-40"
                             )}
                         >
