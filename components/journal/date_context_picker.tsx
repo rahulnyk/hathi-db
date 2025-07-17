@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentContext } from "@/store/notesSlice";
 import { setDatePickerSelectedDate } from "@/store/uiSlice";
@@ -12,22 +13,28 @@ interface DateContextPickerProps {
     onDateChangeHook?: () => void; // New prop
 }
 
-export function DateContextPicker({ isOpen, onDateChangeHook }: DateContextPickerProps) {
+export function DateContextPicker({
+    isOpen,
+    onDateChangeHook,
+}: DateContextPickerProps) {
     const selectedDateString = useAppSelector(
         (state) => state.ui.datePickerSelectedDate
     );
     const selectedDate = new Date(selectedDateString); // Convert string back to Date
     const dispatch = useAppDispatch();
+    const router = useRouter();
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
             // Update the date picker state in Redux (convert Date to string)
             dispatch(setDatePickerSelectedDate(date.toISOString()));
 
-            // Update the current context in Redux when date changes (existing behavior)
-            dispatch(setCurrentContext(dateToSlug(date)));
+            // Navigate to the date context URL instead of just updating Redux
+            const dateSlug = dateToSlug(date);
+            router.push(`/journal/${dateSlug}`);
 
-            if (onDateChangeHook) { // Call the hook
+            if (onDateChangeHook) {
+                // Call the hook
                 onDateChangeHook();
             }
         }

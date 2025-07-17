@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
-import { setCurrentContext } from "@/store/notesSlice";
+// import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType } from "@/store/uiSlice";
 import { ContextStatParams } from "@/app/actions/contexts";
 import { cn, slugToSentenceCase } from "@/lib/utils";
@@ -17,6 +18,7 @@ interface ContextListProps {
 
 export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const { contexts, status, hasMore, isLoadingMore } = useAppSelector(
         (state) => state.notesMetadata
     );
@@ -33,7 +35,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         if (deviceType === "mobile") {
             onCloseMenu();
         }
-        dispatch(setCurrentContext(contextSlug));
+        // Navigate to the context URL, which will update Redux state through the useEffect in JournalComponent
+        router.push(`/journal/${contextSlug}`);
     };
 
     const handleLoadMore = useCallback(() => {
@@ -42,7 +45,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         }
     }, [hasMore, isLoadingMore, dispatch]);
 
-    if (status === "loading" || status === "idle") {
+    // Only show loading when we have no contexts AND we're in a loading state
+    if ((status === "loading" || status === "idle") && contexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-neutral-500">
                 Loading contexts...
