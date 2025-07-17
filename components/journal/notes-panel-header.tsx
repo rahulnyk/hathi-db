@@ -7,8 +7,10 @@ import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
 import { HathiIcon } from "@/components/icon"; // Import HathiIcon
 import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
+import { useRouter } from "next/navigation";
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
+    const router = useRouter();
     const { currentContext } = useAppSelector((state) => state.notes);
     const { chatMode } = useAppSelector((state) => state.ui);
     const todaysDateSlug = dateToSlug(new Date());
@@ -16,7 +18,8 @@ export function NotesPanelHeader() {
     const showHomeButton = currentContext !== todaysDateSlug;
 
     const handleGoToToday = () => {
-        dispatch(setCurrentContext(todaysDateSlug));
+        // Navigate to today's date instead of just updating Redux
+        router.push(`/journal/${todaysDateSlug}`);
     };
 
     const handleToggleChatMode = () => {
