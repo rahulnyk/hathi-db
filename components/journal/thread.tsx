@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 // import clsx from "clsx";
 import { NoteCard } from "./note_card/notes-card";
 import { AiNoteCard } from "./note_card/ai-note-card"; // Import AiNoteCard
+import { TodoNoteCard } from "./note_card/todo-note-card"; // Import TodoNoteCard
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchNotes } from "@/store/notesSlice";
 
@@ -69,18 +70,16 @@ export function Thread() {
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {reversedNotes.map((note) =>
-                        note.note_type === "ai-note" ? (
-                            <AiNoteCard key={note.id} note={note} />
-                        ) : (
-                            <NoteCard
-                                // Use unique key combining id and isSearchResult
-                                // This avoids the duplicate key warning in react.
-                                key={`${note.id}-${note.isSearchResult}`}
-                                note={note}
-                            />
-                        )
-                    )}
+                    {reversedNotes.map((note) => {
+                        const cardKey = `${note.id}-${note.isSearchResult || 'default'}`;
+                        if (note.note_type === "ai-note") {
+                            return <AiNoteCard key={cardKey} note={note} />;
+                        } else if (note.note_type === "todo") {
+                            return <TodoNoteCard key={cardKey} note={note} />;
+                        } else {
+                            return <NoteCard key={cardKey} note={note} />;
+                        }
+                    })}
                 </div>
             )}
         </div>

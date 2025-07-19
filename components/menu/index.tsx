@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useEffect } from "react"; // Import useRef and useEffect
+import { useRouter } from "next/navigation";
 // useState and useEffect removed as isDatePickerOpen state is removed
 // Button import removed as child components (ThemeSwitcher, LogoutButton) import it themselves.
 // CalendarIcon import removed
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
-import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
-import { setCurrentContext } from "@/store/notesSlice";
+import { useAppSelector } from "@/store"; // Import useAppSelector and useAppDispatch
 import { ThemeSwitcher } from "../theme-switcher";
 import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
@@ -23,7 +23,7 @@ interface RetractableMenuProps {
 }
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
-    const dispatch = useAppDispatch();
+    const router = useRouter();
     const deviceType = useAppSelector((state) => state.ui.deviceType); // Get deviceType from Redux store
     const menuRef = useRef<HTMLDivElement>(null); // Create menuRef
 
@@ -101,7 +101,8 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                         <ContextSearchBox
                             placeholder="Search contexts..."
                             onContextSelect={(context) => {
-                                dispatch(setCurrentContext(context));
+                                // Navigate to the context URL instead of just updating Redux
+                                router.push(`/journal/${context}`);
                                 if (deviceType === "mobile") {
                                     onClose();
                                 }

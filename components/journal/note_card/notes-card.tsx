@@ -12,7 +12,7 @@ import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { setCurrentContext } from "@/store/notesSlice";
+import { useRouter } from "next/navigation";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
@@ -36,6 +36,7 @@ export function NoteCard({
     disableCardHeader = false,
 }: NoteCardProps) {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
     // Check if there's a version of this note in the Redux store
@@ -114,8 +115,8 @@ export function NoteCard({
                     target.textContent ||
                     "";
                 const context = sentenceCaseToSlug(content);
-                // Dispatch action to set current context
-                dispatch(setCurrentContext(context));
+                // Navigate to the context URL instead of just updating Redux
+                router.push(`/journal/${context}`);
                 console.log("Context clicked:", context);
             }
 
@@ -130,7 +131,7 @@ export function NoteCard({
 
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
-    }, [dispatch]);
+    }, [dispatch, router]);
 
     const textSizeClass = {
         normal: "text-base",

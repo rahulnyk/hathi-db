@@ -24,6 +24,8 @@ export interface SearchResultNote
         | "note_type"
         | "suggested_contexts"
         | "created_at"
+        | "deadline"
+        | "status"
     > {
     /** Similarity score for semantic search results (0.0-1.0) */
     similarity?: number;

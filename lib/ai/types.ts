@@ -48,25 +48,45 @@ export interface StructurizeNoteResponse {
 }
 
 // Q&A types
-export interface QARequest {
-    question: string;
-    context: string; // Combined relevant notes content
-    userContexts: string[];
+// export interface QARequest {
+//     question: string;
+//     context: string; // Combined relevant notes content
+//     userContexts: string[];
+// }
+
+// export interface QAResponse {
+//     answer: string;
+//     relevantSources?: string[]; // Note IDs that were used as context
+// }
+
+// Types for deadline extraction
+export interface ExtractDeadlineRequest {
+    content: string;
 }
 
-export interface QAResponse {
-    answer: string;
-    relevantSources?: string[]; // Note IDs that were used as context
+export interface ExtractDeadlineResponse {
+    deadline: string | null; // YYYY-MM-DD or null
 }
 
 // AI Provider interface for abstraction
 export interface AIProvider {
-    suggestContexts(request: SuggestContextsRequest): Promise<SuggestContextsResponse>;
+    suggestContexts(
+        request: SuggestContextsRequest
+    ): Promise<SuggestContextsResponse>;
     generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
-    generateDocumentEmbedding(request: DocumentEmbeddingRequest): Promise<DocumentEmbeddingResponse>;
-    generateQueryEmbedding(request: QueryEmbeddingRequest): Promise<QueryEmbeddingResponse>;
-    structurizeNote(request: StructurizeNoteRequest): Promise<StructurizeNoteResponse>;
-    answerQuestion(request: QARequest): Promise<QAResponse>;
+    generateDocumentEmbedding(
+        request: DocumentEmbeddingRequest
+    ): Promise<DocumentEmbeddingResponse>;
+    generateQueryEmbedding(
+        request: QueryEmbeddingRequest
+    ): Promise<QueryEmbeddingResponse>;
+    structurizeNote(
+        request: StructurizeNoteRequest
+    ): Promise<StructurizeNoteResponse>;
+    // answerQuestion(request: QARequest): Promise<QAResponse>;
+    extractDeadline(
+        request: ExtractDeadlineRequest
+    ): Promise<ExtractDeadlineResponse>;
 }
 
 // Error types

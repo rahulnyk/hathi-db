@@ -38,6 +38,36 @@ export async function suggestContexts({
 }
 
 /**
+ * Extracts a deadline from note content using AI.
+ *
+ * @param content - The content of the note
+ * @returns Promise that resolves to a string (YYYY-MM-DD) or null
+ */
+export async function extractDeadlineFromContent({
+    content,
+}: {
+    content: string;
+}): Promise<string | null> {
+    return measureExecutionTime("extractDeadlineFromContent", async () => {
+        try {
+            const response = await aiProvider.extractDeadline({
+                content,
+            });
+            return response.deadline;
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error occurred";
+            console.error("Error extracting deadline:", errorMessage);
+            // For this specific use case, we don't want to throw an error
+            // that stops note creation. Just return null if AI fails.
+            return null;
+        }
+    });
+}
+
+/**
  * Structurizes a note's content using AI
  *
  * @param content - The content to structurize

@@ -11,25 +11,49 @@ export function suggestContextUserPrompt(
     const contextsListString =
         contextsList.length > 0
             ? contextsList.map((ctx) => `- ${ctx}`).join("\n")
-            : "No existing contexts found";
+            : "No existing contexts available";
 
-    const prompt = `
-Analyze this note: "${content}"
+    const prompt = `Analyze this note content and suggest 1-5 relevant contexts for organization:
 
-Suggest 1-5 relevant contexts (tags/categories) for organizing this note.
+NOTE CONTENT:
+"${content}"
 
-Priority:
-1. Named entities from the note
-2. Existing contexts: ${contextsListString}
-3. General contexts: work, personal, health, finance, family, travel, learning, etc.
+EXISTING CONTEXTS TO CONSIDER:
+${contextsListString}
 
-CRITICAL: Return ONLY a JSON array of strings, no markdown, no explanations, no other text.
-Example: ["work", "meeting-notes"]
-Max 5 contexts.`;
-    
+CONTEXT SELECTION GUIDELINES:
+1. Prioritize reusing existing contexts when relevant
+2. Extract specific named entities, topics, or themes from the note
+3. Consider general categories: work, personal, health, finance, family, travel, learning, projects, etc.
+4. Use lowercase, hyphenated format (e.g., "meeting-notes", "health-tracking")
+5. Be specific but not overly narrow
+6. Maximum 5 contexts
+
+RESPONSE FORMAT:
+Return ONLY a JSON array of strings. No explanations, no markdown, no additional text.
+
+Examples:
+["work", "meeting-notes"]
+["personal", "health"]
+["finance", "tax-planning", "2025"]`;
+
     return prompt.trim();
 }
 
 export function suggestContextSystemPrompt(): string {
-    return `You are a context suggestion tool. Return ONLY valid JSON arrays of strings. No markdown formatting, no explanations, no additional text.`;
+    return `You are a context suggestion assistant that analyzes note content and suggests relevant organizational contexts (tags/categories).
+
+CRITICAL INSTRUCTIONS:
+- You MUST respond with ONLY a valid JSON array of strings
+- Do NOT include any markdown code blocks (no \`\`\`json or \`\`\`)
+- Do NOT include any explanations, comments, or additional text
+- Do NOT use any formatting other than plain JSON
+- The response must be parseable by JSON.parse()
+
+Examples of correct responses:
+["work", "meeting-notes"]
+["personal", "health", "fitness"]
+["finance", "budgeting", "taxes"]
+
+Your entire response must be the JSON array and nothing else.`;
 }

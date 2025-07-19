@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
 import { measureExecutionTime } from "@/lib/performance";
 import { getAuthUser } from "@/app/actions/get-auth-user";
-
+import { TodoStatus } from "@/store/notesSlice";
 /**
  * Adds a new note to the database.
  *
@@ -21,12 +21,16 @@ export async function addNote({
     contexts,
     tags,
     note_type = "note",
+    deadline,
+    status,
 }: {
     content: string;
     key_context: string;
     contexts?: string[];
     tags?: string[];
     note_type?: NoteType;
+    deadline?: string | null;
+    status?: TodoStatus | null; // Using TodoStatus enum for type safety, stored as string in DB
 }): Promise<Note> {
     return measureExecutionTime("addNote", async () => {
         const supabase = await createClient();
@@ -40,6 +44,8 @@ export async function addNote({
                 contexts: contexts || [],
                 tags: tags || [],
                 note_type,
+                deadline: deadline || null,
+                status: status || null,
             };
             const { data, error } = await supabase
                 .from("notes")
@@ -230,7 +236,13 @@ export async function patchNote({
     patches: Partial<
         Pick<
             Note,
-            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type"
+            | "content"
+            | "contexts"
+            | "tags"
+            | "suggested_contexts"
+            | "note_type"
+            | "deadline"
+            | "status"
         >
     > & {
         embedding?: number[];

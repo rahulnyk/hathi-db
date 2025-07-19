@@ -18,10 +18,10 @@ export const AI_ANSWERS_ENABLED = true;
  * Choose which AI provider to use for the application
  */
 export const AI_PROVIDER = {
-    GEMINI: 'gemini'
+    GEMINI: "gemini",
 } as const;
 
-export type AIProviderType = typeof AI_PROVIDER[keyof typeof AI_PROVIDER];
+export type AIProviderType = (typeof AI_PROVIDER)[keyof typeof AI_PROVIDER];
 
 /**
  * Current AI provider - change this to switch between providers
@@ -36,14 +36,17 @@ export const AI_MODEL_CONFIG = {
     GEMINI: {
         // Text generation model
         textGeneration: {
-            model: 'gemini-2.0-flash'
+            model: "gemini-2.0-flash",
+        },
+        textGenerationLite: {
+            model: "gemini-2.0-flash-lite",
         },
         // Embedding model - gemini-embedding-exp-03-07 produces 1536 dimensions
         embedding: {
-            model: 'gemini-embedding-exp-03-07',
-            dimensions: 1536
-        }
-    }
+            model: "gemini-embedding-exp-03-07",
+            dimensions: 1536,
+        },
+    },
 } as const;
 
 /**

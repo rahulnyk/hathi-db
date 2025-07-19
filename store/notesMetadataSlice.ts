@@ -71,12 +71,12 @@ const notesMetadataSlice = createSlice({
     name: "notesMetadata",
     initialState,
     reducers: {
-        // Add a refresh action that resets status to idle to trigger a refetch
+        // Modified refresh action that doesn't clear current data immediately
         refreshContextsMetadata: (state) => {
+            // Only reset status to idle to trigger a refetch
+            // Keep existing contexts to prevent flickering
             state.status = "idle";
-            state.contexts = [];
-            state.hasMore = false;
-            state.totalCount = 0;
+            // Don't clear contexts here - let the fulfilled action replace them
         },
     },
     extraReducers: (builder) => {
@@ -98,12 +98,13 @@ const notesMetadataSlice = createSlice({
 
                 if (action.payload.isLoadingMore) {
                     // Append new contexts to existing ones, removing duplicates
-                    const existingContexts = new Set(state.contexts.map(c => c.context));
-                    const newContexts = action.payload.contexts.filter(c => !existingContexts.has(c.context));
-                    state.contexts = [
-                        ...state.contexts,
-                        ...newContexts,
-                    ];
+                    const existingContexts = new Set(
+                        state.contexts.map((c) => c.context)
+                    );
+                    const newContexts = action.payload.contexts.filter(
+                        (c) => !existingContexts.has(c.context)
+                    );
+                    state.contexts = [...state.contexts, ...newContexts];
                 } else {
                     // Replace contexts (initial load or reset)
                     state.contexts = action.payload.contexts;
