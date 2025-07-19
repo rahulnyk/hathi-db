@@ -100,9 +100,8 @@ export async function testFilterNotes() {
         console.log(
             `Available note types: ${options.availableNoteTypes.length}`
         );
-        console.log(`Available statuses: ${options.availableStatuses.length}`);
         console.log(
-            `Available statuses: ${options.availableStatuses.join(", ")}`
+            `Available statuses (${options.availableStatuses.length}): ${options.availableStatuses.join(", ")}`
         );
     } catch (error) {
         console.error("Test failed:", error);
