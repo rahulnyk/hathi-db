@@ -9,6 +9,7 @@ import {
 } from "@/store/notesSlice";
 import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
+import { determineNoteType } from "@/lib/note-type-utils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -357,11 +358,8 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
             ...new Set([...contexts, ...extractedContexts]),
         ];
 
-        // Determine note_type for TODOs
-        let noteType: "note" | "todo" = "note";
-        if (content.toLowerCase().startsWith("todo")) {
-            noteType = "todo";
-        }
+        // Use the utility function to determine note type
+        const noteType = determineNoteType(content);
 
         const optimisticNote = createOptimisticNote(
             content,

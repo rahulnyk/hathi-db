@@ -115,12 +115,12 @@ export const addNote = createAsyncThunk(
         { rejectWithValue, dispatch }
     ) => {
         try {
-            let finalNoteType = noteData.note_type;
+            // Use the note type that was already determined in the editor
+            const finalNoteType = noteData.note_type || "note";
             let deadline: string | null = null;
             let status: TodoStatus | null = null;
 
-            if (noteData.content.toLowerCase().startsWith("todo")) {
-                finalNoteType = "todo";
+            if (finalNoteType === "todo") {
                 status = TodoStatus.TODO;
                 // Placeholder for AI deadline extraction - will be implemented in Step 4
                 // For now, this call won't do anything until extractDeadlineFromContent is implemented
@@ -209,7 +209,6 @@ export const patchNote = createAsyncThunk(
                     | "embedding"
                     | "embedding_model"
                     | "embedding_created_at"
-                    // Add deadline and status to patchable fields
                     | "deadline"
                     | "status"
                 >
