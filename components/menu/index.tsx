@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 // CalendarIcon import removed
 // import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
-import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
-import { setCurrentContext } from "@/store/notesSlice";
+import { useAppSelector } from "@/store"; // Import useAppSelector and useAppDispatch
 import { ThemeSwitcher } from "../theme-switcher";
 import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
@@ -24,7 +23,6 @@ interface RetractableMenuProps {
 }
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
-    const dispatch = useAppDispatch();
     const router = useRouter();
     const deviceType = useAppSelector((state) => state.ui.deviceType); // Get deviceType from Redux store
     const menuRef = useRef<HTMLDivElement>(null); // Create menuRef

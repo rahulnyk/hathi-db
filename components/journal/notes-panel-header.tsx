@@ -2,10 +2,8 @@
 
 import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
-import { setCurrentContext } from "@/store/notesSlice"; // Added setCurrentContext
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
-import { HathiIcon } from "@/components/icon"; // Import HathiIcon
 import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
 import { useRouter } from "next/navigation";
 export function NotesPanelHeader() {

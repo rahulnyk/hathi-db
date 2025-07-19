@@ -12,7 +12,6 @@ import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { setCurrentContext } from "@/store/notesSlice";
 import { useRouter } from "next/navigation";
 import {
     generateSuggestedContexts,
@@ -132,7 +131,7 @@ export function NoteCard({
 
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
-    }, [dispatch]);
+    }, [dispatch, router]);
 
     const textSizeClass = {
         normal: "text-base",
