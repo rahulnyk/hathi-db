@@ -132,13 +132,7 @@ export function ChatComponent({ chatHook, className }: ChatComponentProps) {
                                 size={16}
                                 color="currentColor"
                                 loading={true}
-                                className="sm:hidden"
-                            />
-                            <HashLoader
-                                size={20}
-                                color="currentColor"
-                                loading={true}
-                                className="hidden sm:block"
+                                // className="sm:hidden"
                             />
                         </div>
                     )}
@@ -279,7 +273,7 @@ function MessagePartRenderer({
             return (
                 <TextPartRenderer part={part} isUserMessage={isUserMessage} />
             );
-
+        // return null; // Ignore text parts in this context
         case "tool-invocation":
             return (
                 <ToolInvocationPartComponent
@@ -330,8 +324,7 @@ function ToolInvocationPartComponent({
     if (toolName === "answer") {
         return (
             <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                Done gathering logs{" "}
-                <span className="text-base sm:text-lg"> 🪵 </span>
+                <span className="text-lg px-2"> 🪵 </span> Done gathering logs
             </div>
         );
     }

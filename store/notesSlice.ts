@@ -8,6 +8,7 @@ import {
     deleteNote as deleteNoteAction,
     patchNote as patchNoteAction,
 } from "@/app/actions/notes"; // Import server actions
+import { extractDeadlineFromContent } from "@/app/actions/ai"; // Import AI action for deadline
 import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 import { setActiveNoteId } from "./uiSlice"; // Import setActiveNoteId
 
@@ -16,6 +17,14 @@ export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
 
 // Define possible note types
 export type NoteType = "note" | "todo" | "ai-todo" | "ai-note" | null;
+
+// Define possible TODO statuses
+export enum TodoStatus {
+    TODO = "TODO",
+    DOING = "DOING",
+    DONE = "DONE",
+    OBSOLETE = "OBSOLETE",
+}
 
 export type Note = {
     id: string;
@@ -33,6 +42,9 @@ export type Note = {
     embedding_model?: string;
     embedding_created_at?: string;
     isSearchResult?: boolean; // Flag for notes from agent search results
+    // Fields for TODO notes
+    deadline?: string | null; // ISO date string
+    status?: TodoStatus | null;
 };
 
 interface NotesState {
@@ -103,9 +115,38 @@ export const addNote = createAsyncThunk(
         { rejectWithValue, dispatch }
     ) => {
         try {
-            const newNote = await addNoteAction({
+            const finalNoteType = noteData.note_type || "note";
+            let deadline: string | null = null;
+            let status: TodoStatus | null = null;
+
+            if (finalNoteType === "todo") {
+                status = TodoStatus.TODO;
+                try {
+                    const extractedDeadline = await extractDeadlineFromContent({
+                        content: noteData.content,
+                    });
+                    if (extractedDeadline) {
+                        deadline = extractedDeadline;
+                    }
+                } catch (e) {
+                    console.warn(
+                        "AI deadline extraction failed or not yet implemented:",
+                        e
+                    );
+                }
+            }
+
+            const notePayload: Parameters<typeof addNoteAction>[0] = {
                 ...noteData,
-            });
+                note_type: finalNoteType,
+            };
+
+            if (finalNoteType === "todo") {
+                notePayload.deadline = deadline;
+                notePayload.status = status;
+            }
+
+            const newNote = await addNoteAction(notePayload);
 
             // Refresh context metadata since new contexts might have been created
             dispatch(refreshContextsMetadata());
@@ -165,6 +206,8 @@ export const patchNote = createAsyncThunk(
                     | "embedding"
                     | "embedding_model"
                     | "embedding_created_at"
+                    | "deadline"
+                    | "status"
                 >
             >;
         },
@@ -259,7 +302,12 @@ const notesSlice = createSlice({
             state,
             action: PayloadAction<{
                 noteId: string;
-                patches: Partial<Pick<Note, "content" | "contexts" | "tags">>;
+                patches: Partial<
+                    Pick<
+                        Note,
+                        "content" | "contexts" | "tags" | "deadline" | "status"
+                    >
+                >;
             }>
         ) => {
             const { noteId, patches } = action.payload;

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
-import { setCurrentContext } from "@/store/notesSlice";
+// import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType } from "@/store/uiSlice";
 import { ContextStatParams } from "@/app/actions/contexts";
 import { cn, slugToSentenceCase } from "@/lib/utils";
@@ -17,10 +18,14 @@ interface ContextListProps {
 
 export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const { contexts, status, hasMore, isLoadingMore } = useAppSelector(
         (state) => state.notesMetadata
     );
     const { currentContext } = useAppSelector((state) => state.notes);
+
+    // Check if we're refreshing (have contexts but status is loading)
+    const isRefreshing = status === "loading" && contexts.length > 0;
 
     // Fetch contexts when component mounts
     useEffect(() => {
@@ -33,7 +38,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         if (deviceType === "mobile") {
             onCloseMenu();
         }
-        dispatch(setCurrentContext(contextSlug));
+        // Navigate to the context URL, which will update Redux state through the useEffect in JournalComponent
+        router.push(`/journal/${contextSlug}`);
     };
 
     const handleLoadMore = useCallback(() => {
@@ -42,7 +48,9 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         }
     }, [hasMore, isLoadingMore, dispatch]);
 
-    if (status === "loading" || status === "idle") {
+    // Only show loading when we have no contexts AND we're in a loading state on initial load
+    // This prevents flickering when contexts are being refreshed
+    if (status === "loading" && contexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-neutral-500">
                 Loading contexts...
@@ -50,7 +58,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         );
     }
 
-    if (status === "failed") {
+    // Only show error state if we have no contexts and the request failed
+    if (status === "failed" && contexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-red-500">
                 Failed to load contexts.
@@ -60,6 +69,14 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
 
     return (
         <div className="flex flex-col gap-1 px-2 py-1">
+            {/* Optional subtle refresh indicator */}
+            {isRefreshing && (
+                <div className="px-2 py-1 text-xs text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Updating...
+                </div>
+            )}
+
             {/* Context List */}
             {contexts.map((contextStat: ContextStatParams) => (
                 <div

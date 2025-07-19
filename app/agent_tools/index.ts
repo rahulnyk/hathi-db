@@ -1,7 +1,7 @@
-// import { google } from "@ai-sdk/google";
 import { tool } from "ai";
 import { z } from "zod";
 import { filterNotes, getFilterOptions } from "@/app/agent_tools/filter-notes";
+import { TodoStatus } from "@/store/notesSlice";
 // import { summarizeNotes } from "@/app/agent_tools/summarize-notes";
 import { searchNotesBySimilarity } from "@/app/agent_tools/semantic-search";
 import type { ToolSet } from "ai";
@@ -11,7 +11,7 @@ import { formatSearchMessage } from "@/app/agent_tools/types";
 export const tools: ToolSet = {
     filterNotes: tool({
         description:
-            "Filter and search notes based on various criteria like date, contexts, note type, and content search. Returns up to 20 notes by default.",
+            "Filter and search notes based on various criteria like date, contexts, note type, deadline, status, and content search. Returns up to 20 notes by default.",
         parameters: z.object({
             createdAfter: z
                 .string()
@@ -36,6 +36,30 @@ export const tools: ToolSet = {
                 .optional()
                 .describe(
                     "Filter by note type (e.g., 'note', 'ai-note', 'todo')"
+                ),
+            deadlineAfter: z
+                .string()
+                .optional()
+                .describe(
+                    "Filter TODO notes with deadline after this date (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.sssZ)"
+                ),
+            deadlineBefore: z
+                .string()
+                .optional()
+                .describe(
+                    "Filter TODO notes with deadline before this date (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.sssZ)"
+                ),
+            deadlineOn: z
+                .string()
+                .optional()
+                .describe(
+                    "Filter TODO notes with deadline on this specific date (format: YYYY-MM-DD)"
+                ),
+            status: z
+                .nativeEnum(TodoStatus)
+                .optional()
+                .describe(
+                    "Filter TODO notes by status: TODO, DOING, DONE, or OBSOLETE"
                 ),
             limit: z
                 .number()
@@ -77,7 +101,7 @@ export const tools: ToolSet = {
     }),
     getFilterOptions: tool({
         description:
-            "Get available filter options (contexts, hashtags, note types) that the user has in their notes",
+            "Get available filter options (contexts, hashtags, note types, statuses) that the user has in their notes",
         parameters: z.object({}),
         execute: async () => {
             try {
@@ -85,7 +109,7 @@ export const tools: ToolSet = {
                 return {
                     success: true,
                     ...options,
-                    message: `Found ${options.availableContexts.length} contexts, ${options.availableHashtags.length} , and ${options.availableNoteTypes.length} note types.`,
+                    message: `Found ${options.availableContexts.length} contexts, ${options.availableHashtags.length} hashtags, ${options.availableNoteTypes.length} note types, and ${options.availableStatuses.length} statuses.`,
                 };
             } catch (error) {
                 return {
@@ -153,6 +177,39 @@ export const tools: ToolSet = {
             }
         },
     }),
+    // Final answer tool for providing structured responses
+    answer: tool({
+        description:
+            "Use this tool to provide a final answer to the user's question. DO NOT take any further actions after this step. This should be your last step.",
+        parameters: z.object({
+            foundNotes: z
+                .array(z.string())
+                .describe(
+                    "Array of note IDs that were found and used to formulate the answer"
+                ),
+            answer: z
+                .string()
+                .describe(
+                    "The comprehensive answer to the user's question based on the retrieved notes"
+                ),
+            searchStrategy: z
+                .string()
+                .optional()
+                .describe(
+                    "Brief description of what search approach was used (e.g., 'semantic search for AI concepts', 'filtered by work context and date')"
+                ),
+        }),
+        execute: async (params) => {
+            return {
+                success: true,
+                foundNoteIds: params.foundNotes,
+                answer: params.answer,
+                searchStrategy: params.searchStrategy,
+                message: `Found ${params.foundNotes.length} relevant notes and provided comprehensive answer.`,
+            };
+        },
+    }),
+
     // summarizeNotes: tool({
     //     description:
     //         "Generate an AI-powered intelligent summary with key insights, themes, and action items from the provided notes. Uses advanced AI analysis to identify patterns and extract meaningful information.",
@@ -189,36 +246,4 @@ export const tools: ToolSet = {
     //         }
     //     },
     // }),
-    // Final answer tool for providing structured responses
-    answer: tool({
-        description:
-            "Use this tool to provide a final answer to the user's question. DO NOT take any further actions after this step. This should be your last step.",
-        parameters: z.object({
-            foundNotes: z
-                .array(z.string())
-                .describe(
-                    "Array of note IDs that were found and used to formulate the answer"
-                ),
-            answer: z
-                .string()
-                .describe(
-                    "The comprehensive answer to the user's question based on the retrieved notes"
-                ),
-            searchStrategy: z
-                .string()
-                .optional()
-                .describe(
-                    "Brief description of what search approach was used (e.g., 'semantic search for AI concepts', 'filtered by work context and date')"
-                ),
-        }),
-        execute: async (params) => {
-            return {
-                success: true,
-                foundNoteIds: params.foundNotes,
-                answer: params.answer,
-                searchStrategy: params.searchStrategy,
-                message: `Found ${params.foundNotes.length} relevant notes and provided comprehensive answer.`,
-            };
-        },
-    }),
 };

@@ -5,7 +5,8 @@
  * Note: These tests require authentication and actual data in the database
  */
 
-import { filterNotes, getFilterOptions } from "../app/actions/filter-notes";
+import { filterNotes, getFilterOptions } from "../app/agent_tools/filter-notes";
+import { TodoStatus } from "../store/notesSlice";
 
 // Example usage of the filterNotes function
 export async function testFilterNotes() {
@@ -36,44 +37,71 @@ export async function testFilterNotes() {
         });
         console.log(`Found ${contextNotes.notes.length} work/project notes`);
 
-        // Test 4: Search by content
-        console.log("\nTest 4: Content search");
-        const searchResults = await filterNotes({
-            searchTerm: "react",
-            limit: 5,
-        });
-        console.log(
-            `Found ${searchResults.notes.length} notes containing 'react'`
-        );
-
-        // Test 5: Filter by note type
-        console.log("\nTest 5: AI notes only");
+        // Test 4: Filter by note type
+        console.log("\nTest 4: AI notes only");
         const aiNotes = await filterNotes({
             noteType: "ai-note",
             limit: 5,
         });
         console.log(`Found ${aiNotes.notes.length} AI-generated notes`);
 
-        // Test 6: Complex filter combination
-        console.log("\nTest 6: Complex filter");
+        // Test 5: Filter TODO notes by status
+        console.log("\nTest 5: TODO notes by status");
+        const todoNotes = await filterNotes({
+            noteType: "todo",
+            status: TodoStatus.TODO,
+            limit: 10,
+        });
+        console.log(
+            `Found ${todoNotes.notes.length} TODO notes with status: TODO`
+        );
+
+        // Test 6: Filter by deadline
+        console.log("\nTest 6: Notes with upcoming deadlines");
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+
+        const upcomingDeadlines = await filterNotes({
+            deadlineAfter: today.toISOString(),
+            deadlineBefore: nextWeek.toISOString(),
+            limit: 10,
+        });
+        console.log(
+            `Found ${upcomingDeadlines.notes.length} notes with deadlines in the next week`
+        );
+
+        // Test 7: Filter by specific deadline date
+        console.log("\nTest 7: Notes due today");
+        const todayDateOnly = today.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+        const dueTodayNotes = await filterNotes({
+            deadlineOn: todayDateOnly,
+            limit: 10,
+        });
+        console.log(`Found ${dueTodayNotes.notes.length} notes due today`);
+
+        // Test 8: Complex filter combination with new fields
+        console.log("\nTest 8: Complex filter with new fields");
         const complexFilter = await filterNotes({
             contexts: ["work"],
-            hashtags: ["important"],
-            noteType: "note",
-            searchTerm: "meeting",
+            noteType: "todo",
+            status: TodoStatus.DOING,
             limit: 5,
         });
         console.log(
-            `Found ${complexFilter.notes.length} work notes with #important tag containing 'meeting'`
+            `Found ${complexFilter.notes.length} work TODO notes currently in progress`
         );
 
-        // Test 7: Get filter options
-        console.log("\nTest 7: Available filter options");
+        // Test 9: Get filter options
+        console.log("\nTest 9: Available filter options");
         const options = await getFilterOptions();
         console.log(`Available contexts: ${options.availableContexts.length}`);
         console.log(`Available hashtags: ${options.availableHashtags.length}`);
         console.log(
             `Available note types: ${options.availableNoteTypes.length}`
+        );
+        console.log(
+            `Available statuses (${options.availableStatuses.length}): ${options.availableStatuses.join(", ")}`
         );
     } catch (error) {
         console.error("Test failed:", error);
@@ -117,19 +145,41 @@ export const commonFilterExamples = {
             limit: 20,
         }),
 
-    // Find todos
+    // Find todos with specific status
     todoNotes: () =>
         filterNotes({
             noteType: "todo",
             limit: 20,
         }),
 
-    // Search meeting notes
-    meetingNotes: () =>
+    // Find todos with specific status
+    todoNotesInProgress: () =>
         filterNotes({
-            searchTerm: "meeting",
-            limit: 15,
+            noteType: "todo",
+            status: TodoStatus.DOING,
+            limit: 20,
         }),
+
+    // Find overdue todos
+    overdueTodos: () => {
+        const today = new Date().toISOString();
+        return filterNotes({
+            noteType: "todo",
+            deadlineBefore: today,
+            status: TodoStatus.TODO,
+            limit: 20,
+        });
+    },
+
+    // Find todos due today
+    todosDueToday: () => {
+        const today = new Date().toISOString().split("T")[0];
+        return filterNotes({
+            noteType: "todo",
+            deadlineOn: today,
+            limit: 20,
+        });
+    },
 
     // Find AI-generated content
     aiGeneratedNotes: () =>
@@ -157,12 +207,15 @@ export function formatFilterResults(
         filters.push(`before ${appliedFilters.createdBefore}`);
     if (appliedFilters.contexts)
         filters.push(`contexts: ${appliedFilters.contexts.join(", ")}`);
-    if (appliedFilters.hashtags)
-        filters.push(`hashtags: ${appliedFilters.hashtags.join(", ")}`);
     if (appliedFilters.noteType)
         filters.push(`type: ${appliedFilters.noteType}`);
-    if (appliedFilters.searchTerm)
-        filters.push(`containing: "${appliedFilters.searchTerm}"`);
+    if (appliedFilters.deadlineAfter)
+        filters.push(`deadline after: ${appliedFilters.deadlineAfter}`);
+    if (appliedFilters.deadlineBefore)
+        filters.push(`deadline before: ${appliedFilters.deadlineBefore}`);
+    if (appliedFilters.deadlineOn)
+        filters.push(`deadline on: ${appliedFilters.deadlineOn}`);
+    if (appliedFilters.status) filters.push(`status: ${appliedFilters.status}`);
 
     if (filters.length > 0) {
         summary += `\nFilters applied: ${filters.join(", ")}`;
@@ -179,6 +232,10 @@ export function formatFilterResults(
             contexts: note.contexts || [],
             tags: note.tags || [],
             type: note.note_type || "note",
+            deadline: note.deadline
+                ? new Date(note.deadline).toLocaleDateString()
+                : null,
+            status: note.status || null,
         })),
     };
 }

@@ -108,6 +108,7 @@ Current migration files:
 - `20250618120000_create_get_user_context_stats_function.sql` - User context stats function
 - `20250619100000_add_embedding_to_notes.sql` - Add embedding support
 - `20250619130000_add_suggested_contexts_to_notes.sql` - Add suggested contexts
+- `20250701000000_add_todo_fields_to_notes.sql` - Add deadline and status for TODOs
 
 ## Troubleshooting
 

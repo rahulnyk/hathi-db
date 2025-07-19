@@ -9,6 +9,7 @@ import { NoteCard } from "@/components/journal/note_card/notes-card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotebookText } from "lucide-react";
+import { TodoNoteCard } from "@/components/journal/note_card/todo-note-card";
 // Search Results Component
 export function SearchResultsRenderer({
     result,
@@ -90,13 +91,17 @@ export function SearchResultsRenderer({
                         <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
                             {result.notes.map((note: SearchResultNote) => (
                                 <div key={note.id} className="relative">
-                                    <NoteCard note={note} disableCardHeader />
-                                    {/* {note.similarity && (
-                                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 text-xs bg-blue-100 dark:bg-blue-900/50 px-1 sm:px-2 py-1 rounded">
-                                            {(note.similarity * 100).toFixed(0)}
-                                            % match
-                                        </div>
-                                    )} */}
+                                    {note.note_type === "todo" ? (
+                                        <TodoNoteCard
+                                            note={note}
+                                            disableCardHeader
+                                        />
+                                    ) : (
+                                        <NoteCard
+                                            note={note}
+                                            disableCardHeader
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
