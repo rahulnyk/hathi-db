@@ -115,15 +115,12 @@ export const addNote = createAsyncThunk(
         { rejectWithValue, dispatch }
     ) => {
         try {
-            // Use the note type that was already determined in the editor
             const finalNoteType = noteData.note_type || "note";
             let deadline: string | null = null;
             let status: TodoStatus | null = null;
 
             if (finalNoteType === "todo") {
                 status = TodoStatus.TODO;
-                // Placeholder for AI deadline extraction - will be implemented in Step 4
-                // For now, this call won't do anything until extractDeadlineFromContent is implemented
                 try {
                     const extractedDeadline = await extractDeadlineFromContent({
                         content: noteData.content,

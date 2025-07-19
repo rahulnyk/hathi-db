@@ -29,7 +29,7 @@ DATE EXTRACTION RULES:
 2. Convert relative dates to absolute dates based on today's date: ${
         new Date().toISOString().split("T")[0]
     }
-3. Handle relative terms: "tomorrow", "next Monday", "in 3 days", "end of week", "next month"
+3. Handle relative terms: "tomorrow", "next Monday", "in 3 days", "end of week", "next month", "this week"
 4. If no specific deadline is mentioned or it's too vague (e.g., "soon", "later", "eventually"), return "null"
 
 EXAMPLES OF CORRECT RESPONSES:

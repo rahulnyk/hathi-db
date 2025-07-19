@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
 import { measureExecutionTime } from "@/lib/performance";
 import { getAuthUser } from "@/app/actions/get-auth-user";
-
+import { TodoStatus } from "@/store/notesSlice";
 /**
  * Adds a new note to the database.
  *
@@ -236,7 +236,13 @@ export async function patchNote({
     patches: Partial<
         Pick<
             Note,
-            "content" | "contexts" | "tags" | "suggested_contexts" | "note_type" | "deadline" | "status"
+            | "content"
+            | "contexts"
+            | "tags"
+            | "suggested_contexts"
+            | "note_type"
+            | "deadline"
+            | "status"
         >
     > & {
         embedding?: number[];
