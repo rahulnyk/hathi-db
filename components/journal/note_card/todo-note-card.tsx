@@ -101,17 +101,15 @@ export function TodoNoteCard({
         }
     };
 
+    const CARD_STYLES: Record<TodoStatus | "default", string> = {
+        [TodoStatus.TODO]: "bg-slate-50 dark:bg-gray-800",
+        [TodoStatus.DOING]: "bg-blue-50 dark:bg-blue-900/10",
+        [TodoStatus.DONE]: "bg-green-50 dark:bg-green-900/10",
+        default: "bg-white dark:bg-gray-800",
+    };
+
     const getCardStyle = (status: TodoStatus) => {
-        switch (status) {
-            case TodoStatus.TODO:
-                return "bg-slate-50 dark:bg-gray-800";
-            case TodoStatus.DOING:
-                return "bg-blue-50 dark:bg-blue-900/10";
-            case TodoStatus.DONE:
-                return "bg-green-50 dark:bg-green-900/10";
-            default:
-                return "bg-white dark:bg-gray-800";
-        }
+        return CARD_STYLES[status] || CARD_STYLES.default;
     };
 
     const getNextStatus = (status: TodoStatus): TodoStatus => {
