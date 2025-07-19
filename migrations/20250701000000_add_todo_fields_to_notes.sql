@@ -1,5 +1,5 @@
 -- Migration: Add deadline and status to notes table for TODO functionality
--- Created: 2025-07-01
+-- Created: 2023-10-01
 
 DO $$
 BEGIN
