@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { setCurrentContext } from "@/store/notesSlice";
 import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { dateToSlug } from "@/lib/utils";
 

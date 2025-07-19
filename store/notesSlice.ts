@@ -125,12 +125,17 @@ export const addNote = createAsyncThunk(
                 // Placeholder for AI deadline extraction - will be implemented in Step 4
                 // For now, this call won't do anything until extractDeadlineFromContent is implemented
                 try {
-                    const extractedDeadline = await extractDeadlineFromContent({ content: noteData.content });
+                    const extractedDeadline = await extractDeadlineFromContent({
+                        content: noteData.content,
+                    });
                     if (extractedDeadline) {
                         deadline = extractedDeadline;
                     }
                 } catch (e) {
-                    console.warn("AI deadline extraction failed or not yet implemented:", e);
+                    console.warn(
+                        "AI deadline extraction failed or not yet implemented:",
+                        e
+                    );
                 }
             }
 
@@ -301,7 +306,12 @@ const notesSlice = createSlice({
             state,
             action: PayloadAction<{
                 noteId: string;
-                patches: Partial<Pick<Note, "content" | "contexts" | "tags" | "deadline" | "status">>;
+                patches: Partial<
+                    Pick<
+                        Note,
+                        "content" | "contexts" | "tags" | "deadline" | "status"
+                    >
+                >;
             }>
         ) => {
             const { noteId, patches } = action.payload;
