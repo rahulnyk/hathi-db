@@ -30,7 +30,7 @@ export async function addNote({
     tags?: string[];
     note_type?: NoteType;
     deadline?: string | null;
-    status?: string | null; // Storing as string in DB, matching TodoStatus enum values
+    status?: TodoStatus | null; // Using TodoStatus enum for type safety, stored as string in DB
 }): Promise<Note> {
     return measureExecutionTime("addNote", async () => {
         const supabase = await createClient();
