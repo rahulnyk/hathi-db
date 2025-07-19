@@ -27,7 +27,7 @@ export function NotesPanelHeader() {
     return (
         <div
             className={cn(
-                "w-full sticky top-0 z-10 py-1",
+                "w-full sticky top-0 z-10 py-2",
                 "bg-background",
                 "h-14 rounded-b-xl" // Set height
             )}
@@ -70,28 +70,27 @@ export function NotesPanelHeader() {
                 )}
 
                 {/* Toggle switch between Notes and Assistant */}
-                <div
+                <button
                     className={cn(
-                        "relative flex items-center p-1 rounded-lg cursor-pointer transition-all duration-300",
-                        "bg-zinc-300 dark:bg-zinc-500 border border-zinc-300 dark:border-zinc-700",
-                        "w-16 h-4"
+                        "relative flex items-center cursor-pointer transition-all duration-300",
+                        "border border-zinc-300 dark:border-zinc-700",
+                        "w-16 h-7 p-0.5 bg-zinc-200 dark:bg-zinc-800",
+                        "rounded-md" // Changed from rounded-full to rounded-md for square-rounded look
                     )}
                     onClick={handleToggleChatMode}
                     title={chatMode ? "Switch to Notes" : "Switch to Assistant"}
+                    type="button"
                 >
-                    {/* Background track */}
-                    <div
-                        className={cn(
-                            "absolute inset-1 rounded-md transition-all duration-300 bg-background"
-                        )}
-                    />
-
                     {/* Sliding toggle */}
                     <div
                         className={cn(
-                            "relative z-10 flex items-center justify-center w-7 h-7 rounded-md transition-all duration-300 shadow-sm",
-                            "transform bg-blue-600 text-white",
-                            chatMode ? "translate-x-8" : "translate-x-0"
+                            "absolute left-0.5 flex items-center justify-center transition-transform duration-500",
+                            "w-6 h-6 shadow-sm",
+                            "bg-blue-600 text-white",
+                            "rounded-sm", // Changed from rounded-full to rounded-sm
+                            chatMode
+                                ? "transform translate-x-8" // Translate to the right in chat mode
+                                : "transform translate-x-0" // Stay at original position in notes mode
                         )}
                     >
                         {chatMode ? (
@@ -101,26 +100,27 @@ export function NotesPanelHeader() {
                         )}
                     </div>
 
-                    {/* Labels */}
-                    <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
-                        <span
-                            className={cn(
-                                "text-xs font-medium transition-opacity duration-300 text-blue-800",
-                                !chatMode ? "opacity-100" : "opacity-40"
-                            )}
-                        >
-                            {/* Notes label - hidden to save space */}
-                        </span>
-                        <span
-                            className={cn(
-                                "text-xs font-medium transition-opacity duration-300 text-blue-800",
-                                chatMode ? "opacity-100" : "opacity-40"
-                            )}
-                        >
-                            {/* AI label - hidden to save space */}
-                        </span>
-                    </div>
-                </div>
+                    {/* Indicator icons (optional) */}
+                    <span
+                        className={cn(
+                            "absolute left-1 transition-opacity duration-300",
+                            chatMode ? "opacity-0" : "opacity-0"
+                        )}
+                    >
+                        <NotebookPen size={14} className="text-zinc-400" />
+                    </span>
+                    <span
+                        className={cn(
+                            "absolute right-1 transition-opacity duration-300",
+                            chatMode ? "opacity-0" : "opacity-0"
+                        )}
+                    >
+                        <LucideMessageCircleQuestion
+                            size={14}
+                            className="text-zinc-400"
+                        />
+                    </span>
+                </button>
             </div>
             {/* Removed Calendar menu div */}
         </div>

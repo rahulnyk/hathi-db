@@ -19,6 +19,9 @@ import { CalendarIcon, Circle, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { useRef } from "react";
 import { setEditingNoteId } from "@/store/uiSlice";
+import { cleanTodoContent } from "@/lib/note-type-utils";
+import remarkContextPlugin from "@/lib/remark_context_plugin";
+import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 
 export interface TodoNoteCardProps {
     note: Note;
@@ -152,11 +155,7 @@ export function TodoNoteCard({
         lastTouchTime.current = currentTime;
     };
 
-    const displayContent = note.content.toLowerCase().startsWith("todo ")
-        ? note.content.substring(5)
-        : note.content.toLowerCase().startsWith("todo")
-        ? note.content.substring(4)
-        : note.content;
+    const displayContent = cleanTodoContent(note.content);
 
     return (
         <div
@@ -174,7 +173,7 @@ export function TodoNoteCard({
             {!disableCardHeader && !isNoteEditing && (
                 <CardHeader
                     note={note}
-                    showDeleteButton={false}
+                    showDeleteButton={true}
                     showStructurizeButton={false}
                 />
             )}
@@ -208,7 +207,13 @@ export function TodoNoteCard({
                                 )}
                                 title="Double-click to edit"
                             >
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                <ReactMarkdown
+                                    remarkPlugins={[
+                                        remarkGfm,
+                                        remarkContextPlugin,
+                                        remarkHashtagPlugin,
+                                    ]}
+                                >
                                     {displayContent}
                                 </ReactMarkdown>
                             </div>
