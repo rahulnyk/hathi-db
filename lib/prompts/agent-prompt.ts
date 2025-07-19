@@ -28,7 +28,7 @@ TODAY: ${currentDateString}
 
 # IMPORTANT GUIDELINES:
 - *DO NOT use the same tool more than once*, unless absolutely necessary.
-- *DO NOT repeadedly use the same tool* to search for the same information.
+- *DO NOT repeatedly use the same tool* to search for the same information.
 - *DO NOT Repeat your steps* or actions.
 
 # SEARCH STRATEGY GUIDANCE:
