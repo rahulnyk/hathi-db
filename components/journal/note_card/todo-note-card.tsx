@@ -63,12 +63,19 @@ export function TodoNoteCard({
 
     const handleDeadlineChange = (newDate: Date | undefined) => {
         setIsDatePickerOpen(false);
-        if (newDate && newDate.toISOString() !== note.deadline) {
-            const isoDate = newDate.toISOString();
+        
+        // Avoid unnecessary API calls if there's no actual change
+        const currentDeadline = note.deadline ? new Date(note.deadline).toISOString() : null;
+        const newDeadline = newDate ? newDate.toISOString() : null;
+        if (currentDeadline === newDeadline) {
+            return;
+        }
+        
+        if (newDate) {
             dispatch(
-                patchNote({ noteId: note.id, patches: { deadline: isoDate } })
+                patchNote({ noteId: note.id, patches: { deadline: newDate.toISOString() } })
             );
-        } else if (!newDate && note.deadline) {
+        } else {
             dispatch(
                 patchNote({ noteId: note.id, patches: { deadline: null } })
             );
