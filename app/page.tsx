@@ -107,11 +107,11 @@ export default function Home() {
                         </div>
                         <div className="rounded-lg overflow-hidden shadow-xl bg-background">
                             {/* Placeholder for app screenshot - replace with your actual app screenshot */}
-                            <div className="aspect-video bg-gradient-to-br from-primary/5 to-primary/30 w-full h-full flex items-center justify-center">
-                                <p className="text-center text-muted-foreground">
-                                    App interface visualization
-                                </p>
-                            </div>
+                            <img
+                                src="/screenshot.jpg"
+                                alt="Hathi app interface preview"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     </div>
                 </div>
