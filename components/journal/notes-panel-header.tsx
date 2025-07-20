@@ -5,10 +5,10 @@ import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatc
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Home, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
 import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
-import { useRouter } from "next/navigation";
+import { useContextNavigation } from "@/lib/context-navigation";
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
-    const router = useRouter();
+    const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
     const { chatMode, isNavigatingToContext } = useAppSelector(
         (state) => state.ui
@@ -18,8 +18,8 @@ export function NotesPanelHeader() {
     const showHomeButton = currentContext !== todaysDateSlug;
 
     const handleGoToToday = () => {
-        // Navigate to today's date instead of just updating Redux
-        router.push(`/journal/${todaysDateSlug}`);
+        // Use context navigation hook to properly exit chat mode and navigate to today
+        navigateToContext(todaysDateSlug);
     };
 
     const handleToggleChatMode = () => {

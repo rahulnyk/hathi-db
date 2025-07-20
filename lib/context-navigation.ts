@@ -4,29 +4,30 @@ import { setChatMode, setIsNavigatingToContext } from "@/store/uiSlice";
 import { useCallback } from "react";
 
 /**
- * Custom hook for handling context navigation from chat
+ * Custom hook for handling navigation from chat mode to journal views
  * Preserves chat history and search results while switching to thread view
+ * Works for both context navigation and date navigation
  */
 export function useContextNavigation() {
     const router = useRouter();
     const dispatch = useAppDispatch();
 
     const navigateToContext = useCallback(
-        async (contextSlug: string) => {
+        async (journalRoute: string) => {
             try {
                 // Set loading state
                 dispatch(setIsNavigatingToContext(true));
 
-                // Switch to thread mode to show the context
+                // Switch to thread mode to show the journal view
                 dispatch(setChatMode(false));
 
-                // Navigate to the context URL
-                router.push(`/journal/${contextSlug}`);
+                // Navigate to the journal URL (can be context or date)
+                router.push(`/journal/${journalRoute}`);
 
                 // Note: We don't clear search results or chat history
                 // They will be preserved in Redux state
             } catch (error) {
-                console.error("Error navigating to context:", error);
+                console.error("Error navigating to journal:", error);
             } finally {
                 // Reset loading state after a brief delay to account for navigation
                 setTimeout(() => {
