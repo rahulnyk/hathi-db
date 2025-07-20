@@ -98,15 +98,16 @@ export function Thread() {
                                             Organize with Contexts
                                         </p>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Use{" "}
+                                            Convert any word or phrase into a
+                                            context like{" "}
                                             <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
                                                 [[work]]
                                             </code>{" "}
                                             or{" "}
                                             <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
-                                                [[project]]
+                                                [[Project Awesome]]
                                             </code>{" "}
-                                            to categorize your thoughts
+                                            to categorize your notes.
                                         </p>
                                     </div>
                                 </div>
@@ -120,10 +121,16 @@ export function Thread() {
                                             Smart Todos
                                         </p>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Just mention &quot;todo&quot;,
-                                            &quot;task&quot;, or &quot;remind
-                                            me&quot; and we&apos;ll create tasks
-                                            automatically
+                                            Just start a note with
+                                            &quot;todo&quot;, &quot;task&quot;,
+                                            or &quot;remind me&quot; and Hathi
+                                            will create tasks automatically.
+                                            Mention
+                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
+                                                today, tomorrow, next week
+                                            </code>
+                                            , etc. to automatically set due
+                                            dates.
                                         </p>
                                     </div>
                                 </div>
@@ -134,7 +141,7 @@ export function Thread() {
                                     <div className="text-lg">🎨</div>
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium text-foreground/70">
-                                            Rich Formatting
+                                            Format your notes with Markdown
                                         </p>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
                                             Style with{" "}
