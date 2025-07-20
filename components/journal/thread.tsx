@@ -120,8 +120,9 @@ export function Thread() {
                                             Smart Todos
                                         </p>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Just mention &quot;todo&quot;, &quot;task&quot;, or
-                                            &quot;remind me&quot; and we&apos;ll create tasks
+                                            Just mention &quot;todo&quot;,
+                                            &quot;task&quot;, or &quot;remind
+                                            me&quot; and we&apos;ll create tasks
                                             automatically
                                         </p>
                                     </div>
