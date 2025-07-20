@@ -1,0 +1,9 @@
+{
+    "regions": ["bom1"],
+    "functions": {
+        "app/api/**": {
+            "regions": ["bom1"]
+        }
+    },
+    "cleanUrls": true
+}
