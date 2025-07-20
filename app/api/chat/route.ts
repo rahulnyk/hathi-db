@@ -8,9 +8,10 @@ export const maxDuration = 50;
 
 export async function POST(req: Request) {
     try {
-        const { messages } = await req.json();
+        const { messages, id } = await req.json();
 
         console.log("Received messages:", messages?.length);
+        console.log("Chat ID:", id);
         console.log("Google API Key present:", !!process.env.GOOGLE_AI_API_KEY);
 
         const result = streamText({

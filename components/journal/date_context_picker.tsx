@@ -2,10 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { dateToSlug } from "@/lib/utils";
+import { useContextNavigation } from "@/lib/context-navigation";
 
 interface DateContextPickerProps {
     isOpen: boolean;
@@ -21,16 +21,16 @@ export function DateContextPicker({
     );
     const selectedDate = new Date(selectedDateString); // Convert string back to Date
     const dispatch = useAppDispatch();
-    const router = useRouter();
+    const { navigateToContext } = useContextNavigation();
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
             // Update the date picker state in Redux (convert Date to string)
             dispatch(setDatePickerSelectedDate(date.toISOString()));
 
-            // Navigate to the date context URL instead of just updating Redux
+            // Use context navigation hook to properly exit chat mode and navigate to date
             const dateSlug = dateToSlug(date);
-            router.push(`/journal/${dateSlug}`);
+            navigateToContext(dateSlug);
 
             if (onDateChangeHook) {
                 // Call the hook
