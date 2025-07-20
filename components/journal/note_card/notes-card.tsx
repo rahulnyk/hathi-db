@@ -12,7 +12,7 @@ import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef } from "react";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useContextNavigation } from "@/lib/context-navigation";
 import {
     generateSuggestedContexts,
     structurizeNoteThunk,
@@ -36,7 +36,7 @@ export function NoteCard({
     disableCardHeader = false,
 }: NoteCardProps) {
     const dispatch = useAppDispatch();
-    const router = useRouter();
+    const { navigateToContext } = useContextNavigation();
     const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
 
     // Check if there's a version of this note in the Redux store
@@ -115,8 +115,8 @@ export function NoteCard({
                     target.textContent ||
                     "";
                 const context = sentenceCaseToSlug(content);
-                // Navigate to the context URL instead of just updating Redux
-                router.push(`/journal/${context}`);
+                // Use the context navigation hook to preserve chat state
+                navigateToContext(context);
                 console.log("Context clicked:", context);
             }
 
@@ -131,7 +131,7 @@ export function NoteCard({
 
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
-    }, [dispatch, router]);
+    }, [navigateToContext]); // Only navigateToContext is actually used
 
     const textSizeClass = {
         normal: "text-base",

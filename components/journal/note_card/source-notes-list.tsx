@@ -31,6 +31,13 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
         return aiAnswerDetails?.relevantSources || [];
     }, [aiAnswerDetails?.relevantSources]);
 
+    // Memoize relevant notes from state to prevent unnecessary effect runs
+    const relevantNotesFromState = useMemo(() => {
+        return sourceNoteIds
+            .map((id) => notesInState.find((note) => note.id === id))
+            .filter((note): note is Note => note !== undefined);
+    }, [sourceNoteIds, notesInState]);
+
     // Effect to fetch missing source notes
     useEffect(() => {
         if (sourceNoteIds.length === 0) {
@@ -38,24 +45,19 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
             return;
         }
 
-        // Find notes that are already in Redux state
-        const notesFromState = sourceNoteIds
-            .map((id) => notesInState.find((note) => note.id === id))
-            .filter((note): note is Note => note !== undefined);
-
         // Find missing note IDs
         const missingNoteIds = sourceNoteIds.filter(
-            (id) => !notesInState.find((note) => note.id === id)
+            (id) => !relevantNotesFromState.find((note) => note.id === id)
         );
 
         if (missingNoteIds.length === 0) {
             // All notes are already in state
-            setSourceNotes(notesFromState);
+            setSourceNotes(relevantNotesFromState);
             return;
         }
 
         // Set notes from state immediately, then fetch missing ones
-        setSourceNotes(notesFromState);
+        setSourceNotes(relevantNotesFromState);
 
         // Fetch missing notes
         const fetchMissingNotes = async () => {
@@ -64,7 +66,10 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
                 const fetchedNotes = await fetchNotesByIds(missingNoteIds);
 
                 // Combine notes from state with fetched notes
-                const allSourceNotes = [...notesFromState, ...fetchedNotes];
+                const allSourceNotes = [
+                    ...relevantNotesFromState,
+                    ...fetchedNotes,
+                ];
 
                 // Sort by original order in sourceNoteIds
                 const sortedNotes = sourceNoteIds
@@ -75,14 +80,14 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
             } catch (error) {
                 console.error("Error fetching source notes:", error);
                 // Fallback to notes from state only
-                setSourceNotes(notesFromState);
+                setSourceNotes(relevantNotesFromState);
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchMissingNotes();
-    }, [sourceNoteIds, notesInState]);
+    }, [sourceNoteIds, notesInState.map((note) => note.id).join(",")]); // Depends on sourceNoteIds and note IDs in state for stability
 
     // Don't render if no sources
     if (sourceNoteIds.length === 0) {

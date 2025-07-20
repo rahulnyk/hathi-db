@@ -6,9 +6,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkContextPlugin from "@/lib/remark_context_plugin";
 import remarkHashtagPlugin from "@/lib/remark_hashtag_plugin";
-import { useAppDispatch } from "@/store";
-import { setCurrentContext } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
+import { useContextNavigation } from "@/lib/context-navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { DeleteNoteButton } from "./delete-note-button";
@@ -24,7 +23,7 @@ interface AiNoteCardProps {
 
 export function AiNoteCard({ note }: AiNoteCardProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const dispatch = useAppDispatch();
+    const { navigateToContext } = useContextNavigation();
 
     const toggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
@@ -45,7 +44,8 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
                     target.textContent ||
                     "";
                 const context = sentenceCaseToSlug(content);
-                dispatch(setCurrentContext(context));
+                // Use the context navigation hook to preserve chat state
+                navigateToContext(context);
                 console.log("Context clicked:", context);
             }
 
@@ -60,7 +60,7 @@ export function AiNoteCard({ note }: AiNoteCardProps) {
 
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
-    }, [dispatch]);
+    }, [navigateToContext]); // Only navigateToContext is actually used
 
     return (
         <div
