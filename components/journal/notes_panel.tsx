@@ -4,17 +4,60 @@ import { Thread } from "./thread";
 import { InputPanel } from "./input_panel";
 import { AssistantPanel } from "./assistant-panel";
 import { NotesPanelHeader } from "./notes-panel-header";
-import { useAppSelector } from "@/store";
+import { useAppSelector, useAppDispatch } from "@/store";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
+import { useEffect } from "react";
+import {
+    uiMessagesToStoredMessages,
+    storedMessagesToUIMessages,
+} from "@/lib/chat-message-utils";
+import {
+    initializeChat,
+    setMessages,
+    selectChatId,
+    selectChatMessages,
+    selectIsChatInitialized,
+} from "@/store/chatSlice";
+import { UIMessage } from "ai";
 
 export function NotesPanel() {
+    const dispatch = useAppDispatch();
     const chatMode = useAppSelector((state) => state.ui.chatMode);
 
-    // Create chat hook for assistant mode
+    // Redux chat state
+    const chatId = useAppSelector(selectChatId);
+    const storedMessages = useAppSelector(selectChatMessages);
+    const isChatInitialized = useAppSelector(selectIsChatInitialized);
+
+    // Convert stored messages to UIMessage format for useChat
+    const initialMessages: UIMessage[] =
+        storedMessagesToUIMessages(storedMessages);
+
+    // Create chat hook for assistant mode with persistence
     const chatHook = useChat({
         api: "/api/chat",
+        id: chatId || undefined,
+        initialMessages,
+        sendExtraMessageFields: true,
     });
+
+    // Initialize chat on first render
+    useEffect(() => {
+        if (!isChatInitialized) {
+            dispatch(initializeChat());
+        }
+    }, [dispatch, isChatInitialized]);
+
+    // Sync messages from useChat to Redux store
+    useEffect(() => {
+        if (chatHook.messages.length > 0) {
+            const messagesToStore = uiMessagesToStoredMessages(
+                chatHook.messages
+            );
+            dispatch(setMessages(messagesToStore));
+        }
+    }, [chatHook.messages, dispatch]);
 
     return (
         <div

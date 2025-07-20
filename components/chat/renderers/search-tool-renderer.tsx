@@ -1,9 +1,6 @@
 import React, { useEffect } from "react";
 import { useAppDispatch } from "@/store";
-import {
-    addSearchResultNotes,
-    clearSearchResultNotes,
-} from "@/store/notesSlice";
+import { addSearchResultNotes } from "@/store/notesSlice";
 import { SearchToolResponse, SearchResultNote } from "@/app/agent_tools/types";
 import { NoteCard } from "@/components/journal/note_card/notes-card";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -29,11 +26,9 @@ export function SearchResultsRenderer({
         }));
         dispatch(addSearchResultNotes(tempNotes));
 
-        // Cleanup function to remove these specific search result notes when component unmounts
-        return () => {
-            const noteIds = tempNotes.map((note) => note.id);
-            dispatch(clearSearchResultNotes(noteIds));
-        };
+        // Note: We no longer automatically cleanup search results on unmount
+        // This allows them to persist when navigating to contexts from chat
+        // They will be cleaned up when chat is explicitly cleared or reset
     }, [result.notes, dispatch]);
 
     if (!result.success) {

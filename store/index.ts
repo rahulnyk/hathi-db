@@ -5,6 +5,7 @@ import uiReducer from "./uiSlice";
 import notesMetadataReducer from "./notesMetadataSlice";
 import aiReducer from "./aiSlice";
 import agentReducer from "./agentSlice";
+import chatReducer from "./chatSlice";
 import { notesMiddleware } from "./middleware/notesMiddleware";
 
 export const store = configureStore({
@@ -14,6 +15,7 @@ export const store = configureStore({
         notesMetadata: notesMetadataReducer,
         ai: aiReducer,
         agent: agentReducer,
+        chat: chatReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().prepend(notesMiddleware.middleware),
