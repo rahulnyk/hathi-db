@@ -3,21 +3,23 @@
 import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
-import { Target, Home, NotebookPen } from "lucide-react"; // Added NotebookPen icon
+import { Target, Home, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
 import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
-import { useRouter } from "next/navigation";
+import { useContextNavigation } from "@/lib/context-navigation";
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
-    const router = useRouter();
+    const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
-    const { chatMode } = useAppSelector((state) => state.ui);
+    const { chatMode, isNavigatingToContext } = useAppSelector(
+        (state) => state.ui
+    );
     const todaysDateSlug = dateToSlug(new Date());
 
     const showHomeButton = currentContext !== todaysDateSlug;
 
     const handleGoToToday = () => {
-        // Navigate to today's date instead of just updating Redux
-        router.push(`/journal/${todaysDateSlug}`);
+        // Use context navigation hook to properly exit chat mode and navigate to today
+        navigateToContext(todaysDateSlug);
     };
 
     const handleToggleChatMode = () => {
@@ -93,7 +95,9 @@ export function NotesPanelHeader() {
                                 : "transform translate-x-0" // Stay at original position in notes mode
                         )}
                     >
-                        {chatMode ? (
+                        {isNavigatingToContext ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : chatMode ? (
                             <LucideMessageCircleQuestion size={16} />
                         ) : (
                             <NotebookPen size={16} />
