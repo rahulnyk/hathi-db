@@ -38,6 +38,11 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
             .filter((note): note is Note => note !== undefined);
     }, [sourceNoteIds, notesInState]);
 
+    // Memoize note IDs for stable dependency
+    const noteIdsInState = useMemo(() => {
+        return notesInState.map((note) => note.id).join(",");
+    }, [notesInState]);
+
     // Effect to fetch missing source notes
     useEffect(() => {
         if (sourceNoteIds.length === 0) {
@@ -87,7 +92,7 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
         };
 
         fetchMissingNotes();
-    }, [sourceNoteIds, notesInState.map((note) => note.id).join(",")]); // Depends on sourceNoteIds and note IDs in state for stability
+    }, [sourceNoteIds, noteIdsInState, relevantNotesFromState]); // Added relevantNotesFromState and extracted noteIdsInState
 
     // Don't render if no sources
     if (sourceNoteIds.length === 0) {

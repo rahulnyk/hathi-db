@@ -64,14 +64,111 @@ export function Thread() {
         >
             {reversedNotes.length === 0 ? (
                 <div className="flex-grow flex items-center justify-center h-full">
-                    <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">
-                        Write your first note above!
+                    <div className="max-w-md mx-auto space-y-8 opacity-70">
+                        {/* Help Cards */}
+                        <div className="space-y-4">
+                            <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="text-lg">🚀</div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-foreground/70">
+                                            Quick Commands
+                                        </p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Type{" "}
+                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
+                                                qq
+                                            </code>{" "}
+                                            for assistant mode{" "}
+                                            <span className="mx-1">or</span>
+                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
+                                                nn
+                                            </code>{" "}
+                                            for notes mode.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="text-lg">🏷️</div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-foreground/70">
+                                            Organize with Contexts
+                                        </p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Use{" "}
+                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
+                                                [[work]]
+                                            </code>{" "}
+                                            or{" "}
+                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
+                                                [[project]]
+                                            </code>{" "}
+                                            to categorize your thoughts
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="text-lg">✅</div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-foreground/70">
+                                            Smart Todos
+                                        </p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Just mention &quot;todo&quot;, &quot;task&quot;, or
+                                            &quot;remind me&quot; and we&apos;ll create tasks
+                                            automatically
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="text-lg">🎨</div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-foreground/70">
+                                            Rich Formatting
+                                        </p>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Style with{" "}
+                                            <strong className="text-foreground/60">
+                                                **bold**
+                                            </strong>
+                                            ,{" "}
+                                            <em className="text-foreground/60">
+                                                *italic*
+                                            </em>
+                                            ,{" "}
+                                            <code className="bg-primary/10 text-primary px-1 py-0.5 rounded text-xs font-mono">
+                                                `code`
+                                            </code>
+                                            ,{" "}
+                                            <span className="text-foreground/60 font-semibold">
+                                                # headings
+                                            </span>
+                                            , and{" "}
+                                            <span className="text-foreground/60">
+                                                - bullet lists
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
                     {reversedNotes.map((note) => {
-                        const cardKey = `${note.id}-${note.isSearchResult || 'default'}`;
+                        const cardKey = `${note.id}-${
+                            note.isSearchResult || "default"
+                        }`;
                         if (note.note_type === "ai-note") {
                             return <AiNoteCard key={cardKey} note={note} />;
                         } else if (note.note_type === "todo") {

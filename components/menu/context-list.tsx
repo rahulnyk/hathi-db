@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
 // import { setCurrentContext } from "@/store/notesSlice";
@@ -10,6 +9,7 @@ import { ContextStatParams } from "@/app/actions/contexts";
 import { cn, slugToSentenceCase } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useContextNavigation } from "@/lib/context-navigation";
 
 interface ContextListProps {
     onCloseMenu: () => void;
@@ -18,7 +18,7 @@ interface ContextListProps {
 
 export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     const dispatch = useAppDispatch();
-    const router = useRouter();
+    const { navigateToContext } = useContextNavigation();
     const { contexts, status, hasMore, isLoadingMore } = useAppSelector(
         (state) => state.notesMetadata
     );
@@ -38,8 +38,8 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         if (deviceType === "mobile") {
             onCloseMenu();
         }
-        // Navigate to the context URL, which will update Redux state through the useEffect in JournalComponent
-        router.push(`/journal/${contextSlug}`);
+        // Use the context navigation hook to properly exit chat mode and preserve chat history
+        navigateToContext(contextSlug);
     };
 
     const handleLoadMore = useCallback(() => {
