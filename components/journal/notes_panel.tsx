@@ -34,7 +34,9 @@ export function NotesPanel() {
     const initialMessages: UIMessage[] =
         storedMessagesToUIMessages(storedMessages);
 
-    // Create chat hook for assistant mode with persistence
+    // Create chat hook for assistant mode with persistence:
+    // - `id` is used to identify the chat session for persistence.
+    // - `initialMessages` initializes the chat with stored messages.
     const chatHook = useChat({
         api: "/api/chat",
         id: chatId || undefined,
