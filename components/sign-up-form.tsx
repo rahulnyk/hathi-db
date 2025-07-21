@@ -41,9 +41,10 @@ export function SignUpForm({
 
         try {
             // Get the correct base URL for redirects
-            const baseUrl = process.env.NODE_ENV === 'production' 
-                ? process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-                : window.location.origin;
+            const baseUrl =
+                process.env.NODE_ENV === "production"
+                    ? process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+                    : window.location.origin;
 
             const { error } = await supabase.auth.signUp({
                 email,
