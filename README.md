@@ -200,7 +200,10 @@ Ensure these environment variables are set in your production environment:
 NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
 GOOGLE_AI_API_KEY=your-google-ai-api-key
+NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
 ```
+
+> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper email confirmation and password reset redirects in production. Without this, users may receive emails with localhost URLs instead of your production domain.
 
 ### Database Setup for Production
 
