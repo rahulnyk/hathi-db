@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Note, TodoStatus, patchNote } from "@/store/notesSlice";
+import { Note, TodoStatus, updateNoteOptimistically } from "@/store/notesSlice";
 import { useAppDispatch, useAppSelector } from "@/store";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -73,18 +73,15 @@ export function TodoNoteCard({
             return;
         }
 
-        if (newDate) {
-            dispatch(
-                patchNote({
-                    noteId: note.id,
-                    patches: { deadline: newDate.toISOString() },
-                })
-            );
-        } else {
-            dispatch(
-                patchNote({ noteId: note.id, patches: { deadline: null } })
-            );
-        }
+        const deadlineValue = newDate ? newDate.toISOString() : null;
+
+        // Use optimistic update - middleware will handle persistence automatically
+        dispatch(
+            updateNoteOptimistically({
+                noteId: note.id,
+                patches: { deadline: deadlineValue },
+            })
+        );
     };
 
     const getStatusIcon = (status: TodoStatus) => {
@@ -140,8 +137,13 @@ export function TodoNoteCard({
 
     const handleStatusChange = () => {
         const nextStatus = getNextStatus(currentStatus);
+
+        // Use optimistic update - middleware will handle persistence automatically
         dispatch(
-            patchNote({ noteId: note.id, patches: { status: nextStatus } })
+            updateNoteOptimistically({
+                noteId: note.id,
+                patches: { status: nextStatus },
+            })
         );
     };
 

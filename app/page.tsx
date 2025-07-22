@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
     ArrowRight,
@@ -107,9 +108,11 @@ export default function Home() {
                         </div>
                         <div className="rounded-lg overflow-hidden shadow-xl bg-background">
                             {/* Placeholder for app screenshot - replace with your actual app screenshot */}
-                            <img
+                            <Image
                                 src="/screenshot.jpg"
                                 alt="Hathi app interface preview"
+                                width={600}
+                                height={400}
                                 className="w-full h-full object-cover"
                             />
                         </div>
