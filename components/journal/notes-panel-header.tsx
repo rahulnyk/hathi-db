@@ -72,59 +72,53 @@ export function NotesPanelHeader() {
                 )}
 
                 {/* Toggle switch between Notes and Assistant */}
-                <button
-                    className={cn(
-                        "relative flex items-center cursor-pointer transition-all duration-300",
-                        "border border-zinc-300 dark:border-zinc-700",
-                        "w-16 h-7 p-0.5 bg-zinc-200 dark:bg-zinc-800",
-                        "rounded-md" // Changed from rounded-full to rounded-md for square-rounded look
-                    )}
+                <div
+                    className="relative inline-flex bg-gray-200 dark:bg-gray-700 rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
                     onClick={handleToggleChatMode}
-                    title={chatMode ? "Switch to Notes" : "Switch to Assistant"}
-                    type="button"
                 >
-                    {/* Sliding toggle */}
+                    {/* Sliding background indicator */}
                     <div
                         className={cn(
-                            "absolute left-0.5 flex items-center justify-center transition-transform duration-500",
-                            "w-6 h-6 shadow-sm",
-                            "bg-blue-600 text-white",
-                            "rounded-sm", // Changed from rounded-full to rounded-sm
+                            "absolute top-1 w-16 h-6 rounded-full shadow-md transition-all duration-300 ease-in-out",
+                            "bg-blue-700 dark:bg-blue-600",
+                            chatMode ? "translate-x-16" : "translate-x-0"
+                        )}
+                    />
+
+                    {/* Note Option */}
+                    <div
+                        className={cn(
+                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300 text-xs font-medium",
                             chatMode
-                                ? "transform translate-x-8" // Translate to the right in chat mode
-                                : "transform translate-x-0" // Stay at original position in notes mode
+                                ? "text-gray-600 dark:text-gray-400"
+                                : "text-white"
                         )}
                     >
-                        {isNavigatingToContext ? (
-                            <Loader2 size={16} className="animate-spin" />
-                        ) : chatMode ? (
-                            <LucideMessageCircleQuestion size={16} />
+                        {isNavigatingToContext && !chatMode ? (
+                            <Loader2 size={10} className="animate-spin" />
                         ) : (
-                            <NotebookPen size={16} />
+                            <NotebookPen size={10} />
                         )}
+                        <span>NOTE</span>
                     </div>
 
-                    {/* Indicator icons (optional) */}
-                    <span
+                    {/* Ask Option */}
+                    <div
                         className={cn(
-                            "absolute left-1 transition-opacity duration-300",
-                            chatMode ? "opacity-0" : "opacity-0"
+                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300 text-xs font-medium",
+                            chatMode
+                                ? "text-white"
+                                : "text-gray-600 dark:text-gray-400"
                         )}
                     >
-                        <NotebookPen size={14} className="text-zinc-400" />
-                    </span>
-                    <span
-                        className={cn(
-                            "absolute right-1 transition-opacity duration-300",
-                            chatMode ? "opacity-0" : "opacity-0"
+                        {isNavigatingToContext && chatMode ? (
+                            <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                            <LucideMessageCircleQuestion size={10} />
                         )}
-                    >
-                        <LucideMessageCircleQuestion
-                            size={14}
-                            className="text-zinc-400"
-                        />
-                    </span>
-                </button>
+                        <span>ASK</span>
+                    </div>
+                </div>
             </div>
             {/* Removed Calendar menu div */}
         </div>
