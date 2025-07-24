@@ -92,11 +92,11 @@ notesMiddleware.startListening({
     },
 });
 
-// Handle optimistic note creation with auto-save
+// Handle optimistic note creation with immediate persistence
 notesMiddleware.startListening({
     actionCreator: createNoteOptimistically,
     effect: async (action, listenerApi) => {
-        const { tempNote, autoSave } = action.payload;
+        const { note, autoSave } = action.payload;
 
         if (!autoSave) return;
 
@@ -104,21 +104,21 @@ notesMiddleware.startListening({
             const state = listenerApi.getState() as RootState;
             const currentContext = state.notes.currentContext;
 
-            // Persist to database
+            // Persist to database using the note's UUID
             const result = await listenerApi.dispatch(
                 addNote({
-                    tempId: tempNote.id,
-                    content: tempNote.content,
+                    id: note.id, // Pass the existing UUID from optimistic note
+                    content: note.content,
                     key_context: currentContext,
-                    contexts: tempNote.contexts,
-                    tags: tempNote.tags,
-                    note_type: tempNote.note_type,
+                    contexts: note.contexts,
+                    tags: note.tags,
+                    note_type: note.note_type,
                 })
             );
 
             // If note was successfully added, generate context suggestions and embedding
             if (addNote.fulfilled.match(result)) {
-                const persistedNote = result.payload.note;
+                const persistedNote = result.payload;
                 const allUserContexts = state.notesMetadata.contexts.map(
                     (ctx) => ctx.context
                 );
@@ -147,7 +147,7 @@ notesMiddleware.startListening({
             console.error("Failed to persist note creation:", error);
             listenerApi.dispatch(
                 updateNotePersistenceStatus({
-                    id: tempNote.id,
+                    id: note.id,
                     status: "failed",
                     errorMessage:
                         error instanceof Error
@@ -231,30 +231,30 @@ notesMiddleware.startListening({
 });
 
 // Handle Q&A note creation
-notesMiddleware.startListening({
-    actionCreator: createNoteOptimistically,
-    effect: async (action, listenerApi) => {
-        const { tempNote } = action.payload;
+// notesMiddleware.startListening({
+//     actionCreator: createNoteOptimistically,
+//     effect: async (action, listenerApi) => {
+//         const { note } = action.payload;
 
-        // Only process AI notes
-        if (tempNote.note_type !== "ai-note") return;
+//         // Only process AI notes
+//         if (note.note_type !== "ai-note") return;
 
-        // For AI notes, we need to extract question and answer from content
-        const contentMatch = tempNote.content.match(
-            /\*\*Q:\*\* (.+?)\n\n\*\*A:\*\* ([\s\S]+)/
-        );
-        if (contentMatch) {
-            const [, question, answer] = contentMatch;
+//         // For AI notes, we need to extract question and answer from content
+//         const contentMatch = note.content.match(
+//             /\*\*Q:\*\* (.+?)\n\n\*\*A:\*\* ([\s\S]+)/
+//         );
+//         if (contentMatch) {
+//             const [, question, answer] = contentMatch;
 
-            // Mark as AI answer
-            listenerApi.dispatch(
-                markAsAIAnswer({
-                    noteId: tempNote.id,
-                    question,
-                    answer,
-                    relevantSources: [], // TODO: Pass relevant sources if available
-                })
-            );
-        }
-    },
-});
+//             // Mark as AI answer
+//             listenerApi.dispatch(
+//                 markAsAIAnswer({
+//                     noteId: note.id,
+//                     question,
+//                     answer,
+//                     relevantSources: [], // TODO: Pass relevant sources if available
+//                 })
+//             );
+//         }
+//     },
+// });
