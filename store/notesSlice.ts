@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 // import { createClient } from "@/lib/supabase/client"; // Removed direct client import
-// import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { dateToSlug } from "@/lib/utils";
 import {
     fetchNotes as fetchNotesAction,
@@ -102,10 +102,10 @@ export const addNote = createAsyncThunk(
     "notes/addNote",
     async (
         {
-            tempId,
+            id,
             ...noteData
         }: {
-            tempId: string;
+            id?: string; // Optional - if not provided, generate new UUID
             content: string;
             key_context: string;
             contexts?: string[];
@@ -115,6 +115,8 @@ export const addNote = createAsyncThunk(
         { rejectWithValue, dispatch }
     ) => {
         try {
+            // Generate UUID at application level if not provided
+            const noteId = id || uuidv4();
             const finalNoteType = noteData.note_type || "note";
             let deadline: string | null = null;
             let status: TodoStatus | null = null;
@@ -137,6 +139,7 @@ export const addNote = createAsyncThunk(
             }
 
             const notePayload: Parameters<typeof addNoteAction>[0] = {
+                id: noteId, // Use provided ID or generated UUID
                 ...noteData,
                 note_type: finalNoteType,
             };
@@ -156,11 +159,10 @@ export const addNote = createAsyncThunk(
                 dispatch(setActiveNoteId(newNote.id));
             }
 
-            return { tempId, note: newNote };
+            return newNote;
         } catch (error: any) {
             return rejectWithValue({
                 error: error?.message || "Failed to add note",
-                tempId,
             });
         }
     }
@@ -322,16 +324,16 @@ const notesSlice = createSlice({
                 };
             }
         },
-        // New action for creating notes optimistically with auto-save
+        // Action for creating notes optimistically with UUIDs
         createNoteOptimistically: (
             state,
             action: PayloadAction<{
-                tempNote: Note;
+                note: Note;
                 autoSave: boolean;
             }>
         ) => {
-            const { tempNote } = action.payload;
-            state.notes.unshift(tempNote);
+            const { note } = action.payload;
+            state.notes.unshift(note);
         },
         // Add search result notes to the store
         addSearchResultNotes: (state, action: PayloadAction<Note[]>) => {
@@ -394,25 +396,34 @@ const notesSlice = createSlice({
                 // Optimistic update already handled by addNoteOptimistically
             })
             .addCase(addNote.fulfilled, (state, action) => {
-                const { tempId, note } = action.payload;
-                const noteIndex = state.notes.findIndex((n) => n.id === tempId);
+                const newNote = action.payload;
+                // Since we're using actual UUIDs, the note should already exist from createNoteOptimistically
+                const noteIndex = state.notes.findIndex(
+                    (n) => n.id === newNote.id
+                );
                 if (noteIndex !== -1) {
                     // Replace optimistic note with the real one from server
                     state.notes[noteIndex] = {
-                        ...note, // note from server action already has persistenceStatus: "persisted"
-                        // id is now the real id from the database
+                        ...newNote,
+                        persistenceStatus: "persisted",
                     };
+                } else {
+                    // This should never happen with UUID approach - log error
+                    console.error(
+                        "addNote.fulfilled: Could not find optimistic note with ID:",
+                        newNote.id,
+                        "This indicates a bug in the note creation flow."
+                    );
+                    // As a fallback, add the note to prevent data loss
+                    state.notes.unshift({
+                        ...newNote,
+                        persistenceStatus: "persisted",
+                    });
                 }
             })
             .addCase(addNote.rejected, (state, action: any) => {
-                const { tempId, error } = action.payload;
-                const noteIndex = state.notes.findIndex(
-                    (note) => note.id === tempId
-                );
-                if (noteIndex !== -1) {
-                    state.notes[noteIndex].persistenceStatus = "failed";
-                    state.notes[noteIndex].errorMessage = error;
-                }
+                const { error } = action.payload;
+                console.error("Failed to add note:", error);
             })
             .addCase(deleteNote.pending, (state) => {
                 // Optimistic update handled by markNoteAsDeleting

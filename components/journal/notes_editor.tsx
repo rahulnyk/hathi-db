@@ -372,7 +372,7 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
         dispatch(
             createNoteOptimistically({
-                tempNote: optimisticNote,
+                note: optimisticNote,
                 autoSave: true,
             })
         );
