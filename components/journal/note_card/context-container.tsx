@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Loader2, X, Check } from "lucide-react";
 import { slugToSentenceCase, sentenceCaseToSlug } from "@/lib/utils";
+import { useAppDispatch } from "@/store";
+import { updateNoteOptimistically, Note } from "@/store/notesSlice";
 
 interface ContextContainerProps {
     contexts: string[];
@@ -10,6 +12,8 @@ interface ContextContainerProps {
     onContextsChange?: (newContexts: string[]) => void;
     className?: string;
     readOnly?: boolean;
+    note?: Note; // Add note prop for independent context updates
+    enableIndependentUpdates?: boolean; // Flag to enable independent context updates
 }
 
 export function ContextContainer({
@@ -18,29 +22,56 @@ export function ContextContainer({
     onContextsChange,
     className,
     readOnly = false,
+    note,
+    enableIndependentUpdates = false,
 }: ContextContainerProps) {
     const [showCustomInput, setShowCustomInput] = useState(false);
     const [customContext, setCustomContext] = useState("");
     const [isAddingCustom, setIsAddingCustom] = useState(false);
+    const dispatch = useAppDispatch();
 
     const handleAddContext = (context: string) => {
+        const newContexts = [...contexts, context];
+
+        // If we have independent updates enabled and a note, patch directly to store
+        if (enableIndependentUpdates && note) {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId: note.id,
+                    patches: { contexts: newContexts },
+                })
+            );
+        }
+
+        // Also call the callback for local state management (for edit mode)
         if (onContextsChange) {
-            const newContexts = [...contexts, context];
             onContextsChange(newContexts);
         }
     };
 
     const handleRemoveContext = (contextToRemove: string) => {
-        if (onContextsChange) {
-            const newContexts = contexts.filter(
-                (context) => context !== contextToRemove
+        const newContexts = contexts.filter(
+            (context) => context !== contextToRemove
+        );
+
+        // If we have independent updates enabled and a note, patch directly to store
+        if (enableIndependentUpdates && note) {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId: note.id,
+                    patches: { contexts: newContexts },
+                })
             );
+        }
+
+        // Also call the callback for local state management (for edit mode)
+        if (onContextsChange) {
             onContextsChange(newContexts);
         }
     };
 
     const handleCustomContextSubmit = async () => {
-        if (!customContext.trim() || !onContextsChange) return;
+        if (!customContext.trim()) return;
 
         const contextSlug = sentenceCaseToSlug(customContext.trim());
 
@@ -51,7 +82,23 @@ export function ContextContainer({
         }
 
         setIsAddingCustom(true);
-        onContextsChange([...contexts, contextSlug]);
+        const newContexts = [...contexts, contextSlug];
+
+        // If we have independent updates enabled and a note, patch directly to store
+        if (enableIndependentUpdates && note) {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId: note.id,
+                    patches: { contexts: newContexts },
+                })
+            );
+        }
+
+        // Also call the callback for local state management (for edit mode)
+        if (onContextsChange) {
+            onContextsChange(newContexts);
+        }
+
         setCustomContext("");
         setShowCustomInput(false);
         setIsAddingCustom(false);
