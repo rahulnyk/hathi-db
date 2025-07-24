@@ -385,9 +385,9 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     const handleSaveEdit = () => {
         if (!note) return;
 
+        // Only save content changes - contexts are handled independently
         saveNote({
             content,
-            contexts,
         });
 
         // Exit edit mode
@@ -397,11 +397,10 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     const handleCancelEdit = () => {
         if (!note || !originalNoteState) return;
 
-        // Restore original state to local state
+        // Only restore content - context changes should persist
         setContent(originalNoteState.content);
-        setContexts(originalNoteState.contexts);
 
-        // Exit edit mode without saving
+        // Exit edit mode without saving content changes
         dispatch(setEditingNoteId(null));
     };
 
@@ -426,13 +425,15 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
                     {isEditMode && (
                         <>
                             <ContextContainer
-                                contexts={contexts}
+                                contexts={note.contexts || []}
                                 suggestedContexts={
                                     note.suggested_contexts || []
                                 }
                                 onContextsChange={handleContextsChange}
                                 readOnly={false}
                                 className="flex-1"
+                                note={note}
+                                enableIndependentUpdates={true}
                             />
                             <div className="flex justify-end items-end pb-2 gap-2">
                                 <Button
