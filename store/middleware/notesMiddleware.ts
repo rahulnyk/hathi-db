@@ -9,7 +9,6 @@ import {
 import {
     generateSuggestedContexts,
     generateEmbeddingThunk,
-    markAsAIAnswer,
 } from "../aiSlice";
 import {
     setEditingNoteId,
@@ -229,32 +228,3 @@ notesMiddleware.startListening({
         }
     },
 });
-
-// Handle Q&A note creation
-// notesMiddleware.startListening({
-//     actionCreator: createNoteOptimistically,
-//     effect: async (action, listenerApi) => {
-//         const { note } = action.payload;
-
-//         // Only process AI notes
-//         if (note.note_type !== "ai-note") return;
-
-//         // For AI notes, we need to extract question and answer from content
-//         const contentMatch = note.content.match(
-//             /\*\*Q:\*\* (.+?)\n\n\*\*A:\*\* ([\s\S]+)/
-//         );
-//         if (contentMatch) {
-//             const [, question, answer] = contentMatch;
-
-//             // Mark as AI answer
-//             listenerApi.dispatch(
-//                 markAsAIAnswer({
-//                     noteId: note.id,
-//                     question,
-//                     answer,
-//                     relevantSources: [], // TODO: Pass relevant sources if available
-//                 })
-//             );
-//         }
-//     },
-// });
