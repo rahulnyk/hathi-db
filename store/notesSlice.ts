@@ -114,9 +114,10 @@ export const addNote = createAsyncThunk(
         },
         { rejectWithValue, dispatch }
     ) => {
+        // Generate UUID at application level if not provided
+        const noteId = id || uuidv4();
+
         try {
-            // Generate UUID at application level if not provided
-            const noteId = id || uuidv4();
             const finalNoteType = noteData.note_type || "note";
             let deadline: string | null = null;
             let status: TodoStatus | null = null;
@@ -163,6 +164,7 @@ export const addNote = createAsyncThunk(
         } catch (error: any) {
             return rejectWithValue({
                 error: error?.message || "Failed to add note",
+                noteId, // Include the noteId for error handling
             });
         }
     }
@@ -422,8 +424,18 @@ const notesSlice = createSlice({
                 }
             })
             .addCase(addNote.rejected, (state, action: any) => {
-                const { error } = action.payload;
-                console.error("Failed to add note:", error);
+                const { noteId, error } = action.payload;
+                // Find and update the specific note that failed
+                const noteIndex = state.notes.findIndex(
+                    (note) => note.id === noteId
+                );
+                if (noteIndex !== -1) {
+                    state.notes[noteIndex].persistenceStatus = "failed";
+                    state.notes[noteIndex].errorMessage = error;
+                } else {
+                    // Fallback: just log if note not found
+                    console.error("Failed to add note:", error);
+                }
             })
             .addCase(deleteNote.pending, (state) => {
                 // Optimistic update handled by markNoteAsDeleting

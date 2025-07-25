@@ -30,9 +30,8 @@ export function ContextContainer({
     const [isAddingCustom, setIsAddingCustom] = useState(false);
     const dispatch = useAppDispatch();
 
-    const handleAddContext = (context: string) => {
-        const newContexts = [...contexts, context];
-
+    // Unified function to handle context updates
+    const updateContexts = (newContexts: string[]) => {
         // If we have independent updates enabled and a note, patch directly to store
         if (enableIndependentUpdates && note) {
             dispatch(
@@ -49,25 +48,16 @@ export function ContextContainer({
         }
     };
 
+    const handleAddContext = (context: string) => {
+        const newContexts = [...contexts, context];
+        updateContexts(newContexts);
+    };
+
     const handleRemoveContext = (contextToRemove: string) => {
         const newContexts = contexts.filter(
             (context) => context !== contextToRemove
         );
-
-        // If we have independent updates enabled and a note, patch directly to store
-        if (enableIndependentUpdates && note) {
-            dispatch(
-                updateNoteOptimistically({
-                    noteId: note.id,
-                    patches: { contexts: newContexts },
-                })
-            );
-        }
-
-        // Also call the callback for local state management (for edit mode)
-        if (onContextsChange) {
-            onContextsChange(newContexts);
-        }
+        updateContexts(newContexts);
     };
 
     const handleCustomContextSubmit = async () => {
@@ -83,21 +73,7 @@ export function ContextContainer({
 
         setIsAddingCustom(true);
         const newContexts = [...contexts, contextSlug];
-
-        // If we have independent updates enabled and a note, patch directly to store
-        if (enableIndependentUpdates && note) {
-            dispatch(
-                updateNoteOptimistically({
-                    noteId: note.id,
-                    patches: { contexts: newContexts },
-                })
-            );
-        }
-
-        // Also call the callback for local state management (for edit mode)
-        if (onContextsChange) {
-            onContextsChange(newContexts);
-        }
+        updateContexts(newContexts);
 
         setCustomContext("");
         setShowCustomInput(false);
