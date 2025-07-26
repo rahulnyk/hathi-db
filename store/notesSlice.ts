@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 // import { createClient } from "@/lib/supabase/client"; // Removed direct client import
-import { v4 as uuidv4 } from "uuid";
 import { dateToSlug } from "@/lib/utils";
 import {
     fetchNotes as fetchNotesAction,
@@ -105,7 +104,7 @@ export const addNote = createAsyncThunk(
             id,
             ...noteData
         }: {
-            id?: string; // Optional - if not provided, generate new UUID
+            id: string; // Required - UUID must be provided by the calling code
             content: string;
             key_context: string;
             contexts?: string[];
@@ -114,8 +113,8 @@ export const addNote = createAsyncThunk(
         },
         { rejectWithValue, dispatch }
     ) => {
-        // Generate UUID at application level if not provided
-        const noteId = id || uuidv4();
+        // Use the provided UUID - no fallback generation
+        const noteId = id;
 
         try {
             const finalNoteType = noteData.note_type || "note";
