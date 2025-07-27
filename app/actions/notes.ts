@@ -16,6 +16,7 @@ import { TodoStatus } from "@/store/notesSlice";
  * @returns Promise that resolves to the created Note object
  */
 export async function addNote({
+    id,
     content,
     key_context,
     contexts,
@@ -24,6 +25,7 @@ export async function addNote({
     deadline,
     status,
 }: {
+    id: string; // UUID provided by the application
     content: string;
     key_context: string;
     contexts?: string[];
@@ -38,6 +40,7 @@ export async function addNote({
 
         try {
             const noteToInsert = {
+                id,
                 content,
                 user_id: user.id,
                 key_context,
