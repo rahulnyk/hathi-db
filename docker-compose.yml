@@ -1,0 +1,15 @@
+services:
+    postgres:
+        image: pgvector/pgvector:pg17
+        container_name: hathi-db-postgres
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: hathi-db-123!
+            POSTGRES_DB: hathi_db
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+volumes:
+    postgres_data:

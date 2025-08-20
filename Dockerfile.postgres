@@ -1,0 +1,24 @@
+# Use the official PostgreSQL image as base
+FROM postgres:latest
+
+# Install dependencies for pgvector
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    git \
+    postgresql-server-dev-all \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and install pgvector
+RUN cd /tmp && \
+    git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git && \
+    cd pgvector && \
+    make && \
+    make install
+
+# Create initialization script to enable pgvector
+RUN mkdir -p /docker-entrypoint-initdb.d
+COPY init-pgvector.sql /docker-entrypoint-initdb.d/
+
+# Set the default database name
+ENV POSTGRES_DB=hathi_db
