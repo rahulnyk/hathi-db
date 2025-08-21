@@ -15,8 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import { useContext } from "react";
-import { UserContext } from "@/components/journal";
 import { ContextContainer } from "./note_card/context-container";
 import { useChat } from "@ai-sdk/react";
 
@@ -104,7 +102,6 @@ function handleAutoDeleteBracketPair(
 
 export function NotesEditor({ note, chatHook }: NotesEditorProps) {
     const isEditMode = !!note;
-    const user = useContext(UserContext);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isUserInteracting = useRef(false);
     const [content, setContent] = useState(note?.content || "");
@@ -363,7 +360,6 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
 
         const optimisticNote = createOptimisticNote(
             content,
-            user.id,
             currentKeyContext,
             noteType, // Pass determined note type
             mergedContexts,

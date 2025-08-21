@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUser } from "@/app/actions/get-auth-user";
 import { measureExecutionTime } from "@/lib/performance";
 
 /**
@@ -32,7 +31,7 @@ export interface FetchContextStatsParams {
 }
 
 /**
- * Fetches statistics for all distinct contexts for the currently authenticated user.
+ * Fetches statistics for all distinct contexts.
  * This includes the occurrence count and the most recent usage timestamp for each context.
  *
  * This action relies on the `get_user_context_stats` PostgreSQL function, which must be
@@ -44,16 +43,12 @@ export interface FetchContextStatsParams {
 export async function fetchContextStats(): Promise<ContextStatParams[]> {
     return measureExecutionTime("fetchContextStats", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
-            // Call the database function `get_user_context_stats` with the user's ID.
+            // Call the database function `get_user_context_stats`.
             // The function performs all the complex aggregation on the database side.
             const { data, error } = await supabase.rpc(
-                "get_user_context_stats",
-                {
-                    p_user_id: user.id,
-                }
+                "get_user_context_stats"
             );
 
             if (error) {
@@ -78,7 +73,7 @@ export async function fetchContextStats(): Promise<ContextStatParams[]> {
 }
 
 /**
- * Fetches paginated statistics for distinct contexts for the currently authenticated user.
+ * Fetches paginated statistics for distinct contexts.
  * Supports pagination and optional search filtering.
  *
  * @param params - Parameters for pagination and search
@@ -90,13 +85,11 @@ export async function fetchContextStatsPaginated(
     return measureExecutionTime("fetchContextStatsPaginated", async () => {
         const { limit = 30, offset = 0, searchTerm } = params;
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
             const { data, error } = await supabase.rpc(
                 "get_user_context_stats_paginated",
                 {
-                    p_user_id: user.id,
                     p_limit: limit,
                     p_offset: offset,
                     p_search_term: searchTerm || null,
@@ -145,7 +138,7 @@ export async function fetchContextStatsPaginated(
 }
 
 /**
- * Searches contexts for the currently authenticated user.
+ * Searches contexts.
  * Used for search suggestions and autocomplete functionality.
  *
  * @param searchTerm - The term to search for
@@ -162,11 +155,9 @@ export async function searchContexts(
         }
 
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
             const { data, error } = await supabase.rpc("search_user_contexts", {
-                p_user_id: user.id,
                 p_search_term: searchTerm.trim(),
                 p_limit: limit,
             });

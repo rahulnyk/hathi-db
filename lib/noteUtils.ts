@@ -75,7 +75,6 @@ export function extractMetadata(content: string): {
  */
 export const createOptimisticNote = (
     content: string,
-    userId: string,
     currentContext: string,
     note_type: NoteType = "note",
     contexts?: string[],
@@ -94,7 +93,6 @@ export const createOptimisticNote = (
         id: uuidv4(),
         content,
         created_at: now,
-        user_id: userId,
         persistenceStatus: "pending",
         key_context: currentContext,
         contexts: distinctContexts,
