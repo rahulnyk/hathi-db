@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { type Note, NoteType } from "@/store/notesSlice";
 import { measureExecutionTime } from "@/lib/performance";
-import { getAuthUser } from "@/app/actions/get-auth-user";
 import { TodoStatus } from "@/store/notesSlice";
 /**
  * Adds a new note to the database.
@@ -36,13 +35,11 @@ export async function addNote({
 }): Promise<Note> {
     return measureExecutionTime("addNote", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
             const noteToInsert = {
                 id,
                 content,
-                user_id: user.id,
                 key_context,
                 contexts: contexts || [],
                 tags: tags || [],
@@ -88,14 +85,12 @@ export async function deleteNote({
 }): Promise<{ noteId: string }> {
     return measureExecutionTime("deleteNote", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
             const { error } = await supabase
                 .from("notes")
                 .delete()
-                .eq("id", noteId)
-                .eq("user_id", user.id);
+                .eq("id", noteId);
 
             if (error) throw error;
 
@@ -114,7 +109,6 @@ export async function deleteNote({
 /**
  * Fetches notes with optional context filtering
  *
- * @param userId - The user ID to fetch notes for
  * @param payload - The fetch configuration object
  * @param payload.keyContext - Single context to filter by (ignored if contexts array is provided)
  * @param payload.contexts - Array of contexts to filter by (takes precedence over keyContext)
@@ -140,14 +134,12 @@ export async function fetchNotes({
             );
         }
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
         try {
             // Start query with user filtering using the provided userId
 
             let query = supabase
                 .from("notes")
                 .select("*")
-                .eq("user_id", user.id) // Filter by provided user ID
                 .order("created_at", { ascending: false });
 
             if (contexts && contexts.length > 0) {
@@ -194,14 +186,12 @@ export async function fetchNotesByIds(noteIds: string[]): Promise<Note[]> {
             }
 
             const client = await createClient();
-            const user = await getAuthUser(client);
 
             // Fetch notes by IDs for the current user
             const { data: notes, error: fetchError } = await client
                 .from("notes")
                 .select("*")
-                .in("id", noteIds)
-                .eq("user_id", user.id);
+                .in("id", noteIds);
 
             if (fetchError) {
                 console.error("Error fetching notes by IDs:", fetchError);
@@ -228,7 +218,6 @@ export async function fetchNotesByIds(noteIds: string[]): Promise<Note[]> {
  *
  * @param noteId - The ID of the note to update
  * @param patches - Partial note object with fields to update
- * @param userId - The user ID for authorization
  * @returns Promise that resolves to the updated note
  */
 export async function patchNote({
@@ -255,7 +244,6 @@ export async function patchNote({
 }): Promise<Note> {
     return measureExecutionTime("patchNote", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
             // Prepare the update object
@@ -273,7 +261,6 @@ export async function patchNote({
                 .from("notes")
                 .update(updateData)
                 .eq("id", noteId)
-                .eq("user_id", user.id)
                 .select()
                 .single();
 

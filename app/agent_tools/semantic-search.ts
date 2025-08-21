@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { generateQueryEmbedding } from "@/app/actions/ai";
-import { getAuthUser } from "../actions/get-auth-user";
 import { measureExecutionTime } from "@/lib/performance";
 import { DEFAULT_SEARCH_LIMIT, QA_SEARCH_LIMITS } from "@/lib/constants/qa";
 import type { SearchResultNote, SemanticSearchParams } from "./types";
@@ -33,7 +32,6 @@ export async function searchNotesBySimilarity({
     return measureExecutionTime("searchNotesBySimilarity", async () => {
         try {
             const supabase = await createClient();
-            const user = await getAuthUser(supabase);
 
             // Generate query embedding
             let queryEmbedding;
@@ -55,7 +53,6 @@ export async function searchNotesBySimilarity({
             const { data: notes, error } = await supabase.rpc(
                 "search_notes_by_similarity",
                 {
-                    p_user_id: user.id,
                     p_query_embedding: queryEmbedding,
                     p_similarity_threshold: similarityThreshold,
                     p_limit: limit,

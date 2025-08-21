@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUser } from "@/app/actions/get-auth-user";
 import { measureExecutionTime } from "@/lib/performance";
 import type { Note } from "@/store/notesSlice";
 import { TodoStatus } from "@/store/notesSlice";
@@ -68,8 +67,7 @@ export async function filterNotes(
 ): Promise<FilterNotesResult> {
     return measureExecutionTime("filterNotes", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
-        console.log("Filtering notes for user with filters:", filters);
+        console.log("Filtering notes with filters:", filters);
         try {
             // Set default and maximum limits
             const limit = Math.min(filters.limit || 20, 50);
@@ -78,7 +76,6 @@ export async function filterNotes(
             let query = supabase
                 .from("notes")
                 .select("*", { count: "exact" })
-                .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
 
             // Apply date filters
@@ -193,14 +190,12 @@ export async function getFilterOptions(): Promise<{
 }> {
     return measureExecutionTime("getFilterOptions", async () => {
         const supabase = await createClient();
-        const user = await getAuthUser(supabase);
 
         try {
-            // Get all unique contexts, tags, and note types for this user
+            // Get all unique contexts, tags, and note types
             const { data, error } = await supabase
                 .from("notes")
-                .select("contexts, tags, note_type, status")
-                .eq("user_id", user.id);
+                .select("contexts, tags, note_type, status");
 
             if (error) {
                 console.error("Error getting filter options:", error);

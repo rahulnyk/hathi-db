@@ -8,7 +8,6 @@ import { useRef, useEffect } from "react"; // Import useRef and useEffect
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
 import { useAppSelector } from "@/store"; // Import useAppSelector and useAppDispatch
 import { ThemeSwitcher } from "../theme-switcher";
-import { LogoutButton } from "../logout-button";
 import { DateContextPicker } from "../journal/date_context_picker";
 import { ContextList } from "./context-list"; // Import ContextList component
 import { ContextSearchBox } from "../ui/context-search-box";
@@ -119,7 +118,6 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                 {/* Sticky Bottom Group - always rendered in "expanded" form because menu is either open or not rendered */}
                 <div className="flex flex-row items-center justify-around p-2 border-t border-border/20 mt-auto gap-2">
                     <ThemeSwitcher isExpanded={true} />
-                    <LogoutButton isExpanded={true} />
                 </div>
             </div>
         </div>
