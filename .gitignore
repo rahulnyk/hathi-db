@@ -45,3 +45,4 @@ pnpm-lock.yaml
 *.tsbuildinfo
 next-env.d.ts
 performance_log.csv
+.github/instructions

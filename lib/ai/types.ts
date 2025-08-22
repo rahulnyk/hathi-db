@@ -38,6 +38,15 @@ export interface QueryEmbeddingResponse {
     embedding: number[];
 }
 
+// Batch embedding types
+export interface BatchDocumentEmbeddingRequest {
+    documents: DocumentEmbeddingRequest[];
+}
+
+export interface BatchDocumentEmbeddingResponse {
+    embeddings: number[][];
+}
+
 export interface StructurizeNoteRequest {
     content: string;
     userContexts: string[];
@@ -80,6 +89,9 @@ export interface AIProvider {
     generateQueryEmbedding(
         request: QueryEmbeddingRequest
     ): Promise<QueryEmbeddingResponse>;
+    generateBatchDocumentEmbeddings(
+        request: BatchDocumentEmbeddingRequest
+    ): Promise<BatchDocumentEmbeddingResponse>;
     structurizeNote(
         request: StructurizeNoteRequest
     ): Promise<StructurizeNoteResponse>;
