@@ -1,9 +1,44 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/db/connection";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { notes } from "@/db/schema";
 import { type Note, NoteType } from "@/store/notesSlice";
 import { measureExecutionTime } from "@/lib/performance";
 import { TodoStatus } from "@/store/notesSlice";
+import { eq, desc, and, inArray, arrayContains } from "drizzle-orm";
+
+/**
+ * Converts a database note record to the application Note type
+ */
+function convertDbNoteToNote(dbNote: Record<string, unknown>): Note {
+    return {
+        id: dbNote.id as string,
+        content: dbNote.content as string,
+        key_context: dbNote.key_context as string,
+        contexts: dbNote.contexts as string[],
+        tags: dbNote.tags as string[],
+        suggested_contexts: dbNote.suggested_contexts
+            ? (dbNote.suggested_contexts as string[])
+            : undefined,
+        note_type: dbNote.note_type as NoteType,
+        embedding: dbNote.embedding
+            ? (dbNote.embedding as number[])
+            : undefined,
+        embedding_model: dbNote.embedding_model
+            ? (dbNote.embedding_model as string)
+            : undefined,
+        embedding_created_at: dbNote.embedding_created_at
+            ? (dbNote.embedding_created_at as Date).toISOString()
+            : undefined,
+        deadline: dbNote.deadline
+            ? (dbNote.deadline as Date).toISOString()
+            : null,
+        status: dbNote.status ? (dbNote.status as TodoStatus) : null,
+        created_at: (dbNote.created_at as Date).toISOString(),
+        persistenceStatus: "persisted" as const,
+    };
+}
 /**
  * Adds a new note to the database.
  *
@@ -34,9 +69,12 @@ export async function addNote({
     status?: TodoStatus | null; // Using TodoStatus enum for type safety, stored as string in DB
 }): Promise<Note> {
     return measureExecutionTime("addNote", async () => {
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
+            await client.connect();
+            const db = drizzle(client, { schema: { notes } });
+
             const noteToInsert = {
                 id,
                 content,
@@ -44,22 +82,20 @@ export async function addNote({
                 contexts: contexts || [],
                 tags: tags || [],
                 note_type,
-                deadline: deadline || null,
+                deadline: deadline ? new Date(deadline) : null,
                 status: status || null,
             };
-            const { data, error } = await supabase
-                .from("notes")
-                .insert([noteToInsert])
-                .select();
 
-            if (error) throw error;
-            if (!data || data.length === 0)
+            const result = await db
+                .insert(notes)
+                .values(noteToInsert)
+                .returning();
+
+            if (!result || result.length === 0) {
                 throw new Error("No data returned after insert");
+            }
 
-            return {
-                ...data[0],
-                persistenceStatus: "persisted",
-            } as Note;
+            return convertDbNoteToNote(result[0]);
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -67,6 +103,8 @@ export async function addNote({
                     : "Unknown error occurred";
             console.error("Error adding note:", errorMessage);
             throw new Error(`Failed to add note: ${errorMessage}`);
+        } finally {
+            await client.end();
         }
     });
 }
@@ -84,15 +122,13 @@ export async function deleteNote({
     noteId: string;
 }): Promise<{ noteId: string }> {
     return measureExecutionTime("deleteNote", async () => {
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
-            const { error } = await supabase
-                .from("notes")
-                .delete()
-                .eq("id", noteId);
+            await client.connect();
+            const db = drizzle(client, { schema: { notes } });
 
-            if (error) throw error;
+            await db.delete(notes).where(eq(notes.id, noteId));
 
             return { noteId };
         } catch (error: unknown) {
@@ -102,6 +138,8 @@ export async function deleteNote({
                     : "Unknown error occurred";
             console.error("Error deleting note:", errorMessage);
             throw new Error(`Failed to delete note: ${errorMessage}`);
+        } finally {
+            await client.end();
         }
     });
 }
@@ -133,40 +171,53 @@ export async function fetchNotes({
                 "At least one filtering parameter (keyContext or contexts) must be provided"
             );
         }
-        const supabase = await createClient();
-        try {
-            // Start query with user filtering using the provided userId
 
-            let query = supabase
-                .from("notes")
-                .select("*")
-                .order("created_at", { ascending: false });
+        const client = createClient();
+
+        try {
+            await client.connect();
+            const db = drizzle(client, { schema: { notes } });
 
             if (contexts && contexts.length > 0) {
-                query = applyContextsArrayFilter(
-                    query,
-                    contexts,
-                    method || "OR"
-                );
+                if (method === "AND") {
+                    // Notes must contain ALL contexts from the array
+                    const andConditions = contexts.map((context) =>
+                        arrayContains(notes.contexts, [context])
+                    );
+                    const result = await db
+                        .select()
+                        .from(notes)
+                        .where(and(...andConditions))
+                        .orderBy(desc(notes.created_at));
+
+                    return result.map(convertDbNoteToNote);
+                } else {
+                    // Notes must contain ANY context from the array (OR logic)
+                    const result = await db
+                        .select()
+                        .from(notes)
+                        .where(arrayContains(notes.contexts, contexts))
+                        .orderBy(desc(notes.created_at));
+
+                    return result.map(convertDbNoteToNote);
+                }
             } else if (keyContext) {
-                // Fallback to single keyContext filtering (existing functionality)
-                query = query.contains("contexts", [keyContext]);
+                // Fallback to single keyContext filtering
+                const result = await db
+                    .select()
+                    .from(notes)
+                    .where(arrayContains(notes.contexts, [keyContext]))
+                    .orderBy(desc(notes.created_at));
+
+                return result.map(convertDbNoteToNote);
             }
 
-            const { data, error } = await query;
-
-            if (error) {
-                console.error("Supabase error:", error);
-                throw error;
-            }
-
-            return (data || []).map((note) => ({
-                ...note,
-                persistenceStatus: "persisted" as const,
-            }));
+            return [];
         } catch (error) {
             console.error("Error fetching notes:", error);
             throw error;
+        } finally {
+            await client.end();
         }
     });
 }
@@ -185,23 +236,22 @@ export async function fetchNotesByIds(noteIds: string[]): Promise<Note[]> {
                 return [];
             }
 
-            const client = await createClient();
+            const client = createClient();
 
-            // Fetch notes by IDs for the current user
-            const { data: notes, error: fetchError } = await client
-                .from("notes")
-                .select("*")
-                .in("id", noteIds);
+            try {
+                await client.connect();
+                const db = drizzle(client, { schema: { notes } });
 
-            if (fetchError) {
-                console.error("Error fetching notes by IDs:", fetchError);
-                throw new Error(`Failed to fetch notes: ${fetchError.message}`);
+                // Fetch notes by IDs
+                const result = await db
+                    .select()
+                    .from(notes)
+                    .where(inArray(notes.id, noteIds));
+
+                return result.map(convertDbNoteToNote);
+            } finally {
+                await client.end();
             }
-
-            return ((notes as Note[]) || []).map((note) => ({
-                ...note,
-                persistenceStatus: "persisted" as const,
-            }));
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -243,34 +293,43 @@ export async function patchNote({
     };
 }): Promise<Note> {
     return measureExecutionTime("patchNote", async () => {
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
+            await client.connect();
+            const db = drizzle(client, { schema: { notes } });
+
             // Prepare the update object
             const updateData: Record<string, unknown> = {};
 
             // Only include fields that are actually being updated
             Object.entries(patches).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    updateData[key] = value;
+                    if (key === "deadline" && typeof value === "string") {
+                        updateData[key] = new Date(value);
+                    } else if (
+                        key === "embedding_created_at" &&
+                        typeof value === "string"
+                    ) {
+                        updateData[key] = new Date(value);
+                    } else {
+                        updateData[key] = value;
+                    }
                 }
             });
 
             // Update the note
-            const { data, error } = await supabase
-                .from("notes")
-                .update(updateData)
-                .eq("id", noteId)
-                .select()
-                .single();
+            const result = await db
+                .update(notes)
+                .set(updateData)
+                .where(eq(notes.id, noteId))
+                .returning();
 
-            if (error) throw error;
-            if (!data) throw new Error("No data returned after update");
+            if (!result || result.length === 0) {
+                throw new Error("No data returned after update");
+            }
 
-            return {
-                ...data,
-                persistenceStatus: "persisted",
-            } as Note;
+            return convertDbNoteToNote(result[0]);
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -278,34 +337,8 @@ export async function patchNote({
                     : "Unknown error occurred";
             console.error("Error patching note:", errorMessage);
             throw new Error(`Failed to patch note: ${errorMessage}`);
+        } finally {
+            await client.end();
         }
     });
-}
-
-/**
- * Applies context array filtering to Supabase query
- *
- * @param query - Supabase query builder instance
- * @param contexts - Array of contexts to filter by
- * @param method - Filtering method ('AND' or 'OR')
- * @returns Modified query with context filtering applied
- */
-function applyContextsArrayFilter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    query: any, // Supabase query builder type
-    contexts: string[],
-    method: "AND" | "OR"
-) {
-    if (method === "AND") {
-        // Notes must contain ALL contexts from the array
-        // Apply each context as a separate contains filter (AND logic)
-        contexts.forEach((context) => {
-            query = query.contains("contexts", [context]);
-        });
-    } else {
-        // Notes must contain ANY context from the array (OR logic)
-        query = query.contains("contexts", contexts);
-    }
-
-    return query;
 }

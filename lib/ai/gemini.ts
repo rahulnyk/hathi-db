@@ -7,6 +7,8 @@ import {
     DocumentEmbeddingResponse,
     QueryEmbeddingRequest,
     QueryEmbeddingResponse,
+    BatchDocumentEmbeddingRequest,
+    BatchDocumentEmbeddingResponse,
     SuggestContextsRequest,
     SuggestContextsResponse,
     StructurizeNoteRequest,
@@ -169,6 +171,63 @@ export class GeminiAI implements AIProvider {
             return {
                 embedding: embedding,
             };
+        } catch (error) {
+            throw this.handleGeminiError(error);
+        }
+    }
+
+    async generateBatchDocumentEmbeddings(
+        request: BatchDocumentEmbeddingRequest
+    ): Promise<BatchDocumentEmbeddingResponse> {
+        try {
+            // Process embeddings in parallel batches to avoid overwhelming the API
+            const batchSize = 5; // Process 5 embeddings at a time
+            const embeddings: number[][] = [];
+
+            for (let i = 0; i < request.documents.length; i += batchSize) {
+                const batch = request.documents.slice(i, i + batchSize);
+
+                // Process this batch in parallel
+                const batchPromises = batch.map(async (doc) => {
+                    const prompt = documentEmbeddingPrompt(
+                        doc.content,
+                        doc.contexts,
+                        doc.tags,
+                        doc.noteType
+                    );
+
+                    const result = await this.genAI.models.embedContent({
+                        model: this.embeddingModelName,
+                        contents: [{ text: prompt }],
+                        config: {
+                            outputDimensionality:
+                                AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                        },
+                    });
+
+                    if (!result.embeddings || !result.embeddings[0]?.values) {
+                        throw new AIError(
+                            `No embedding generated for document: ${doc.content.substring(
+                                0,
+                                50
+                            )}...`
+                        );
+                    }
+
+                    return result.embeddings[0].values;
+                });
+
+                // Wait for all embeddings in this batch to complete
+                const batchResults = await Promise.all(batchPromises);
+                embeddings.push(...batchResults);
+
+                // Add a small delay between batches to be respectful to the API
+                if (i + batchSize < request.documents.length) {
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                }
+            }
+
+            return { embeddings };
         } catch (error) {
             throw this.handleGeminiError(error);
         }

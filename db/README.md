@@ -58,7 +58,10 @@ Application database functions:
     # macOS with Homebrew
     brew install postgresql pgvector
 
-    # Or using Docker (recommended for development)
+    # Or using Docker Compose (recommended for development)
+    cd docker && docker-compose up -d
+
+    # Or manual Docker setup
     docker run -d \
       --name hathi-postgres \
       -p 5432:5432 \

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/db/connection";
 import { measureExecutionTime } from "@/lib/performance";
 
 /**
@@ -42,25 +42,23 @@ export interface FetchContextStatsParams {
  */
 export async function fetchContextStats(): Promise<ContextStatParams[]> {
     return measureExecutionTime("fetchContextStats", async () => {
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
+            await client.connect();
+
             // Call the database function `get_user_context_stats`.
             // The function performs all the complex aggregation on the database side.
-            const { data, error } = await supabase.rpc(
-                "get_user_context_stats"
+            const result = await client.query(
+                "SELECT * FROM get_user_context_stats()"
             );
 
-            if (error) {
-                console.error(
-                    "Supabase RPC error fetching context stats:",
-                    error
-                );
-                throw error;
-            }
-
-            // The RPC call returns data in the exact shape of the ContextStatParams interface.
-            return data || [];
+            // Convert the results to the expected format
+            return result.rows.map((row) => ({
+                context: row.context,
+                count: row.count,
+                lastUsed: row.lastused, // PostgreSQL function returns lowercase
+            }));
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -68,6 +66,8 @@ export async function fetchContextStats(): Promise<ContextStatParams[]> {
                     : "Could not fetch context statistics.";
             console.error("Error in fetchContextStats:", errorMessage);
             throw new Error(errorMessage);
+        } finally {
+            await client.end();
         }
     });
 }
@@ -84,41 +84,25 @@ export async function fetchContextStatsPaginated(
 ): Promise<PaginatedContextStats> {
     return measureExecutionTime("fetchContextStatsPaginated", async () => {
         const { limit = 30, offset = 0, searchTerm } = params;
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
-            const { data, error } = await supabase.rpc(
-                "get_user_context_stats_paginated",
-                {
-                    p_limit: limit,
-                    p_offset: offset,
-                    p_search_term: searchTerm || null,
-                }
+            await client.connect();
+
+            // Call the database function with parameters
+            const result = await client.query(
+                "SELECT * FROM get_user_context_stats_paginated($1, $2, $3)",
+                [limit, offset, searchTerm || null]
             );
 
-            if (error) {
-                console.error(
-                    "Supabase RPC error fetching paginated context stats:",
-                    error
-                );
-                throw error;
-            }
-
-            const contexts = (data || []).map(
-                (row: {
-                    context: string;
-                    count: number;
-                    lastUsed: string;
-                    total_count: number;
-                }) => ({
-                    context: row.context,
-                    count: row.count,
-                    lastUsed: row.lastUsed,
-                })
-            );
+            const contexts = result.rows.map((row) => ({
+                context: row.context,
+                count: row.count,
+                lastUsed: row.lastused, // PostgreSQL function returns lowercase
+            }));
 
             const totalCount =
-                data && data.length > 0 ? data[0].total_count : 0;
+                result.rows.length > 0 ? result.rows[0].total_count : 0;
             const hasMore = offset + contexts.length < totalCount;
 
             return {
@@ -133,6 +117,8 @@ export async function fetchContextStatsPaginated(
                     : "Could not fetch paginated context statistics.";
             console.error("Error in fetchContextStatsPaginated:", errorMessage);
             throw new Error(errorMessage);
+        } finally {
+            await client.end();
         }
     });
 }
@@ -154,20 +140,22 @@ export async function searchContexts(
             return [];
         }
 
-        const supabase = await createClient();
+        const client = createClient();
 
         try {
-            const { data, error } = await supabase.rpc("search_user_contexts", {
-                p_search_term: searchTerm.trim(),
-                p_limit: limit,
-            });
+            await client.connect();
 
-            if (error) {
-                console.error("Supabase RPC error searching contexts:", error);
-                throw error;
-            }
+            // Call the database function
+            const result = await client.query(
+                "SELECT * FROM search_user_contexts($1, $2)",
+                [searchTerm.trim(), limit]
+            );
 
-            return data || [];
+            return result.rows.map((row) => ({
+                context: row.context,
+                count: row.count,
+                lastUsed: row.lastused, // PostgreSQL function returns lowercase
+            }));
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -175,6 +163,8 @@ export async function searchContexts(
                     : "Could not search contexts.";
             console.error("Error in searchContexts:", errorMessage);
             throw new Error(errorMessage);
+        } finally {
+            await client.end();
         }
     });
 }
