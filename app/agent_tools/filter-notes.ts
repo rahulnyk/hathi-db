@@ -1,10 +1,12 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createDb } from "@/db/connection";
+import { notes } from "@/db/schema";
 import { measureExecutionTime } from "@/lib/performance";
 import type { Note } from "@/store/notesSlice";
 import { TodoStatus } from "@/store/notesSlice";
 import type { SearchResultNote } from "./types";
+import { and, gte, lte, eq, desc, arrayContains, count } from "drizzle-orm";
 
 /**
  * Filters interface for the filterNotes function
@@ -66,74 +68,93 @@ export async function filterNotes(
     filters: NotesFilter = {}
 ): Promise<FilterNotesResult> {
     return measureExecutionTime("filterNotes", async () => {
-        const supabase = await createClient();
         console.log("Filtering notes with filters:", filters);
+
+        const db = createDb();
         try {
+            await db.$client.connect();
+
             // Set default and maximum limits
             const limit = Math.min(filters.limit || 20, 50);
 
-            // Start building the query
-            let query = supabase
-                .from("notes")
-                .select("*", { count: "exact" })
-                .order("created_at", { ascending: false });
+            // Build the query conditions
+            const conditions = [];
 
             // Apply date filters
             if (filters.createdAfter) {
-                query = query.gte("created_at", filters.createdAfter);
+                conditions.push(
+                    gte(notes.created_at, new Date(filters.createdAfter))
+                );
             }
             if (filters.createdBefore) {
-                query = query.lte("created_at", filters.createdBefore);
+                conditions.push(
+                    lte(notes.created_at, new Date(filters.createdBefore))
+                );
             }
 
             // Apply context filters
             if (filters.contexts && filters.contexts.length > 0) {
                 // Filter notes that contain ALL of the specified contexts
-                // Using contains operator to check if the note's contexts array contains all specified contexts
-                query = query.contains("contexts", filters.contexts);
+                for (const context of filters.contexts) {
+                    conditions.push(arrayContains(notes.contexts, [context]));
+                }
             }
-
-            // Apply hashtag/tag filters
-            // if (filters.hashtags && filters.hashtags.length > 0) {
-            //     // Filter notes that contain ANY of the specified hashtags/tags
-            //     query = query.overlaps("tags", filters.hashtags);
-            // }
 
             // Apply note type filter
             if (filters.noteType) {
-                query = query.eq("note_type", filters.noteType);
+                conditions.push(eq(notes.note_type, filters.noteType));
             }
 
             // Apply deadline filters
             if (filters.deadlineAfter) {
-                query = query.gte("deadline", filters.deadlineAfter);
+                conditions.push(
+                    gte(notes.deadline, new Date(filters.deadlineAfter))
+                );
             }
             if (filters.deadlineBefore) {
-                query = query.lte("deadline", filters.deadlineBefore);
+                conditions.push(
+                    lte(notes.deadline, new Date(filters.deadlineBefore))
+                );
             }
             if (filters.deadlineOn) {
                 // Filter for notes with deadline on a specific date
-                const startOfDay = `${filters.deadlineOn}T00:00:00.000Z`;
-                const endOfDay = `${filters.deadlineOn}T23:59:59.999Z`;
-                query = query
-                    .gte("deadline", startOfDay)
-                    .lte("deadline", endOfDay);
+                const startOfDay = new Date(
+                    `${filters.deadlineOn}T00:00:00.000Z`
+                );
+                const endOfDay = new Date(
+                    `${filters.deadlineOn}T23:59:59.999Z`
+                );
+                conditions.push(
+                    and(
+                        gte(notes.deadline, startOfDay),
+                        lte(notes.deadline, endOfDay)
+                    )
+                );
             }
 
             // Apply status filter
             if (filters.status) {
-                query = query.eq("status", filters.status);
+                conditions.push(eq(notes.status, filters.status));
             }
 
-            // Apply limit
-            query = query.limit(limit);
+            // Get the total count
+            const countQuery = db
+                .select({ count: count() })
+                .from(notes)
+                .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-            const { data, error, count } = await query;
+            const countResult = await countQuery;
+            const totalCount = countResult[0]?.count || 0;
 
-            if (error) {
-                console.error("Error filtering notes:", error);
-                throw error;
-            }
+            // Get the filtered notes
+            const query = db
+                .select()
+                .from(notes)
+                .where(conditions.length > 0 ? and(...conditions) : undefined)
+                .orderBy(desc(notes.created_at))
+                .limit(limit);
+
+            const data = await query;
 
             // Prepare applied filters for response
             const appliedFilters = {
@@ -147,10 +168,6 @@ export async function filterNotes(
                     filters.contexts.length > 0 && {
                         contexts: filters.contexts,
                     }),
-                // ...(filters.hashtags &&
-                //     filters.hashtags.length > 0 && {
-                //         hashtags: filters.hashtags,
-                //     }),
                 ...(filters.noteType && { noteType: filters.noteType }),
                 ...(filters.deadlineAfter && {
                     deadlineAfter: filters.deadlineAfter,
@@ -164,16 +181,30 @@ export async function filterNotes(
             };
 
             return {
-                notes: ((data as Note[]) || []).map((note) => ({
-                    ...note,
+                notes: (data || []).map((note) => ({
+                    id: note.id,
+                    content: note.content,
                     persistenceStatus: "persisted" as const,
+                    created_at:
+                        note.created_at?.toISOString() ||
+                        new Date().toISOString(),
+                    deadline: note.deadline?.toISOString() || undefined,
+                    key_context: note.key_context || undefined,
+                    contexts: note.contexts || undefined,
+                    tags: note.tags || undefined,
+                    suggested_contexts: note.suggested_contexts || undefined,
+                    note_type:
+                        (note.note_type as Note["note_type"]) || undefined,
+                    status: (note.status as TodoStatus) || undefined,
                 })),
-                totalCount: count || 0,
+                totalCount: Number(totalCount),
                 appliedFilters,
             };
         } catch (error) {
             console.error("Error in filterNotes:", error);
             throw error;
+        } finally {
+            await db.$client.end();
         }
     });
 }
@@ -189,18 +220,20 @@ export async function getFilterOptions(): Promise<{
     availableStatuses: TodoStatus[];
 }> {
     return measureExecutionTime("getFilterOptions", async () => {
-        const supabase = await createClient();
+        const db = createDb();
 
         try {
-            // Get all unique contexts, tags, and note types
-            const { data, error } = await supabase
-                .from("notes")
-                .select("contexts, tags, note_type, status");
+            await db.$client.connect();
 
-            if (error) {
-                console.error("Error getting filter options:", error);
-                throw error;
-            }
+            // Get all unique contexts, tags, and note types
+            const data = await db
+                .select({
+                    contexts: notes.contexts,
+                    tags: notes.tags,
+                    note_type: notes.note_type,
+                    status: notes.status,
+                })
+                .from(notes);
 
             const contextSet = new Set<string>();
             const tagSet = new Set<string>();
@@ -241,12 +274,14 @@ export async function getFilterOptions(): Promise<{
                     statusSet.add(note.status as TodoStatus);
                 }
             });
+
             console.log("Available filter options:", {
                 contexts: Array.from(contextSet),
                 hashtags: Array.from(tagSet),
                 noteTypes: Array.from(noteTypeSet),
                 statuses: Array.from(statusSet),
             });
+
             return {
                 availableContexts: Array.from(contextSet).sort(),
                 availableHashtags: Array.from(tagSet).sort(),
@@ -256,6 +291,8 @@ export async function getFilterOptions(): Promise<{
         } catch (error) {
             console.error("Error in getFilterOptions:", error);
             throw error;
+        } finally {
+            await db.$client.end();
         }
     });
 }
