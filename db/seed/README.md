@@ -1,9 +1,10 @@
 # Da- **Realistic Content**: Notes include various types of content an entrepreneur would create
-- **Date Distribution**: Notes are spread across past 7 days with random timestamps
-- **Context Management**: Each note gets a date-based key context and relevant topic contexts
-- **Suggested Contexts**: Pre-populated semantic suggestions for enhanced note discovery
-- **Batch Embedding Generation**: AI embeddings are generated efficiently in parallel batches
-- **Slug-based Contexts**: All contexts use slug format for consistencye Seeding
+
+-   **Date Distribution**: Notes are spread across past 7 days with random timestamps
+-   **Context Management**: Each note gets a date-based key context and relevant topic contexts
+-   **Suggested Contexts**: Pre-populated semantic suggestions for enhanced note discovery
+-   **Batch Embedding Generation**: AI embeddings are generated efficiently in parallel batches
+-   **Slug-based Contexts**: All contexts use slug format for consistencye Seeding
 
 This directory contains scrip## Features
 
