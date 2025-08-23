@@ -216,19 +216,27 @@ The app organizes notes by "contexts" - thematic categories that group related n
 Ensure these environment variables are set in your production environment:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
+# PostgreSQL Database Configuration
+POSTGRES_HOST=your-production-postgres-host
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-secure-password
+POSTGRES_DB=hathi_db
+
+# Google AI API for embeddings
 GOOGLE_AI_API_KEY=your-google-ai-api-key
+
+# Site configuration
 NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
 ```
 
-> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper email confirmation and password reset redirects in production. Without this, users may receive emails with localhost URLs instead of your production domain.
+> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper URL generation in production environments.
 
 ### Database Setup for Production
 
-1. Run migrations on your production Supabase instance
-2. Ensure RLS policies are enabled
-3. Verify user authentication flows
+1. Set up a PostgreSQL instance with pgvector extension
+2. Run migrations using `yarn db:migrate`
+3. Seed initial data if needed
 
 ## Contributing
 
@@ -244,4 +252,4 @@ This project is private and proprietary.
 
 ---
 
-Built with ❤️ using Next.js, Supabase, and Google AI
+Built with ❤️ using Next.js, PostgreSQL, and Google AI

@@ -5,11 +5,6 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-// This check can be removed, it is just for tutorial purposes
-export const hasEnvVars =
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 /**
  * Converts a Date object to a slug string in the format "DD-Month-YYYY".
  * Example: new Date(2025, 5, 10) -> "10-june-2025"
@@ -107,9 +102,9 @@ export function areArraysEqual<T>(a: T[], b: T[]): boolean {
     if (a.length !== b.length) return false;
 
     for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) {
-        return false;
-      }
+        if (!deepEqual(a[i], b[i])) {
+            return false;
+        }
     }
 
     return true;
@@ -128,24 +123,25 @@ export function deepEqual(a: any, b: any): boolean {
 
     if (typeof a !== typeof b) return false;
 
-    if (a && b && typeof a === 'object') {
-      if (Array.isArray(a)) {
-        if (!Array.isArray(b) || a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-          if (!deepEqual(a[i], b[i])) return false;
+    if (a && b && typeof a === "object") {
+        if (Array.isArray(a)) {
+            if (!Array.isArray(b) || a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (!deepEqual(a[i], b[i])) return false;
+            }
+            return true;
         }
+
+        const aKeys = Object.keys(a);
+        const bKeys = Object.keys(b);
+        if (aKeys.length !== bKeys.length) return false;
+
+        for (const key of aKeys) {
+            if (!b.hasOwnProperty(key) || !deepEqual(a[key], b[key]))
+                return false;
+        }
+
         return true;
-      }
-
-      const aKeys = Object.keys(a);
-      const bKeys = Object.keys(b);
-      if (aKeys.length !== bKeys.length) return false;
-
-      for (const key of aKeys) {
-        if (!b.hasOwnProperty(key) || !deepEqual(a[key], b[key])) return false;
-      }
-
-      return true;
     }
 
     return false;
