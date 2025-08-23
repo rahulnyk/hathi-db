@@ -34,12 +34,9 @@ export default function Home() {
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
                         <Button asChild size="lg" className="gap-2">
-                            <Link href="/auth/sign-up">
+                            <Link href="/chat">
                                 Get Started <ArrowRight className="h-4 w-4" />
                             </Link>
-                        </Button>
-                        <Button asChild variant="outline" size="lg">
-                            <Link href="/auth/login">Sign In</Link>
                         </Button>
                     </div>
 

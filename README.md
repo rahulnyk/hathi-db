@@ -21,14 +21,15 @@
 -   **Smart Journaling**: Create and organize notes with context-based categorization
 -   **AI Integration**: Powered by Google Gemini for intelligent note suggestions and insights
 -   **Context Management**: Organize notes by contexts with pagination and search
--   **Real-time Sync**: All data synced in real-time with Supabase
+-   **Local Database**: PostgreSQL with pgvector for semantic search
 -   **Performance Monitoring**: Built-in performance logging and optimization
 
-### 🔐 Authentication & Security
+### 🔐 Database & Performance
 
--   **Secure Authentication**: Complete auth flow with Supabase (login, signup, password reset)
--   **Row Level Security**: Data isolation per user with RLS policies
--   **Protected Routes**: Auth-gated journal functionality
+-   **Local PostgreSQL**: Full database control with pgvector extension
+-   **Drizzle ORM**: Type-safe database operations
+-   **Vector Search**: Semantic similarity search with embeddings
+-   **Performance Monitoring**: Built-in performance logging and optimization
 
 ### 🎨 User Experience
 
@@ -51,12 +52,12 @@
 ## Tech Stack
 
 -   **Frontend**: Next.js 15 with App Router, React 19
--   **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+-   **Backend**: PostgreSQL with Drizzle ORM
 -   **AI**: Google Gemini API integration (flash-2.5 model)
 -   **Styling**: Tailwind CSS, shadcn/ui components
 -   **State Management**: Redux Toolkit
 -   **Database**: PostgreSQL with custom functions and triggers
--   **Authentication**: Supabase Auth with SSR
+-   **Vector Search**: pgvector extension for semantic similarity
 -   **Deployment**: Vercel-ready
 
 ## Getting Started
@@ -64,7 +65,7 @@
 ### Prerequisites
 
 -   Node.js 18+
--   A [Supabase](https://supabase.com) account and project
+-   Docker and Docker Compose (for local PostgreSQL)
 -   A [Google AI](https://aistudio.google.com/) API key
 
 ### 1. Clone the Repository
@@ -91,9 +92,12 @@ yarn install
 2. Update `.env.local` with your credentials:
 
     ```bash
-    # Supabase Configuration
-    NEXT_PUBLIC_SUPABASE_URL=your-project-url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+    # PostgreSQL Configuration (defaults work with Docker setup)
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    POSTGRES_USER=postgres
+    POSTGRES_PASSWORD=hathi-db-123!
+    POSTGRES_DB=hathi_db
 
     # Google AI Configuration
     GOOGLE_AI_API_KEY=your-google-ai-api-key
@@ -102,26 +106,34 @@ yarn install
     LOG_PERF_TO_CSV=false
     ```
 
-    You can find your Supabase credentials in your [project's API settings](https://supabase.com/dashboard/project/_/settings/api).
     You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
 
-### 4. Set Up the Database
+### 4. Start the Database
+
+Start the PostgreSQL database using Docker:
+
+```bash
+cd docker
+docker-compose up -d
+```
+
+### 5. Set Up the Database Schema
 
 Run the database migrations to set up the required tables and functions:
 
 ```bash
-yarn migrate
+yarn db:migrate
 ```
 
 This will create:
 
--   Notes table with RLS policies
--   Context and tags support
--   User statistics functions
+-   Notes table with vector support
+-   Context and tags support with array indexes
+-   Database functions for context statistics
 -   Embedding support for AI features (1536-dimensional vectors for Google gemini-embedding-exp-03-07)
--   Pagination functions
+-   Pagination and search functions
 
-### 5. Start the Development Server
+### 6. Start the Development Server
 
 ```bash
 yarn dev
@@ -137,31 +149,38 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application.
 -   `yarn build` - Build for production
 -   `yarn start` - Start production server
 -   `yarn lint` - Run ESLint
--   `yarn migrate` - Run database migrations
--   `yarn migrate:create` - Create a new migration
--   `yarn migrate:reset` - Reset database and run all migrations
+-   `yarn db:migrate` - Run database migrations
+-   `yarn db:reset` - Reset database and run all migrations
+-   `yarn db:tables` - List all database tables
+-   `yarn db:data <table>` - View data from a specific table
 
 ### Project Structure
 
 ```
 ├── app/                    # Next.js App Router
-│   ├── actions/           # Server actions
-│   ├── auth/              # Authentication pages
+│   ├── actions/           # Server actions for database
+│   ├── chat/              # AI chat interface
 │   ├── journal/           # Main journal interface
 │   └── globals.css        # Global styles
 ├── components/            # React components
-│   ├── auth/              # Auth-related components
+│   ├── chat/              # Chat-related components
 │   ├── journal/           # Journal components
 │   ├── menu/              # Navigation components
 │   └── ui/                # shadcn/ui components
+├── db/                    # Database configuration
+│   ├── migrate/           # Migration files
+│   ├── connection.ts      # Database connection
+│   └── schema.ts          # Drizzle schema
+├── docker/                # Docker configuration
+│   ├── docker-compose.yml # PostgreSQL setup
+│   └── Dockerfile.postgres # Custom PostgreSQL image
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # Utility functions
 │   ├── ai/                # AI integration
-│   ├── prompts/           # AI prompts
-│   └── supabase/          # Supabase configuration
-├── migrations/            # Database migrations
+│   └── prompts/           # AI prompts
 ├── store/                 # Redux store and slices
-└── scripts/               # Build and deployment scripts
+├── tests/                 # Test files
+└── scripts/               # Build and utility scripts
 ```
 
 ### Key Features Implementation
@@ -197,19 +216,27 @@ The app organizes notes by "contexts" - thematic categories that group related n
 Ensure these environment variables are set in your production environment:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your-production-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
+# PostgreSQL Database Configuration
+POSTGRES_HOST=your-production-postgres-host
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-secure-password
+POSTGRES_DB=hathi_db
+
+# Google AI API for embeddings
 GOOGLE_AI_API_KEY=your-google-ai-api-key
+
+# Site configuration
 NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
 ```
 
-> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper email confirmation and password reset redirects in production. Without this, users may receive emails with localhost URLs instead of your production domain.
+> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper URL generation in production environments.
 
 ### Database Setup for Production
 
-1. Run migrations on your production Supabase instance
-2. Ensure RLS policies are enabled
-3. Verify user authentication flows
+1. Set up a PostgreSQL instance with pgvector extension
+2. Run migrations using `yarn db:migrate`
+3. Seed initial data if needed
 
 ## Contributing
 
@@ -225,4 +252,4 @@ This project is private and proprietary.
 
 ---
 
-Built with ❤️ using Next.js, Supabase, and Google AI
+Built with ❤️ using Next.js, PostgreSQL, and Google AI

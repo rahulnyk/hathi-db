@@ -1,13 +1,11 @@
-import { withAuth } from "@/components/auth/with-auth";
-import { User } from "@supabase/supabase-js";
 import { JournalComponent } from "@/components/journal";
 
-function Journal({ user }: { user: User }) {
+function Journal() {
     return (
         <div className="flex flex-row w-full relative">
-            <JournalComponent user={user} />
+            <JournalComponent />
         </div>
     );
 }
 
-export default withAuth(Journal);
+export default Journal;

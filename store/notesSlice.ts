@@ -29,7 +29,6 @@ export type Note = {
     id: string;
     content: string;
     created_at: string;
-    user_id: string;
     persistenceStatus: PersistenceStatus;
     errorMessage?: string;
     key_context?: string;
