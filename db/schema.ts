@@ -16,10 +16,8 @@ import { sql } from "drizzle-orm";
  * over PostgreSQL-specific features like vector indexes and GIN indexes.
  */
 export const notes = pgTable("notes", {
-    // Primary key
-    id: uuid("id")
-        .primaryKey()
-        .default(sql`gen_random_uuid()`),
+    // Primary key - ID generation handled by application
+    id: uuid("id").primaryKey().notNull(),
 
     // Core content
     content: text("content").notNull(),

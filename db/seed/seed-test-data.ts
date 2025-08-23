@@ -3,6 +3,7 @@
  * Inserts basic notes data for testing filter functionality
  */
 
+import { v4 as uuidv4 } from "uuid";
 import { createDb } from "../connection.js";
 import { notes } from "../schema.js";
 
@@ -29,6 +30,7 @@ export async function seedTestData() {
         // Simple test notes with random embeddings
         const testNotes = [
             {
+                id: uuidv4(),
                 content:
                     "Test note 1 - Project planning meeting #planning #important",
                 key_context: "test-planning",
@@ -42,6 +44,7 @@ export async function seedTestData() {
                 updated_at: new Date("2025-08-20T10:00:00Z"),
             },
             {
+                id: uuidv4(),
                 content:
                     "Test note 2 - Development tasks and priorities #development #tasks",
                 key_context: "development",
@@ -55,6 +58,7 @@ export async function seedTestData() {
                 updated_at: new Date("2025-08-21T14:30:00Z"),
             },
             {
+                id: uuidv4(),
                 content:
                     "Test note 3 - Marketing strategy review #marketing #strategy",
                 key_context: "marketing",
@@ -68,6 +72,7 @@ export async function seedTestData() {
                 updated_at: new Date("2025-08-22T09:15:00Z"),
             },
             {
+                id: uuidv4(),
                 content:
                     "Test note 4 - Team feedback and retrospective #team #feedback",
                 key_context: "team",
@@ -81,6 +86,7 @@ export async function seedTestData() {
                 updated_at: new Date("2025-08-23T16:45:00Z"),
             },
             {
+                id: uuidv4(),
                 content:
                     "Test note 5 - Product roadmap discussion #product #roadmap",
                 key_context: "product",
