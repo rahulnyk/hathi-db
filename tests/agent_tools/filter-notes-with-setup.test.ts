@@ -19,14 +19,14 @@ describe("Filter Notes Functions with Database Setup", () => {
         try {
             // Truncate all tables to ensure clean state
             await execAsync(
-                "cd /Users/rahulnayak/TechWork/hathi-db && yarn db:test:truncate"
+                "cd ./hathi-db && yarn db:test:truncate"
             );
             console.log("✅ Tables truncated successfully");
 
             console.log("🌱 Seeding test database with necessary data...");
             // Seed with minimal test data (no AI required)
             await execAsync(
-                "cd /Users/rahulnayak/TechWork/hathi-db && yarn db:test:seed"
+                "cd ./hathi-db && yarn db:test:seed"
             );
             console.log("✅ Test data seeded successfully");
         } catch (error) {
