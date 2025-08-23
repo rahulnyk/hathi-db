@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/db/connection";
+import { createClient, createDb } from "@/db/connection";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { notes } from "@/db/schema";
 import { measureExecutionTime } from "@/lib/performance";
@@ -167,11 +167,11 @@ export async function filterNotes(
     return measureExecutionTime("filterNotes", async () => {
         console.log("Filtering notes with filters:", filters);
 
-        const client = createClient();
+        const db = createDb();
 
         try {
-            await client.connect();
-            const db = drizzle(client, { schema: { notes } });
+            // Connect the client before using it
+            await db.$client.connect();
 
             // Set default and maximum limits
             const limit = Math.min(filters.limit || 20, 50);
@@ -238,7 +238,7 @@ export async function filterNotes(
             console.error("Error in filterNotes:", errorMessage);
             throw new Error(`Failed to filter notes: ${errorMessage}`);
         } finally {
-            await client.end();
+            await db.$client.end();
         }
     });
 }
