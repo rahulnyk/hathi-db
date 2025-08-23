@@ -5,11 +5,14 @@ services:
         environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: hathi-db-123!
-            POSTGRES_DB: hathi_db
+            POSTGRES_DB: postgres # Default database for initial connection
+            # Additional environment variables for multi-database setup
+            POSTGRES_MULTIPLE_DATABASES: hathi_db,hathi_db_test
         ports:
             - "5432:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
+            - ./init-pgvector.sql:/docker-entrypoint-initdb.d/01-init-pgvector.sql
 
 volumes:
     postgres_data:
