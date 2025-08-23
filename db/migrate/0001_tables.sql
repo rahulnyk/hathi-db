@@ -1,5 +1,5 @@
 CREATE TABLE "notes" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"content" text NOT NULL,
 	"key_context" text,
 	"contexts" text[],

@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 import { promises as fs } from "fs";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 import { GeminiAI } from "../../lib/ai/gemini";
 import { getCurrentEmbeddingConfig } from "../../lib/constants/ai-config";
 import { dateToSlug } from "../../lib/utils";
@@ -30,6 +31,7 @@ interface SeedNote {
 }
 
 interface NoteToInsert {
+    id: string;
     content: string;
     key_context: string;
     contexts: string[];
@@ -244,6 +246,7 @@ async function runSeedNotes() {
                 const allContexts = [daySlug, ...seedNote.contexts];
 
                 notesToInsert.push({
+                    id: uuidv4(),
                     content: seedNote.content,
                     key_context: daySlug,
                     contexts: allContexts,
