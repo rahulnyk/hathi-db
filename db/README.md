@@ -11,9 +11,13 @@ db/
 │   ├── 0001_extensions.sql         # PostgreSQL extensions
 │   ├── 0002_triggers.sql           # Triggers and utility functions
 │   └── 0003_functions.sql          # Application database functions
+├── seed/                       # Database seeding files
+│   ├── seed-notes.ts              # Note seeding script
+│   └── entrepreneur-notes.json    # Sample note data
 ├── schema.ts                   # Drizzle schema definition
 ├── connection.ts               # Database connection utilities
 ├── migrate-runner.ts           # Custom migration runner
+├── truncate.ts                 # Database truncation utility
 └── README.md                   # This file
 ```
 
@@ -71,12 +75,16 @@ Application database functions:
     ```
 
 2. **Environment variables in .env.local**
+
     ```env
     POSTGRES_HOST=localhost
     POSTGRES_PORT=5432
     POSTGRES_USER=postgres
-    POSTGRES_PASSWORD=hathi-db-1234%
-    POSTGRES_DB=postgres
+    POSTGRES_PASSWORD=hathi-db-123!
+    POSTGRES_DB=hathi_db
+
+    # Required for seeding (AI embeddings)
+    GOOGLE_AI_API_KEY=your-google-api-key
     ```
 
 ### Available Scripts
@@ -93,6 +101,19 @@ yarn db:reset
 
 # Generate new migration from schema changes
 yarn db:generate
+
+# Data management commands
+yarn db:truncate    # Remove all data (keep schema)
+yarn db:seed        # Populate with sample data
+yarn db:fresh       # Truncate + seed (quick refresh)
+
+# Database inspection commands
+yarn db:tables      # List all tables
+yarn db:schema      # Show table schemas
+yarn db:functions   # List database functions
+yarn db:indexes     # Show all indexes
+yarn db:data        # Show table data (requires table name)
+yarn db:overview    # Database overview
 ```
 
 ### Migration Process
@@ -113,6 +134,32 @@ yarn db:generate
     ```bash
     yarn db:reset
     ```
+
+### Data Management
+
+**Quick Development Setup (Most Common)**
+
+```bash
+# Get fresh sample data for development
+yarn db:fresh
+```
+
+**Individual Data Commands**
+
+```bash
+# Remove all data but keep schema
+yarn db:truncate
+
+# Add sample entrepreneur notes (20 notes across past 7 days)
+yarn db:seed
+```
+
+The seeding process:
+
+-   Creates 20 realistic entrepreneur notes
+-   Distributes them across the past 7 days
+-   Generates AI embeddings for semantic search
+-   Includes contexts, tags, and note types for testing filters
 
 ## Schema Management
 
@@ -140,6 +187,23 @@ The custom migration runner (`migrate-runner.ts`) provides:
 -   **Reset functionality** - Clean slate database setup
 -   **Detailed logging** - Shows progress and success/failure for each step
 
+## Data Management Features
+
+### Truncation (`truncate.ts`)
+
+-   **Safe data removal** - Removes all data while preserving schema
+-   **RESTART IDENTITY** - Resets auto-increment sequences
+-   **CASCADE handling** - Properly handles foreign key constraints
+-   **Connection management** - Automatic cleanup and error handling
+
+### Seeding (`seed/seed-notes.ts`)
+
+-   **Realistic data** - 20 entrepreneur-focused notes with authentic content
+-   **Time distribution** - Notes spread across past 7 days with random timestamps
+-   **AI embeddings** - Generates vector embeddings for semantic search testing
+-   **Rich metadata** - Includes contexts, tags, note types for comprehensive testing
+-   **Batch processing** - Efficient bulk operations for better performance
+
 ## Schema Compatibility
 
 This migration setup perfectly replicates the current Supabase schema:
@@ -155,7 +219,27 @@ This migration setup perfectly replicates the current Supabase schema:
 
 After successful migration setup:
 
-1. Update application database client to use local PostgreSQL
-2. Update server actions to use Drizzle ORM instead of Supabase client
-3. Test all application functionality with local database
-4. Deploy local PostgreSQL to production environment
+1. **Development workflow**: Use `yarn db:fresh` for quick data refresh during development
+2. **Application integration**: Update server actions to use Drizzle ORM instead of Supabase client
+3. **Testing**: Use seeded data to test filtering, search, and other application features
+4. **Production deployment**: Deploy PostgreSQL with pgvector to production environment
+5. **Data migration**: Import existing production data from Supabase to PostgreSQL
+
+## Common Development Tasks
+
+```bash
+# Fresh start for development
+yarn db:fresh
+
+# Schema changes workflow
+yarn db:generate    # After updating schema.ts
+yarn db:migrate     # Apply the changes
+
+# Clean slate (nuclear option)
+yarn db:reset
+yarn db:seed
+
+# Production-like testing
+yarn db:truncate
+# Import real data here
+```
