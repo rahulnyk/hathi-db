@@ -8,6 +8,7 @@ import {
     uiMessagesToStoredMessages,
     storedMessagesToUIMessages,
 } from "@/lib/chat-message-utils";
+import { DefaultChatTransport } from "ai";
 import {
     initializeChat,
     setMessages,
@@ -26,15 +27,18 @@ export default function ChatPage() {
     const isChatInitialized = useAppSelector(selectIsChatInitialized);
 
     // Convert stored messages to UIMessage format for useChat
-    const initialMessages: UIMessage[] =
-        storedMessagesToUIMessages(storedMessages);
+    const messages: UIMessage[] = storedMessagesToUIMessages(storedMessages);
 
     // Create chat hook with persistence - same as NotesPanel
     const chatHook = useChat({
-        api: "/api/chat",
+        transport: new DefaultChatTransport({
+            api: "/api/chat",
+            credentials: "include",
+            headers: { "Custom-Header": "value" },
+        }),
+        // api: "/api/chat",
         id: chatId || undefined,
-        initialMessages,
-        sendExtraMessageFields: true,
+        messages,
     });
 
     // Initialize chat on first render

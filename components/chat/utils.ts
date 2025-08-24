@@ -6,7 +6,7 @@ import {
     SourceUIPart,
     FileUIPart,
     StepStartUIPart,
-} from "@ai-sdk/ui-utils";
+} from 'ai';
 
 export type MessagePart =
     | TextUIPart

@@ -12,7 +12,7 @@ export const tools: ToolSet = {
     filterNotes: tool({
         description:
             "Filter and search notes based on various criteria like date, contexts, note type, deadline, status, and content search. Returns up to 20 notes by default.",
-        parameters: z.object({
+        inputSchema: z.object({
             createdAfter: z
                 .string()
                 .optional()
@@ -102,7 +102,7 @@ export const tools: ToolSet = {
     getFilterOptions: tool({
         description:
             "Get available filter options (contexts, hashtags, note types, statuses) that the user has in their notes",
-        parameters: z.object({}),
+        inputSchema: z.object({}),
         execute: async () => {
             try {
                 const options = await getFilterOptions();
@@ -126,7 +126,7 @@ export const tools: ToolSet = {
     searchNotesBySimilarity: tool({
         description:
             "Search notes using semantic similarity based on embeddings. This finds notes that are conceptually related to the query, even if they don't contain exact keywords. Perfect for finding notes about similar topics, concepts, or themes.",
-        parameters: z.object({
+        inputSchema: z.object({
             query: z
                 .string()
                 .describe(
@@ -181,7 +181,7 @@ export const tools: ToolSet = {
     answer: tool({
         description:
             "Use this tool to provide a final answer to the user's question. DO NOT take any further actions after this step. This should be your last step.",
-        parameters: z.object({
+        inputSchema: z.object({
             foundNotes: z
                 .array(z.string())
                 .describe(

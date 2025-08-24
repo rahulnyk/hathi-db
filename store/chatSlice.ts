@@ -1,12 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { generateId } from "ai";
-import { Message } from "ai";
+import { UIMessage } from "ai";
 
 // Create a simplified, serializable version based on AI SDK Message type
 // Pick only the essential fields that we need and can serialize
 export interface StoredMessage {
     id: string;
-    role: Message["role"]; // Use the role type from Message
+    role: UIMessage["role"]; // Use the role type from Message
     content: string;
     createdAt?: string;
     // We'll handle complex parts separately if needed

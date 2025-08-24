@@ -1,5 +1,5 @@
 // import { google } from "@ai-sdk/google";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
 import { gemini } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
@@ -19,12 +19,12 @@ export async function POST(req: Request) {
             messages,
             maxRetries: 2,
             system: agentSystemPrompt(),
-            maxSteps: 3,
+            stopWhen: stepCountIs(5),
             toolChoice: "auto", // let the agent decide when to use tools vs respond directly
             tools,
         });
 
-        return result.toDataStreamResponse();
+        return result.toUIMessageStreamResponse();
     } catch (error) {
         console.error("Chat API error:", error);
         return new Response(

@@ -20,6 +20,7 @@ import {
     selectIsChatInitialized,
 } from "@/store/chatSlice";
 import { UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 
 export function NotesPanel() {
     const dispatch = useAppDispatch();
@@ -38,10 +39,14 @@ export function NotesPanel() {
     // - `id` is used to identify the chat session for persistence.
     // - `initialMessages` initializes the chat with stored messages.
     const chatHook = useChat({
-        api: "/api/chat",
+        // api: "/api/chat",
+        transport: new DefaultChatTransport({
+            api: "/api/chat",
+            credentials: "include",
+            headers: { "Custom-Header": "value" },
+        }),
         id: chatId || undefined,
-        initialMessages,
-        sendExtraMessageFields: true,
+        messages: initialMessages,
     });
 
     // Initialize chat on first render

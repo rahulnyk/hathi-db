@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
 import { MessagePart, messageHasParts } from "./utils";
-import { ToolInvocationUIPart } from "@ai-sdk/ui-utils";
+import { ToolInvocationUIPart } from "ai";
 import { HashLoader } from "react-spinners";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
@@ -40,10 +40,10 @@ export function ChatComponent({
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
+    const [content, setContent] = useState("");
 
     // Use the provided chatHook directly
-    const { messages, input, handleInputChange, handleSubmit, status } =
-        chatHook;
+    const { messages, sendMessage, status } = chatHook;
 
     // Auto-scroll refs and logic
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -223,17 +223,24 @@ export function ChatComponent({
             {/* Input area */}
             {showInput && (
                 <div className="border-t p-2 sm:p-4 flex-shrink-0">
-                    <form onSubmit={handleSubmit} className="flex gap-2">
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            sendMessage({ text: content });
+                            setContent("");
+                        }}
+                        className="flex gap-2"
+                    >
                         <Input
-                            value={input}
-                            onChange={handleInputChange}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
                             placeholder="Ask about your notes..."
                             disabled={isProcessing}
                             className="flex-1 text-sm sm:text-base"
                         />
                         <Button
                             type="submit"
-                            disabled={isProcessing || !input.trim()}
+                            disabled={isProcessing || !content.trim()}
                             size="icon"
                             className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
                         >
@@ -366,7 +373,7 @@ function MessagePartRenderer({
     isUserMessage: boolean;
 }) {
     const displayText = {
-        reasoning: "Thinking",
+        reasoningText: "Thinking",
         source: "...",
         file: "...",
         "step-start": "Thinking...",
