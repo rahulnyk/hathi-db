@@ -1,5 +1,5 @@
 // import { google } from "@ai-sdk/google";
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
 import { gemini } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
         const result = streamText({
             model: gemini("gemini-2.5-flash"),
-            messages,
+            messages: convertToModelMessages(messages),
             maxRetries: 2,
             system: agentSystemPrompt(),
             stopWhen: stepCountIs(5),

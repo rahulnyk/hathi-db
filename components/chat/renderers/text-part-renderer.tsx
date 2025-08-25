@@ -1,15 +1,16 @@
 import ReactMarkdown from "react-markdown";
-import { TextUIPart } from 'ai';
+import { TextUIPart } from "ai";
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ReasoningPart } from "@ai-sdk/provider-utils";
 
 // Text part component
 export function TextPartRenderer({
     part,
     isUserMessage,
 }: {
-    part: TextUIPart;
+    part: TextUIPart | ReasoningPart;
     isUserMessage?: boolean;
 }) {
     const [copied, setCopied] = useState(false);

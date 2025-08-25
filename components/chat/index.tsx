@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
-import { MessagePart, messageHasParts } from "./utils";
-import { ToolInvocationUIPart } from "ai";
 import { HashLoader } from "react-spinners";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
@@ -23,7 +21,15 @@ import { clearChat } from "@/store/chatSlice";
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
 import { ToolResultRenderer } from "./renderers/tool-results-renderer";
-
+import type {
+    UIMessagePart,
+    UIDataTypes,
+    UITools,
+    ToolUIPart,
+    DynamicToolCall,
+    DynamicToolUIPart,
+    DataUIPart,
+} from "ai";
 export interface ChatComponentProps {
     chatHook: ReturnType<typeof useChat>; // Now required, not optional
     className?: string;
@@ -314,27 +320,17 @@ function MessageContent({
     displayToolInfo: boolean;
     isUserMessage: boolean;
 }) {
-    if (messageHasParts(message)) {
+    if (message.parts) {
         // Check if this message has both text and answer tool parts
         const hasTextPart = message.parts.some((part) => part.type === "text");
         const hasAnswerTool = message.parts.some(
-            (part) =>
-                part.type === "tool-invocation" &&
-                "toolInvocation" in part &&
-                part.toolInvocation.toolName === "answer"
+            (part) => part.type === "tool-answer"
         );
 
         // If we have both text and answer tool, filter out the answer tool to avoid duplication
         const partsToRender =
             hasTextPart && hasAnswerTool
-                ? message.parts.filter(
-                      (part) =>
-                          !(
-                              part.type === "tool-invocation" &&
-                              "toolInvocation" in part &&
-                              part.toolInvocation.toolName === "answer"
-                          )
-                  )
+                ? message.parts.filter((part) => !(part.type === "tool-answer"))
                 : message.parts;
 
         return (
@@ -351,10 +347,11 @@ function MessageContent({
         );
     }
 
-    if (message.content) {
+    // Fallback for legacy content property (shouldn't happen in SDK 5, but for safety)
+    if ((message as unknown as { content?: string }).content) {
         return (
             <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base">
-                {message.content}
+                {(message as unknown as { content: string }).content}
             </div>
         );
     }
@@ -368,86 +365,74 @@ function MessagePartRenderer({
     displayToolInfo,
     isUserMessage,
 }: {
-    part: MessagePart;
+    part: UIMessagePart<UIDataTypes, UITools>; // Use the actual UIMessage part type
     displayToolInfo: boolean;
     isUserMessage: boolean;
 }) {
-    const displayText = {
-        reasoningText: "Thinking",
-        source: "...",
-        file: "...",
-        "step-start": "Thinking...",
-    };
     switch (part.type) {
         case "text":
+        case "reasoning":
             return (
                 <TextPartRenderer part={part} isUserMessage={isUserMessage} />
             );
-        // return null; // Ignore text parts in this context
-        case "tool-invocation":
-            return (
-                <ToolInvocationPartComponent
-                    part={part as ToolInvocationUIPart}
-                    displayToolInfo={displayToolInfo}
-                />
-            );
-
-        case "reasoning":
-        case "source":
+        case "source-url":
+        case "source-document":
         case "file":
         case "step-start":
-            // Handle other part types if needed
-            return displayToolInfo ? (
-                <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20 break-words">
-                    {displayText[part.type]} - {part.type}
-                </div>
-            ) : null;
-
-        default:
             return (
-                <div className="text-xs text-muted-foreground break-words">
-                    Unknown part type
-                </div>
+                displayToolInfo === true && (
+                    <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20 break-words">
+                        {part?.type} <br />
+                    </div>
+                )
             );
+        default:
+            if (part.type.startsWith("data-")) {
+                return null;
+            } else if (part.type.startsWith("tool-")) {
+                return (
+                    <ToolPartComponent
+                        part={part as ToolUIPart | DynamicToolUIPart}
+                        displayToolInfo={displayToolInfo}
+                    />
+                );
+            } else {
+                return null;
+            }
     }
 }
 
-// Tool invocation part component
-function ToolInvocationPartComponent({
+// Tool part component for AI SDK 5
+function ToolPartComponent({
     part,
     displayToolInfo,
 }: {
-    part: ToolInvocationUIPart;
+    part: ToolUIPart | DynamicToolUIPart; // Tool part with type 'tool-${toolName}' or 'data-${string}'
     displayToolInfo: boolean;
 }) {
-    const { toolName, state } = part.toolInvocation;
-    const result =
-        "result" in part.toolInvocation
-            ? part.toolInvocation.result
-            : undefined;
-
-    // Show tool call indicator if enabled
-    if (state === "call" && displayToolInfo) {
-        return <ToolCallIndicator toolName={toolName} />;
-    }
-
-    // Don't show the answer tool at all - it's handled by text parts to avoid duplication
-    if (toolName === "answer") {
+    if (!part.type.startsWith("tool-")) {
         return null;
     }
 
-    // Show tool result
-    if (state === "result" && result) {
-        return (
-            <ToolResultRenderer
-                toolName={toolName}
-                result={result}
-                displayToolInfo={displayToolInfo}
-            />
-        );
+    // Show tool call indicator if enabled and in streaming states
+    const state = part.state;
+    switch (part.state) {
+        case "input-streaming":
+        case "input-available":
+            return (
+                displayToolInfo && <ToolCallIndicator toolName={part.type} />
+            );
+        case "output-available":
+            return (
+                <ToolResultRenderer
+                    toolName={part.type}
+                    result={part.output}
+                    displayToolInfo={displayToolInfo}
+                />
+            );
+        case "output-error":
+            return <div>Error: {part.errorText}</div>;
     }
-
-    return null;
 }
 
 // Tool call indicator
@@ -456,15 +441,15 @@ function ToolCallIndicator({ toolName }: { toolName: string }) {
     const agentStatus = useAppSelector((state) => state.agent.status);
     const getToolMessage = (tool: string) => {
         switch (tool) {
-            case "filterNotes":
+            case "tool-filterNotes":
                 return "Searching your notes...";
-            case "searchNotesBySimilarity":
+            case "tool-searchNotesBySimilarity":
                 return "Finding related notes using AI...";
-            case "getFilterOptions":
+            case "tool-getFilterOptions":
                 return "Getting available filter options...";
-            case "summarizeNotes":
+            case "tool-summarizeNotes":
                 return "Generating summary...";
-            case "answer":
+            case "tool-answer":
                 return "Done";
             default:
                 return "Processing...";

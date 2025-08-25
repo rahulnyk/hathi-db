@@ -4,18 +4,23 @@ import { StoredMessage } from "@/store/chatSlice";
 /**
  * Converts a UIMessage from the AI SDK to a StoredMessage for Redux storage.
  * Handles serialization of Date objects and maintains type safety.
+ * In AI SDK 5, messages always use parts array instead of content property.
  */
 export function uiMessageToStoredMessage(message: UIMessage): StoredMessage {
+    // Extract text from parts for backward compatibility with storage
+    const textParts = message.parts.filter((part) => part.type === "text");
+    const content = textParts
+        .map((part) => (part as { text: string }).text)
+        .join("");
+
     return {
         id: message.id,
-        // Map system and data roles to assistant for storage consistency
-        role:
-            message.role === "system" || message.role === "data"
-                ? "assistant"
-                : message.role,
-        content: message.content || "",
-        createdAt: message.createdAt
-            ? message.createdAt.toISOString()
+        role: message.role, // AI SDK 5 removed 'data' role, only has 'user' and 'assistant'
+        content: content || "",
+        createdAt: (message as unknown as { createdAt?: Date }).createdAt
+            ? (
+                  message as unknown as { createdAt: Date }
+              ).createdAt.toISOString()
             : undefined,
         parts: message.parts || undefined,
     };
@@ -24,6 +29,7 @@ export function uiMessageToStoredMessage(message: UIMessage): StoredMessage {
 /**
  * Converts a StoredMessage from Redux to a UIMessage for the AI SDK.
  * Handles deserialization of Date objects and maintains type safety.
+ * In AI SDK 5, we always create parts array even for simple text messages.
  */
 export function storedMessageToUIMessage(message: StoredMessage): UIMessage {
     // Handle messages with parts (complex AI responses)
@@ -31,19 +37,19 @@ export function storedMessageToUIMessage(message: StoredMessage): UIMessage {
         return {
             id: message.id,
             role: message.role,
-            createdAt: message.createdAt
-                ? new Date(message.createdAt)
-                : undefined,
             parts: message.parts,
         } as UIMessage;
     }
 
-    // Handle simple text messages
+    // Handle simple text messages - convert content to parts array
+    const parts = message.content
+        ? [{ type: "text" as const, text: message.content }]
+        : [];
+
     return {
         id: message.id,
         role: message.role,
-        content: message.content,
-        createdAt: message.createdAt ? new Date(message.createdAt) : undefined,
+        parts: parts,
     } as UIMessage;
 }
 
