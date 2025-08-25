@@ -3,12 +3,15 @@ import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
 import { gemini } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
+import { UIMessage } from "ai";
 
 export const maxDuration = 50;
 
 export async function POST(req: Request) {
     try {
-        const { messages, id } = await req.json();
+        const { messages, id }: { messages: UIMessage[]; id: string } =
+            await req.json();
+        // const { messages, id } = await req.json();
 
         console.log("Received messages:", messages?.length);
         console.log("Chat ID:", id);

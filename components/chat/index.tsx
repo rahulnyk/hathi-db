@@ -29,7 +29,10 @@ import type {
     DynamicToolCall,
     DynamicToolUIPart,
     DataUIPart,
+    TextUIPart,
 } from "ai";
+import { ReasoningPart } from "@ai-sdk/provider-utils";
+import Placeholder from "./placeholder";
 export interface ChatComponentProps {
     chatHook: ReturnType<typeof useChat>; // Now required, not optional
     className?: string;
@@ -46,10 +49,10 @@ export function ChatComponent({
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
-    const [content, setContent] = useState("");
+    // const [content, setContent] = useState("");
 
     // Use the provided chatHook directly
-    const { messages, sendMessage, status } = chatHook;
+    const { messages, status } = chatHook;
 
     // Auto-scroll refs and logic
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -68,9 +71,9 @@ export function ChatComponent({
     const scrollToBottom = () => {
         if (messagesContainerRef.current) {
             const container = messagesContainerRef.current;
-            // Use requestAnimationFrame to ensure DOM is updated before scrolling
-            requestAnimationFrame(() => {
-                // Find the last message element and scroll it into view
+
+            // Helper function to perform the actual scroll
+            const performScroll = () => {
                 const lastMessage =
                     container.lastElementChild?.lastElementChild;
                 if (lastMessage) {
@@ -82,18 +85,13 @@ export function ChatComponent({
                     // Fallback to container scroll
                     container.scrollTop = container.scrollHeight;
                 }
+            };
 
+            // Use requestAnimationFrame to ensure DOM is updated before scrolling
+            requestAnimationFrame(() => {
+                performScroll();
                 // Add a small delay for any dynamic content (like tool results) to render
-                setTimeout(() => {
-                    if (lastMessage) {
-                        lastMessage.scrollIntoView({
-                            behavior: "smooth",
-                            block: "end",
-                        });
-                    } else {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                }, 100);
+                setTimeout(performScroll, 100);
             });
         }
     };
@@ -129,44 +127,46 @@ export function ChatComponent({
                     "max-w-4xl mx-auto h-[100dvh] sm:h-[700px] sm:max-h-[80vh]"
             )}
         >
-            {showHeader && (
-                <div className="border-b p-2 sm:p-4 flex justify-between items-center min-h-[50px] sm:min-h-[60px] flex-shrink-0">
-                    {/* Header with settings */}
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center">
-                            <span className="text-xs sm:text-sm mr-2">
-                                Tool Info
-                            </span>
-                            <button
-                                onClick={() =>
-                                    dispatch(toggleDisplayToolInfo())
-                                }
-                                className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                                    displayToolInfo ? "bg-primary" : "bg-input"
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-background transition-transform ${
-                                        displayToolInfo
-                                            ? "translate-x-5 sm:translate-x-6"
-                                            : "translate-x-1"
-                                    }`}
-                                />
-                            </button>
-                        </div>
-                        {messages.length > 0 && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleClearChat}
-                                className="text-xs"
-                            >
-                                Clear Chat
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            )}
+            {
+                // showHeader && (
+                //     <div className="border-b p-2 sm:p-4 flex justify-between items-center min-h-[50px] sm:min-h-[60px] flex-shrink-0">
+                //         {/* Header with settings */}
+                //         <div className="flex items-center gap-4">
+                //             <div className="flex items-center">
+                //                 <span className="text-xs sm:text-sm mr-2">
+                //                     Tool Info
+                //                 </span>
+                //                 <button
+                //                     onClick={() =>
+                //                         dispatch(toggleDisplayToolInfo())
+                //                     }
+                //                     className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                //                         displayToolInfo ? "bg-primary" : "bg-input"
+                //                     }`}
+                //                 >
+                //                     <span
+                //                         className={`inline-block h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-background transition-transform ${
+                //                             displayToolInfo
+                //                                 ? "translate-x-5 sm:translate-x-6"
+                //                                 : "translate-x-1"
+                //                         }`}
+                //                     />
+                //                 </button>
+                //             </div>
+                //             {messages.length > 0 && (
+                //                 <Button
+                //                     variant="outline"
+                //                     size="sm"
+                //                     onClick={handleClearChat}
+                //                     className="text-xs"
+                //                 >
+                //                     Clear Chat
+                //                 </Button>
+                //             )}
+                //         </div>
+                //     </div>
+                // )
+            }
 
             {/* Messages area */}
             <div
@@ -174,25 +174,7 @@ export function ChatComponent({
                 className="flex-1 p-2 sm:p-4 overflow-y-auto min-h-0 smooth-scroll"
             >
                 <div className="space-y-3 sm:space-y-4">
-                    {messages.length === 0 && (
-                        <div className="text-center text-muted-foreground py-4 sm:py-8 px-2">
-                            <HathiIcon className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
-                            <p className="mb-2 text-sm sm:text-base">
-                                Start a conversation with Hathi
-                            </p>
-                            <div className="text-xs space-y-1">
-                                <p>Try asking:</p>
-                                <div className="space-y-1 text-muted-foreground/70">
-                                    <p>• Show me notes from last week</p>
-                                    <p>• Find notes about React</p>
-                                    <p>• What contexts do I have?</p>
-                                    <p className="hidden sm:block">
-                                        • Show me all my todo notes
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {messages.length === 0 && <Placeholder />}
 
                     {messages.map((message: UIMessage) => (
                         <ChatMessage
@@ -208,57 +190,57 @@ export function ChatComponent({
             {isProcessing && (
                 <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
                     <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
-                    {isProcessing && (
-                        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
-                            <span className="text-xs whitespace-nowrap">
-                                {status === "submitted"
-                                    ? "Thinking..."
-                                    : "Generating..."}
-                            </span>
-                            <HashLoader
-                                size={16}
-                                color="currentColor"
-                                loading={true}
-                                // className="sm:hidden"
-                            />
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
+                        <span className="text-xs whitespace-nowrap">
+                            {status === "submitted"
+                                ? "Thinking..."
+                                : "Generating..."}
+                        </span>
+                        <HashLoader
+                            size={16}
+                            color="currentColor"
+                            loading={true}
+                            // className="sm:hidden"
+                        />
+                    </div>
                 </div>
             )}
 
             {/* Input area */}
-            {showInput && (
-                <div className="border-t p-2 sm:p-4 flex-shrink-0">
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            sendMessage({ text: content });
-                            setContent("");
-                        }}
-                        className="flex gap-2"
-                    >
-                        <Input
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            placeholder="Ask about your notes..."
-                            disabled={isProcessing}
-                            className="flex-1 text-sm sm:text-base"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={isProcessing || !content.trim()}
-                            size="icon"
-                            className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
-                        >
-                            {isProcessing ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Send className="h-4 w-4" />
-                            )}
-                        </Button>
-                    </form>
-                </div>
-            )}
+            {
+                // showInput && (
+                //     <div className="border-t p-2 sm:p-4 flex-shrink-0">
+                //         <form
+                //             onSubmit={(e) => {
+                //                 e.preventDefault();
+                //                 sendMessage({ text: content });
+                //                 setContent("");
+                //             }}
+                //             className="flex gap-2"
+                //         >
+                //             <Input
+                //                 value={content}
+                //                 onChange={(e) => setContent(e.target.value)}
+                //                 placeholder="Ask about your notes..."
+                //                 disabled={isProcessing}
+                //                 className="flex-1 text-sm sm:text-base"
+                //             />
+                //             <Button
+                //                 type="submit"
+                //                 disabled={isProcessing || !content.trim()}
+                //                 size="icon"
+                //                 className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
+                //             >
+                //                 {isProcessing ? (
+                //                     <Loader2 className="h-4 w-4 animate-spin" />
+                //                 ) : (
+                //                     <Send className="h-4 w-4" />
+                //                 )}
+                //             </Button>
+                //         </form>
+                //     </div>
+                // )
+            }
         </div>
     );
 }
@@ -280,86 +262,29 @@ function ChatMessage({
                     : "bg-muted mr-2 sm:mr-4 md:mr-8"
             )}
         >
-            {/* <div
-                className={cn(
-                    "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-                    message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted-foreground text-muted"
-                )}
-            >
-                {message.role === "user" ? (
-                    <User className="h-4 w-4" />
-                ) : (
-                    <HathiIcon className="h-4 w-4" />
-                )}
-            </div> */}
             <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                 <div
                     className={cn("accent-font text-bold text-sm sm:text-base")}
                 >
                     {message.role === "user" ? "You" : "Hathi"}
                 </div>
-                <MessageContent
-                    message={message}
-                    displayToolInfo={displayToolInfo}
-                    isUserMessage={message.role === "user"}
-                />
+
+                <div className="space-y-2 sm:space-y-3">
+                    {message.parts.map((part, index) => (
+                        <MessagePartRenderer
+                            key={`${message.id}-${index}`}
+                            part={part}
+                            displayToolInfo={displayToolInfo}
+                            isUserMessage={message.role === "user"}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     );
 }
 
-// Message content renderer
-function MessageContent({
-    message,
-    displayToolInfo,
-    isUserMessage,
-}: {
-    message: UIMessage;
-    displayToolInfo: boolean;
-    isUserMessage: boolean;
-}) {
-    if (message.parts) {
-        // Check if this message has both text and answer tool parts
-        const hasTextPart = message.parts.some((part) => part.type === "text");
-        const hasAnswerTool = message.parts.some(
-            (part) => part.type === "tool-answer"
-        );
-
-        // If we have both text and answer tool, filter out the answer tool to avoid duplication
-        const partsToRender =
-            hasTextPart && hasAnswerTool
-                ? message.parts.filter((part) => !(part.type === "tool-answer"))
-                : message.parts;
-
-        return (
-            <div className="space-y-2 sm:space-y-3">
-                {partsToRender.map((part, index) => (
-                    <MessagePartRenderer
-                        key={index}
-                        part={part}
-                        displayToolInfo={displayToolInfo}
-                        isUserMessage={isUserMessage}
-                    />
-                ))}
-            </div>
-        );
-    }
-
-    // Fallback for legacy content property (shouldn't happen in SDK 5, but for safety)
-    if ((message as unknown as { content?: string }).content) {
-        return (
-            <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base">
-                {(message as unknown as { content: string }).content}
-            </div>
-        );
-    }
-
-    return null;
-}
-
-// Message part renderer with switch case
+// Message part renderer with regex-based case handling
 function MessagePartRenderer({
     part,
     displayToolInfo,
@@ -369,36 +294,37 @@ function MessagePartRenderer({
     displayToolInfo: boolean;
     isUserMessage: boolean;
 }) {
-    switch (part.type) {
-        case "text":
-        case "reasoning":
+    const { type } = part;
+    const sourceTypes = ["source-url", "source-document", "file", "step-start"];
+
+    // Helper function to get case pattern for regex-based switching
+    const getCasePattern = (type: string) => {
+        if (type === "text" || type === "reasoning") return "text-like";
+        if (sourceTypes.includes(type)) return "source-like";
+        if (/^data-/.test(type)) return "data-like";
+        if (/^tool-/.test(type) || type === "dynamic-tool") return "tool-like";
+        return "unknown";
+    };
+
+    switch (getCasePattern(type)) {
+        case "text-like":
             return (
-                <TextPartRenderer part={part} isUserMessage={isUserMessage} />
+                <TextPartRenderer
+                    part={part as TextUIPart | ReasoningPart}
+                    isUserMessage={isUserMessage}
+                />
             );
-        case "source-url":
-        case "source-document":
-        case "file":
-        case "step-start":
+        case "tool-like":
             return (
-                displayToolInfo === true && (
-                    <div className="text-muted-foreground text-xs p-2 bg-muted/30 rounded border-b-2 border-muted-foreground/20 break-words">
-                        {part?.type} <br />
-                    </div>
-                )
+                <ToolPartComponent
+                    part={part as ToolUIPart | DynamicToolUIPart}
+                    displayToolInfo={displayToolInfo}
+                />
             );
+        case "source-like":
+        case "data-like":
         default:
-            if (part.type.startsWith("data-")) {
-                return null;
-            } else if (part.type.startsWith("tool-")) {
-                return (
-                    <ToolPartComponent
-                        part={part as ToolUIPart | DynamicToolUIPart}
-                        displayToolInfo={displayToolInfo}
-                    />
-                );
-            } else {
-                return null;
-            }
+            return null;
     }
 }
 
@@ -410,12 +336,6 @@ function ToolPartComponent({
     part: ToolUIPart | DynamicToolUIPart; // Tool part with type 'tool-${toolName}' or 'data-${string}'
     displayToolInfo: boolean;
 }) {
-    if (!part.type.startsWith("tool-")) {
-        return null;
-    }
-
-    // Show tool call indicator if enabled and in streaming states
-    const state = part.state;
     switch (part.state) {
         case "input-streaming":
         case "input-available":

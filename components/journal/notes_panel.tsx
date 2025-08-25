@@ -42,11 +42,9 @@ export function NotesPanel() {
         // api: "/api/chat",
         transport: new DefaultChatTransport({
             api: "/api/chat",
-            credentials: "include",
-            headers: { "Custom-Header": "value" },
         }),
         id: chatId || undefined,
-        messages: initialMessages,
+        // messages: initialMessages,
     });
 
     // Initialize chat on first render
