@@ -237,6 +237,7 @@ export function createChatLogger(chatId?: string) {
         /**
          * Hook called for each chunk received during streaming
          */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onChunk: ({ chunk }: { chunk: any }) => {
             const chunkType = chunk.type;
             const chunkSize = JSON.stringify(chunk).length;
@@ -278,6 +279,7 @@ export function createChatLogger(chatId?: string) {
         /**
          * Hook called when each step is finished
          */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onStepFinish: (result: any) => {
             const {
                 stepType,
@@ -286,7 +288,7 @@ export function createChatLogger(chatId?: string) {
                 text,
                 toolCalls,
                 toolResults,
-            } = result;
+            } = result || {};
 
             console.log(
                 `[CHAT] Step finished: ${
@@ -295,12 +297,14 @@ export function createChatLogger(chatId?: string) {
             );
             console.log(
                 `[CHAT] Token usage: ${usage?.totalTokens || 0} total (${
-                    usage?.inputTokens || 0
-                } input, ${usage?.outputTokens || 0} output)`
+                    usage?.promptTokens || 0
+                } input, ${usage?.completionTokens || 0} output)`
             );
             console.log(
-                `[CHAT] Tool calls: ${toolCalls?.length || 0}, Tool results: ${
-                    toolResults?.length || 0
+                `[CHAT] Tool calls: ${
+                    Array.isArray(toolCalls) ? toolCalls.length : 0
+                }, Tool results: ${
+                    Array.isArray(toolResults) ? toolResults.length : 0
                 }`
             );
 
@@ -318,19 +322,22 @@ export function createChatLogger(chatId?: string) {
                 chatId: sessionId,
                 stepType: stepType || "unknown",
                 finishReason,
-                inputTokens: usage?.inputTokens,
-                outputTokens: usage?.outputTokens,
+                inputTokens: usage?.promptTokens,
+                outputTokens: usage?.completionTokens,
                 totalTokens: usage?.totalTokens,
                 status: "success",
-                metadata: `Text length: ${text?.length || 0}, Tools: ${
-                    toolCalls?.length || 0
-                }/${toolResults?.length || 0}`,
+                metadata: `Text length: ${
+                    typeof text === "string" ? text.length : 0
+                }, Tools: ${Array.isArray(toolCalls) ? toolCalls.length : 0}/${
+                    Array.isArray(toolResults) ? toolResults.length : 0
+                }`,
             });
         },
 
         /**
          * Hook called when the entire response is finished
          */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onFinish: (result: any) => {
             const {
                 finishReason,
@@ -340,7 +347,7 @@ export function createChatLogger(chatId?: string) {
                 toolResults,
                 steps,
                 totalUsage,
-            } = result;
+            } = result || {};
             const duration =
                 performance.now() -
                 (activeSessions.get(sessionId)?.sessionStart || 0);
@@ -352,15 +359,19 @@ export function createChatLogger(chatId?: string) {
             console.log(
                 `[CHAT] Final token usage: ${
                     finalUsage?.totalTokens || 0
-                } total (${finalUsage?.inputTokens || 0} input, ${
-                    finalUsage?.outputTokens || 0
+                } total (${finalUsage?.promptTokens || 0} input, ${
+                    finalUsage?.completionTokens || 0
                 } output)`
             );
             console.log(
-                `[CHAT] Final text length: ${text?.length || 0} characters`
+                `[CHAT] Final text length: ${
+                    typeof text === "string" ? text.length : 0
+                } characters`
             );
             console.log(`[CHAT] Session duration: ${Math.round(duration)}ms`);
-            console.log(`[CHAT] Total steps: ${steps?.length || 0}`);
+            console.log(
+                `[CHAT] Total steps: ${Array.isArray(steps) ? steps.length : 0}`
+            );
 
             // Update session metrics
             updateSessionMetrics(sessionId, {
@@ -377,13 +388,17 @@ export function createChatLogger(chatId?: string) {
                 chatId: sessionId,
                 finishReason,
                 duration_ms: Math.round(duration),
-                inputTokens: finalUsage?.inputTokens,
-                outputTokens: finalUsage?.outputTokens,
+                inputTokens: finalUsage?.promptTokens,
+                outputTokens: finalUsage?.completionTokens,
                 totalTokens: finalUsage?.totalTokens,
                 status: "success",
-                metadata: `Text: ${text?.length || 0}chars, Tools: ${
-                    toolCalls?.length || 0
-                }/${toolResults?.length || 0}, Steps: ${steps?.length || 0}`,
+                metadata: `Text: ${
+                    typeof text === "string" ? text.length : 0
+                }chars, Tools: ${
+                    Array.isArray(toolCalls) ? toolCalls.length : 0
+                }/${
+                    Array.isArray(toolResults) ? toolResults.length : 0
+                }, Steps: ${Array.isArray(steps) ? steps.length : 0}`,
             });
 
             // Complete session after a delay (in case of multiple rapid calls)
@@ -428,13 +443,17 @@ export function createChatLogger(chatId?: string) {
         /**
          * Hook called when streaming is aborted
          */
-        onAbort: (result: { steps: any[] }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onAbort: (result: any) => {
             const duration =
                 performance.now() -
                 (activeSessions.get(sessionId)?.sessionStart || 0);
 
+            const steps = result?.steps || [];
             console.log(
-                `[CHAT] Chat aborted after ${result.steps.length} steps`
+                `[CHAT] Chat aborted after ${
+                    Array.isArray(steps) ? steps.length : 0
+                } steps`
             );
 
             writeLogToCsv({
