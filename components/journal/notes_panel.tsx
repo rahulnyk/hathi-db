@@ -9,18 +9,19 @@ import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { useEffect } from "react";
 import {
-    uiMessagesToStoredMessages,
+    uiMessageToStoredMessage,
     storedMessagesToUIMessages,
 } from "@/lib/chat-message-utils";
 import {
     initializeChat,
-    setMessages,
+    setMessage,
     selectChatId,
     selectChatMessages,
     selectIsChatInitialized,
 } from "@/store/chatSlice";
 import { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
+import { useChatAnalytics } from "@/hooks/use-chat-with-logging";
 
 export function NotesPanel() {
     const dispatch = useAppDispatch();
@@ -44,7 +45,19 @@ export function NotesPanel() {
             api: "/api/chat",
         }),
         id: chatId || undefined,
-        // messages: initialMessages,
+        messages: initialMessages,
+        onFinish: ({ message }) => {
+            // Convert the finished message to stored format and append to Redux
+            const messageToStore = uiMessageToStoredMessage(message);
+            dispatch(setMessage(messageToStore));
+        },
+    });
+
+    // Add analytics logging to the chat hook
+    const analytics = useChatAnalytics(chatHook, {
+        enableLogging: true,
+        logToConsole: true,
+        logToLocalStorage: true,
     });
 
     // Initialize chat on first render
@@ -54,15 +67,14 @@ export function NotesPanel() {
         }
     }, [dispatch, isChatInitialized]);
 
-    // Sync messages from useChat to Redux store
+    // Log custom events for significant interactions
     useEffect(() => {
-        if (chatHook.messages.length > 0) {
-            const messagesToStore = uiMessagesToStoredMessages(
-                chatHook.messages
-            );
-            dispatch(setMessages(messagesToStore));
+        if (chatMode) {
+            analytics.logCustomEvent("chat_mode_activated");
+        } else {
+            analytics.logCustomEvent("chat_mode_deactivated");
         }
-    }, [chatHook.messages, dispatch]);
+    }, [chatMode, analytics]);
 
     return (
         <div

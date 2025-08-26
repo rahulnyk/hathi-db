@@ -326,6 +326,8 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
         if (chatMode && chatHook && !isEditMode) {
             // Use chatHook's handleSubmit method
             chatHook.sendMessage({ text: content.trim() });
+            setContent("");
+            return;
         }
 
         if (isEditMode) {

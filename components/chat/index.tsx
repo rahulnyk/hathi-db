@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Send, Loader2 } from "lucide-react";
+
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
 import { HashLoader } from "react-spinners";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
     setStatus,
-    toggleDisplayToolInfo,
     selectDisplayToolInfo,
     selectIsProcessing,
     AgentStatus,
 } from "@/store/agentSlice";
-import { clearChat } from "@/store/chatSlice";
+// import { clearChat } from "@/store/chatSlice";
 
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
@@ -26,9 +24,7 @@ import type {
     UIDataTypes,
     UITools,
     ToolUIPart,
-    DynamicToolCall,
     DynamicToolUIPart,
-    DataUIPart,
     TextUIPart,
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
@@ -43,9 +39,9 @@ export interface ChatComponentProps {
 export function ChatComponent({
     chatHook,
     className,
-    showHeader = false,
-    showInput = false,
-}: ChatComponentProps) {
+}: // showHeader = false,
+// showInput = false,
+ChatComponentProps) {
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
@@ -114,10 +110,10 @@ export function ChatComponent({
     }, [isProcessing]);
 
     // Function to clear chat
-    const handleClearChat = () => {
-        dispatch(clearChat());
-        // The useChat hook will automatically reset when id changes
-    };
+    // const handleClearChat = () => {
+    //     dispatch(clearChat());
+    //     // The useChat hook will automatically reset when id changes
+    // };
 
     return (
         <div

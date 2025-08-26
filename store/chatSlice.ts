@@ -39,6 +39,19 @@ const chatSlice = createSlice({
         setMessages: (state, action: PayloadAction<StoredMessage[]>) => {
             state.messages = action.payload;
         },
+        setMessage: (state, action: PayloadAction<StoredMessage>) => {
+            // Check if message already exists (by id) to avoid duplicates
+            const existingIndex = state.messages.findIndex(
+                (msg) => msg.id === action.payload.id
+            );
+            if (existingIndex >= 0) {
+                // Update existing message
+                state.messages[existingIndex] = action.payload;
+            } else {
+                // Append new message
+                state.messages.push(action.payload);
+            }
+        },
         addMessage: (state, action: PayloadAction<StoredMessage>) => {
             state.messages.push(action.payload);
         },
@@ -54,8 +67,14 @@ const chatSlice = createSlice({
     },
 });
 
-export const { initializeChat, setMessages, addMessage, clearChat, resetChat } =
-    chatSlice.actions;
+export const {
+    initializeChat,
+    setMessages,
+    setMessage,
+    addMessage,
+    clearChat,
+    resetChat,
+} = chatSlice.actions;
 
 // Selectors
 export const selectChatId = (state: { chat: ChatState }) => state.chat.id;
