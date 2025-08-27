@@ -3,7 +3,6 @@
 import { createDb } from "@/db/connection";
 import { generateQueryEmbedding } from "@/app/actions/ai";
 import { measureExecutionTime } from "@/lib/performance";
-import { DEFAULT_SEARCH_LIMIT, QA_SEARCH_LIMITS } from "@/lib/constants/qa";
 import type { SearchResultNote, SemanticSearchParams } from "./types";
 import type { NoteType } from "@/store/notesSlice";
 import { formatSearchMessage } from "./types";
@@ -214,8 +213,8 @@ function generateSearchMessage(
  */
 export async function searchNotesBySimilarity({
     query,
-    similarityThreshold = QA_SEARCH_LIMITS.HIGH_SIMILARITY_THRESHOLD,
-    limit = DEFAULT_SEARCH_LIMIT,
+    similarityThreshold = 0.7,
+    limit = 10,
 }: SemanticSearchParams): Promise<SemanticSearchResult> {
     return measureExecutionTime("searchNotesBySimilarity", async () => {
         // Validate input parameters
