@@ -4,7 +4,7 @@ import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
 import { gemini } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
-import { createChatLogger } from "@/lib/chat-logger";
+import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
 
 export const maxDuration = 50;
 

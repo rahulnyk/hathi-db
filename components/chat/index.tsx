@@ -26,6 +26,7 @@ import type {
     ToolUIPart,
     DynamicToolUIPart,
     TextUIPart,
+    ChatStatus,
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
 import Placeholder from "./placeholder";
@@ -123,47 +124,6 @@ ChatComponentProps) {
                     "max-w-4xl mx-auto h-[100dvh] sm:h-[700px] sm:max-h-[80vh]"
             )}
         >
-            {
-                // showHeader && (
-                //     <div className="border-b p-2 sm:p-4 flex justify-between items-center min-h-[50px] sm:min-h-[60px] flex-shrink-0">
-                //         {/* Header with settings */}
-                //         <div className="flex items-center gap-4">
-                //             <div className="flex items-center">
-                //                 <span className="text-xs sm:text-sm mr-2">
-                //                     Tool Info
-                //                 </span>
-                //                 <button
-                //                     onClick={() =>
-                //                         dispatch(toggleDisplayToolInfo())
-                //                     }
-                //                     className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                //                         displayToolInfo ? "bg-primary" : "bg-input"
-                //                     }`}
-                //                 >
-                //                     <span
-                //                         className={`inline-block h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-background transition-transform ${
-                //                             displayToolInfo
-                //                                 ? "translate-x-5 sm:translate-x-6"
-                //                                 : "translate-x-1"
-                //                         }`}
-                //                     />
-                //                 </button>
-                //             </div>
-                //             {messages.length > 0 && (
-                //                 <Button
-                //                     variant="outline"
-                //                     size="sm"
-                //                     onClick={handleClearChat}
-                //                     className="text-xs"
-                //                 >
-                //                     Clear Chat
-                //                 </Button>
-                //             )}
-                //         </div>
-                //     </div>
-                // )
-            }
-
             {/* Messages area */}
             <div
                 ref={messagesContainerRef}
@@ -177,66 +137,12 @@ ChatComponentProps) {
                             key={message.id}
                             message={message}
                             displayToolInfo={displayToolInfo}
+                            status={status}
+                            isProcessing={isProcessing}
                         />
                     ))}
                 </div>
             </div>
-
-            {/* Footer with Hathi icon and input area */}
-            {isProcessing && (
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
-                    <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
-                    <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
-                        <span className="text-xs whitespace-nowrap">
-                            {status === "submitted"
-                                ? "Thinking..."
-                                : "Generating..."}
-                        </span>
-                        <HashLoader
-                            size={16}
-                            color="currentColor"
-                            loading={true}
-                            // className="sm:hidden"
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* Input area */}
-            {
-                // showInput && (
-                //     <div className="border-t p-2 sm:p-4 flex-shrink-0">
-                //         <form
-                //             onSubmit={(e) => {
-                //                 e.preventDefault();
-                //                 sendMessage({ text: content });
-                //                 setContent("");
-                //             }}
-                //             className="flex gap-2"
-                //         >
-                //             <Input
-                //                 value={content}
-                //                 onChange={(e) => setContent(e.target.value)}
-                //                 placeholder="Ask about your notes..."
-                //                 disabled={isProcessing}
-                //                 className="flex-1 text-sm sm:text-base"
-                //             />
-                //             <Button
-                //                 type="submit"
-                //                 disabled={isProcessing || !content.trim()}
-                //                 size="icon"
-                //                 className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
-                //             >
-                //                 {isProcessing ? (
-                //                     <Loader2 className="h-4 w-4 animate-spin" />
-                //                 ) : (
-                //                     <Send className="h-4 w-4" />
-                //                 )}
-                //             </Button>
-                //         </form>
-                //     </div>
-                // )
-            }
         </div>
     );
 }
@@ -245,9 +151,13 @@ ChatComponentProps) {
 function ChatMessage({
     message,
     displayToolInfo,
+    status,
+    isProcessing,
 }: {
     message: UIMessage;
     displayToolInfo: boolean;
+    status: ChatStatus;
+    isProcessing: boolean;
 }) {
     return (
         <div
@@ -276,6 +186,24 @@ function ChatMessage({
                     ))}
                 </div>
             </div>
+            {/* Footer with Hathi icon and input area */}
+            {isProcessing && (
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
+                    <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
+                    <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
+                        <span className="text-xs whitespace-nowrap">
+                            {status === "submitted"
+                                ? "Thinking..."
+                                : "Generating..."}
+                        </span>
+                        <HashLoader
+                            size={16}
+                            color="currentColor"
+                            loading={true}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

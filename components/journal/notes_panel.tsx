@@ -21,7 +21,7 @@ import {
 } from "@/store/chatSlice";
 import { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
-import { useChatAnalytics } from "@/hooks/use-chat-with-logging";
+import { useChatAnalytics } from "@/lib/chat-loggers/client-chat-logger";
 
 export function NotesPanel() {
     const dispatch = useAppDispatch();

@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { GeminiAI } from "../../lib/ai/gemini";
-import { getCurrentEmbeddingConfig } from "../../lib/constants/ai-config";
+import { getCurrentEmbeddingConfig } from "../../lib/ai/ai-config";
 import { dateToSlug } from "../../lib/utils";
 import { createClient } from "../connection";
 import { notes } from "../schema";

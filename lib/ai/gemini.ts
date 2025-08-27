@@ -33,7 +33,7 @@ import {
     extractDeadlineSystemPrompt,
     extractDeadlineUserPrompt,
 } from "../prompts/extract-deadline-prompts";
-import { AI_MODEL_CONFIG } from "../constants/ai-config";
+import { AI_MODEL_CONFIG } from "./ai-config";
 
 export class GeminiAI implements AIProvider {
     private genAI: GoogleGenAI;

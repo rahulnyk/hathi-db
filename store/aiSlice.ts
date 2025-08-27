@@ -10,7 +10,7 @@ import {
     updateNoteContent,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { getCurrentEmbeddingConfig } from "@/lib/constants/ai-config";
+import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
@@ -275,25 +275,6 @@ const aiSlice = createSlice({
             const noteId = action.payload;
             delete state.structurizedNote[noteId];
         },
-        markAsAIAnswer: (state, action: PayloadAction<{
-            noteId: string;
-            question: string;
-            answer: string;
-            relevantSources?: string[];
-        }>) => {
-            const { noteId, question, answer, relevantSources } = action.payload;
-            state.aiAnswers[noteId] = {
-                isAIAnswer: true,
-                question,
-                answer,
-                createdAt: new Date().toISOString(),
-                relevantSources,
-            };
-        },
-        removeAIAnswer: (state, action: PayloadAction<string>) => {
-            const noteId = action.payload;
-            delete state.aiAnswers[noteId];
-        },
         clearAllAI: (state) => {
             state.suggestedContexts = {};
             state.structurizedNote = {};
@@ -403,7 +384,7 @@ const aiSlice = createSlice({
     },
 });
 
-export const { clearSuggestedContexts, clearStructurizeNote, markAsAIAnswer, removeAIAnswer, clearAllAI } =
+export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } =
     aiSlice.actions;
 
 // Utility function to check if a note is an AI answer
@@ -412,7 +393,10 @@ export const isAIAnswerNote = (state: any, noteId: string): boolean => {
 };
 
 // Utility function to get AI answer details
-export const getAIAnswerDetails = (state: any, noteId: string): AIAnswerState | null => {
+export const getAIAnswerDetails = (
+    state: any,
+    noteId: string
+): AIAnswerState | null => {
     return state.ai.aiAnswers[noteId] || null;
 };
 
