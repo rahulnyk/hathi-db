@@ -2,7 +2,7 @@
  * Simple chat analytics and logging utilities
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { UIMessage } from "ai";
 
 interface ChatLogEntry {
@@ -10,32 +10,38 @@ interface ChatLogEntry {
     event: string;
     chatId?: string;
     messageId?: string;
-    data?: any;
+    data?: Record<string, unknown>;
     duration?: number;
+}
+
+/**
+ * Determine if logging should be enabled based on environment
+ */
+function shouldLog(isError: boolean = false): boolean {
+    // In production, only log errors
+    if (process.env.NODE_ENV === "production") {
+        return isError;
+    }
+    // In development, log everything
+    return process.env.NODE_ENV === "development";
+}
+
+/**
+ * Determine if console logging is enabled
+ */
+function shouldLogToConsole(): boolean {
+    return process.env.LOG_CHAT_TO_CONSOLE === "true";
 }
 
 /**
  * Hook to add analytics to any chat hook
  */
-export function useChatAnalytics(
-    chatHook: {
-        id?: string;
-        messages: UIMessage[];
-        status: string;
-        error?: Error;
-    },
-    options: {
-        enableLogging?: boolean;
-        logToConsole?: boolean;
-        logToLocalStorage?: boolean;
-    } = {}
-) {
-    const {
-        enableLogging = true,
-        logToConsole = true,
-        logToLocalStorage = false,
-    } = options;
-
+export function useChatAnalytics(chatHook: {
+    id?: string;
+    messages: UIMessage[];
+    status: string;
+    error?: Error;
+}) {
     // Refs for timing and state tracking
     const startTimeRef = useRef<number | undefined>(undefined);
     const previousMessageCountRef = useRef(0);
@@ -45,39 +51,28 @@ export function useChatAnalytics(
     /**
      * Log an event
      */
-    const logEvent = (event: string, data?: any) => {
-        if (!enableLogging) return;
+    const logEvent = useCallback(
+        (
+            event: string,
+            data?: Record<string, unknown>,
+            isError: boolean = false
+        ) => {
+            if (!shouldLog(isError)) return;
 
-        const logEntry: ChatLogEntry = {
-            timestamp: new Date().toISOString(),
-            event,
-            chatId: chatHook.id || undefined,
-            data,
-            ...data,
-        };
+            const logEntry: ChatLogEntry = {
+                timestamp: new Date().toISOString(),
+                event,
+                chatId: chatHook.id || undefined,
+                data,
+                ...data,
+            };
 
-        if (logToConsole) {
-            console.log(`[CHAT-CLIENT] ${event}:`, logEntry);
-        }
-
-        if (logToLocalStorage) {
-            try {
-                const logs = JSON.parse(
-                    localStorage.getItem("chat-logs") || "[]"
-                );
-                logs.push(logEntry);
-
-                // Keep only last 100 logs to prevent storage overflow
-                if (logs.length > 100) {
-                    logs.splice(0, logs.length - 100);
-                }
-
-                localStorage.setItem("chat-logs", JSON.stringify(logs));
-            } catch (error) {
-                console.warn("Failed to save log to localStorage:", error);
+            if (shouldLogToConsole()) {
+                console.log(`[CHAT-CLIENT] ${event}:`, logEntry);
             }
-        }
-    };
+        },
+        [chatHook.id]
+    );
 
     // Monitor status changes
     useEffect(() => {
@@ -101,7 +96,7 @@ export function useChatAnalytics(
 
             previousStatusRef.current = chatHook.status;
         }
-    }, [chatHook.status]);
+    }, [chatHook.status, logEvent]);
 
     // Monitor message changes
     useEffect(() => {
@@ -119,17 +114,21 @@ export function useChatAnalytics(
             });
             previousMessageCountRef.current = chatHook.messages.length;
         }
-    }, [chatHook.messages]);
+    }, [chatHook.messages, logEvent]);
 
     // Monitor errors
     useEffect(() => {
         if (chatHook.error) {
-            logEvent("chat_error_state", {
-                error: chatHook.error.message,
-                errorType: chatHook.error.constructor.name,
-            });
+            logEvent(
+                "chat_error_state",
+                {
+                    error: chatHook.error.message,
+                    errorType: chatHook.error.constructor.name,
+                },
+                true
+            ); // Mark as error
         }
-    }, [chatHook.error]);
+    }, [chatHook.error, logEvent]);
 
     // Log session start
     useEffect(() => {
@@ -144,8 +143,12 @@ export function useChatAnalytics(
         /**
          * Log a custom event
          */
-        logCustomEvent: (event: string, data?: any) => {
-            logEvent(event, data);
+        logCustomEvent: (
+            event: string,
+            data?: Record<string, unknown>,
+            isError: boolean = false
+        ) => {
+            logEvent(event, data, isError);
         },
 
         /**
@@ -159,119 +162,6 @@ export function useChatAnalytics(
                 currentStatus: chatHook.status,
                 hasError: !!chatHook.error,
                 sessionId: chatHook.id,
-            };
-        },
-
-        /**
-         * Get logs from localStorage
-         */
-        getLogs: () => {
-            if (!logToLocalStorage) return [];
-            try {
-                return JSON.parse(localStorage.getItem("chat-logs") || "[]");
-            } catch {
-                return [];
-            }
-        },
-
-        /**
-         * Clear logs from localStorage
-         */
-        clearLogs: () => {
-            if (logToLocalStorage) {
-                localStorage.removeItem("chat-logs");
-            }
-        },
-
-        /**
-         * Export logs as CSV
-         */
-        exportLogsAsCSV: () => {
-            if (!logToLocalStorage) return "";
-
-            const logs = (() => {
-                if (!logToLocalStorage) return [];
-                try {
-                    return JSON.parse(
-                        localStorage.getItem("chat-logs") || "[]"
-                    );
-                } catch {
-                    return [];
-                }
-            })();
-
-            if (logs.length === 0) return "";
-
-            const headers = [
-                "timestamp",
-                "event",
-                "chatId",
-                "messageId",
-                "data",
-            ];
-            const csvContent = [
-                headers.join(","),
-                ...logs.map((log: ChatLogEntry) =>
-                    [
-                        log.timestamp,
-                        log.event,
-                        log.chatId || "",
-                        log.messageId || "",
-                        JSON.stringify(log.data || "").replace(/"/g, '""'),
-                    ].join(",")
-                ),
-            ].join("\n");
-
-            return csvContent;
-        },
-
-        /**
-         * Get analytics summary
-         */
-        getAnalytics: () => {
-            const logs = (() => {
-                if (!logToLocalStorage) return [];
-                try {
-                    return JSON.parse(
-                        localStorage.getItem("chat-logs") || "[]"
-                    );
-                } catch {
-                    return [];
-                }
-            })();
-
-            return {
-                totalSessions: new Set(
-                    logs.map((log: ChatLogEntry) => log.chatId)
-                ).size,
-                totalMessages: logs.filter(
-                    (log: ChatLogEntry) => log.event === "message_added"
-                ).length,
-                totalErrors: logs.filter((log: ChatLogEntry) =>
-                    log.event.includes("error")
-                ).length,
-                messagesByRole: logs
-                    .filter(
-                        (log: ChatLogEntry) => log.event === "message_added"
-                    )
-                    .reduce(
-                        (acc: Record<string, number>, log: ChatLogEntry) => {
-                            const role = log.data?.messageRole || "unknown";
-                            acc[role] = (acc[role] || 0) + 1;
-                            return acc;
-                        },
-                        {}
-                    ),
-                errorTypes: logs
-                    .filter((log: ChatLogEntry) => log.event.includes("error"))
-                    .reduce(
-                        (acc: Record<string, number>, log: ChatLogEntry) => {
-                            const errorType = log.data?.errorType || "unknown";
-                            acc[errorType] = (acc[errorType] || 0) + 1;
-                            return acc;
-                        },
-                        {}
-                    ),
             };
         },
     };

@@ -54,11 +54,7 @@ export function NotesPanel() {
     });
 
     // Add analytics logging to the chat hook
-    const analytics = useChatAnalytics(chatHook, {
-        enableLogging: true,
-        logToConsole: true,
-        logToLocalStorage: true,
-    });
+    const analytics = useChatAnalytics(chatHook);
 
     // Initialize chat on first render
     useEffect(() => {

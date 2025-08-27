@@ -143,6 +143,24 @@ ChatComponentProps) {
                     ))}
                 </div>
             </div>
+            {/* Footer with Hathi icon and input area */}
+            {isProcessing && (
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
+                    <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
+                    <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
+                        <span className="text-xs whitespace-nowrap">
+                            {status === "submitted"
+                                ? "Thinking..."
+                                : "Generating..."}
+                        </span>
+                        <HashLoader
+                            size={16}
+                            color="currentColor"
+                            loading={true}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -186,24 +204,6 @@ function ChatMessage({
                     ))}
                 </div>
             </div>
-            {/* Footer with Hathi icon and input area */}
-            {isProcessing && (
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 flex-shrink-0">
-                    <HathiIcon className="hathi-icon h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0" />
-                    <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground min-w-0">
-                        <span className="text-xs whitespace-nowrap">
-                            {status === "submitted"
-                                ? "Thinking..."
-                                : "Generating..."}
-                        </span>
-                        <HashLoader
-                            size={16}
-                            color="currentColor"
-                            loading={true}
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

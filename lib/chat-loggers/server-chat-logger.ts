@@ -54,13 +54,36 @@ const sessionSummaryPath = path.join(
 );
 
 /**
+ * Determine if logging should be enabled based on environment
+ */
+function shouldLog(isError: boolean = false): boolean {
+    // In production, only log errors
+    if (process.env.NODE_ENV === "production") {
+        return isError;
+    }
+    // In development, log everything
+    return process.env.NODE_ENV === "development";
+}
+
+/**
+ * Determine if console logging is enabled
+ */
+function shouldLogToConsole(): boolean {
+    return process.env.LOG_CHAT_TO_CONSOLE === "true";
+}
+
+/**
+ * Determine if CSV logging is enabled
+ */
+function shouldLogToCsv(): boolean {
+    return process.env.LOG_CHAT_TO_CSV === "true";
+}
+
+/**
  * Writes log entry to CSV file
  */
 async function writeLogToCsv(entry: ChatLogEntry) {
-    if (
-        process.env.NODE_ENV !== "development" ||
-        process.env.LOG_CHAT_TO_CSV !== "true"
-    ) {
+    if (!shouldLog(entry.status === "error") || !shouldLogToCsv()) {
         return;
     }
 
@@ -109,10 +132,7 @@ async function writeSessionSummary(
     chatId: string,
     metrics: ChatSessionMetrics
 ) {
-    if (
-        process.env.NODE_ENV !== "development" ||
-        process.env.LOG_CHAT_TO_CSV !== "true"
-    ) {
+    if (!shouldLog() || !shouldLogToCsv()) {
         return;
     }
 
@@ -223,7 +243,9 @@ export function createChatLogger(chatId?: string) {
          * Hook called when streaming starts
          */
         onStart: () => {
-            console.log(`[CHAT] Starting chat session: ${sessionId}`);
+            if (shouldLogToConsole()) {
+                console.log(`[CHAT] Starting chat session: ${sessionId}`);
+            }
 
             writeLogToCsv({
                 timestamp: new Date().toISOString(),
@@ -242,9 +264,11 @@ export function createChatLogger(chatId?: string) {
             const chunkType = chunk.type;
             const chunkSize = JSON.stringify(chunk).length;
 
-            console.log(
-                `[CHAT] Chunk received: ${chunkType} (${chunkSize} bytes)`
-            );
+            if (shouldLogToConsole()) {
+                console.log(
+                    `[CHAT] Chunk received: ${chunkType} (${chunkSize} bytes)`
+                );
+            }
 
             // Track tool calls
             if (chunkType === "tool-call") {
@@ -290,23 +314,25 @@ export function createChatLogger(chatId?: string) {
                 toolResults,
             } = result || {};
 
-            console.log(
-                `[CHAT] Step finished: ${
-                    stepType || "unknown"
-                } - ${finishReason}`
-            );
-            console.log(
-                `[CHAT] Token usage: ${usage?.totalTokens || 0} total (${
-                    usage?.promptTokens || 0
-                } input, ${usage?.completionTokens || 0} output)`
-            );
-            console.log(
-                `[CHAT] Tool calls: ${
-                    Array.isArray(toolCalls) ? toolCalls.length : 0
-                }, Tool results: ${
-                    Array.isArray(toolResults) ? toolResults.length : 0
-                }`
-            );
+            if (shouldLogToConsole()) {
+                console.log(
+                    `[CHAT] Step finished: ${
+                        stepType || "unknown"
+                    } - ${finishReason}`
+                );
+                console.log(
+                    `[CHAT] Token usage: ${usage?.totalTokens || 0} total (${
+                        usage?.promptTokens || 0
+                    } input, ${usage?.completionTokens || 0} output)`
+                );
+                console.log(
+                    `[CHAT] Tool calls: ${
+                        Array.isArray(toolCalls) ? toolCalls.length : 0
+                    }, Tool results: ${
+                        Array.isArray(toolResults) ? toolResults.length : 0
+                    }`
+                );
+            }
 
             // Update session metrics
             updateSessionMetrics(sessionId, {
@@ -355,23 +381,29 @@ export function createChatLogger(chatId?: string) {
             // Use totalUsage if available, otherwise fallback to usage
             const finalUsage = totalUsage || usage;
 
-            console.log(`[CHAT] Chat finished: ${finishReason}`);
-            console.log(
-                `[CHAT] Final token usage: ${
-                    finalUsage?.totalTokens || 0
-                } total (${finalUsage?.promptTokens || 0} input, ${
-                    finalUsage?.completionTokens || 0
-                } output)`
-            );
-            console.log(
-                `[CHAT] Final text length: ${
-                    typeof text === "string" ? text.length : 0
-                } characters`
-            );
-            console.log(`[CHAT] Session duration: ${Math.round(duration)}ms`);
-            console.log(
-                `[CHAT] Total steps: ${Array.isArray(steps) ? steps.length : 0}`
-            );
+            if (shouldLogToConsole()) {
+                console.log(`[CHAT] Chat finished: ${finishReason}`);
+                console.log(
+                    `[CHAT] Final token usage: ${
+                        finalUsage?.totalTokens || 0
+                    } total (${finalUsage?.promptTokens || 0} input, ${
+                        finalUsage?.completionTokens || 0
+                    } output)`
+                );
+                console.log(
+                    `[CHAT] Final text length: ${
+                        typeof text === "string" ? text.length : 0
+                    } characters`
+                );
+                console.log(
+                    `[CHAT] Session duration: ${Math.round(duration)}ms`
+                );
+                console.log(
+                    `[CHAT] Total steps: ${
+                        Array.isArray(steps) ? steps.length : 0
+                    }`
+                );
+            }
 
             // Update session metrics
             updateSessionMetrics(sessionId, {
@@ -415,7 +447,9 @@ export function createChatLogger(chatId?: string) {
                 performance.now() -
                 (activeSessions.get(sessionId)?.sessionStart || 0);
 
-            console.error(`[CHAT] Error occurred:`, error);
+            if (shouldLogToConsole()) {
+                console.error(`[CHAT] Error occurred:`, error);
+            }
 
             // Update session metrics
             updateSessionMetrics(sessionId, {
@@ -450,11 +484,14 @@ export function createChatLogger(chatId?: string) {
                 (activeSessions.get(sessionId)?.sessionStart || 0);
 
             const steps = result?.steps || [];
-            console.log(
-                `[CHAT] Chat aborted after ${
-                    Array.isArray(steps) ? steps.length : 0
-                } steps`
-            );
+
+            if (shouldLogToConsole()) {
+                console.log(
+                    `[CHAT] Chat aborted after ${
+                        Array.isArray(steps) ? steps.length : 0
+                    } steps`
+                );
+            }
 
             writeLogToCsv({
                 timestamp: new Date().toISOString(),
@@ -462,7 +499,9 @@ export function createChatLogger(chatId?: string) {
                 chatId: sessionId,
                 duration_ms: Math.round(duration),
                 status: "warning",
-                metadata: `Aborted after ${result.steps.length} steps`,
+                metadata: `Aborted after ${
+                    Array.isArray(steps) ? steps.length : 0
+                } steps`,
             });
 
             // Complete session on abort
@@ -499,7 +538,9 @@ export function cleanupOldSessions(maxAgeMs: number = 30 * 60 * 1000) {
 
     for (const [sessionId, metrics] of activeSessions.entries()) {
         if (now - metrics.sessionStart > maxAgeMs) {
-            console.log(`[CHAT] Cleaning up old session: ${sessionId}`);
+            if (shouldLogToConsole()) {
+                console.log(`[CHAT] Cleaning up old session: ${sessionId}`);
+            }
             completeSession(sessionId);
         }
     }
