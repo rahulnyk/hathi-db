@@ -1,8 +1,17 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import React, {
+    createContext,
+    useContext,
+    ReactNode,
+    useState,
+    useEffect,
+} from "react";
 import { Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
+import { useChatAnalytics } from "./chat-loggers/client-chat-logger";
+import { useAppSelector } from "@/store";
+import { useChat } from "@ai-sdk/react";
 
 interface ChatContextValue {
     chat: Chat<UIMessage>;
@@ -21,10 +30,24 @@ function createChat() {
 
 export function ChatProvider({ children }: { children: ReactNode }) {
     const [chat, setChat] = useState(() => createChat());
+    const chatMode = useAppSelector((state) => state.ui.chatMode);
 
     const clearChat = () => {
         setChat(createChat());
     };
+
+    const chatHook = useChat({ chat });
+
+    // Analytics //
+    const analytics = useChatAnalytics(chatHook);
+    useEffect(() => {
+        if (chatMode) {
+            analytics.logCustomEvent("chat_mode_activated");
+        } else {
+            analytics.logCustomEvent("chat_mode_deactivated");
+        }
+    }, [chatMode, analytics]);
+    //
 
     return (
         <ChatContext.Provider

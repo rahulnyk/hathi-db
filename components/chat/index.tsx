@@ -29,7 +29,7 @@ import type {
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
 import Placeholder from "./placeholder";
-import { useChatAnalytics } from "@/lib/chat-loggers/client-chat-logger";
+
 export interface ChatComponentProps {
     className?: string;
     showHeader?: boolean; // Control whether to show the header
@@ -37,7 +37,6 @@ export interface ChatComponentProps {
 }
 
 export function ChatComponent({ className }: ChatComponentProps) {
-    const chatMode = useAppSelector((state) => state.ui.chatMode);
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
@@ -45,17 +44,6 @@ export function ChatComponent({ className }: ChatComponentProps) {
     // Always use shared chat context
     const { chat } = useSharedChatContext();
     const chatHook = useChat({ chat });
-
-    // Analytics //
-    const analytics = useChatAnalytics(chatHook);
-    useEffect(() => {
-        if (chatMode) {
-            analytics.logCustomEvent("chat_mode_activated");
-        } else {
-            analytics.logCustomEvent("chat_mode_deactivated");
-        }
-    }, [chatMode, analytics]);
-    //
 
     // Use the chatHook from shared context
     const { messages, status } = chatHook;
