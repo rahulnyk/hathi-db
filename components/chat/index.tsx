@@ -26,7 +26,6 @@ import type {
     ToolUIPart,
     DynamicToolUIPart,
     TextUIPart,
-    ChatStatus,
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
 import Placeholder from "./placeholder";
@@ -137,8 +136,6 @@ ChatComponentProps) {
                             key={message.id}
                             message={message}
                             displayToolInfo={displayToolInfo}
-                            status={status}
-                            isProcessing={isProcessing}
                         />
                     ))}
                 </div>
@@ -169,13 +166,9 @@ ChatComponentProps) {
 function ChatMessage({
     message,
     displayToolInfo,
-    status,
-    isProcessing,
 }: {
     message: UIMessage;
     displayToolInfo: boolean;
-    status: ChatStatus;
-    isProcessing: boolean;
 }) {
     return (
         <div
