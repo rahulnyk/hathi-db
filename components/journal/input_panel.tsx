@@ -2,14 +2,10 @@
 
 import { NotesEditor } from "./notes_editor";
 import { cn } from "@/lib/utils";
-import { useChat } from "@ai-sdk/react";
 import { useAppSelector } from "@/store";
 
-interface InputPanelProps {
-    chatHook: ReturnType<typeof useChat>;
-}
-
-export function InputPanel({ chatHook }: InputPanelProps) {
+// No props needed since NotesEditor uses shared context when available
+export function InputPanel() {
     const chatMode = useAppSelector((state) => state.ui.chatMode);
 
     return (
@@ -38,7 +34,7 @@ export function InputPanel({ chatHook }: InputPanelProps) {
             )}
         >
             <div className="flex flex-col gap-1">
-                <NotesEditor chatHook={chatMode ? chatHook : undefined} />
+                <NotesEditor />
             </div>
         </div>
     );

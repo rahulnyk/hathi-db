@@ -17,10 +17,10 @@ import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { ContextContainer } from "./note_card/context-container";
 import { useChat } from "@ai-sdk/react";
+import { useSharedChatContext } from "@/lib/chat-context";
 
 interface NotesEditorProps {
     note?: Note;
-    chatHook?: ReturnType<typeof useChat>;
 }
 
 const BRACKET_PAIRS: Record<string, string> = {
@@ -100,7 +100,7 @@ function handleAutoDeleteBracketPair(
     return null;
 }
 
-export function NotesEditor({ note, chatHook }: NotesEditorProps) {
+export function NotesEditor({ note }: NotesEditorProps) {
     const isEditMode = !!note;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isUserInteracting = useRef(false);
@@ -111,6 +111,9 @@ export function NotesEditor({ note, chatHook }: NotesEditorProps) {
         start: 0,
         end: 0,
     });
+
+    const { chat } = useSharedChatContext();
+    const chatHook = useChat({ chat });
 
     const dispatch = useAppDispatch();
     const currentKeyContext = useAppSelector(

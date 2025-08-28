@@ -14,7 +14,7 @@ import {
     selectIsProcessing,
     AgentStatus,
 } from "@/store/agentSlice";
-// import { clearChat } from "@/store/chatSlice";
+import { useSharedChatContext } from "@/lib/chat-context";
 
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
@@ -29,25 +29,35 @@ import type {
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
 import Placeholder from "./placeholder";
+import { useChatAnalytics } from "@/lib/chat-loggers/client-chat-logger";
 export interface ChatComponentProps {
-    chatHook: ReturnType<typeof useChat>; // Now required, not optional
     className?: string;
     showHeader?: boolean; // Control whether to show the header
     showInput?: boolean; // Control whether to show the input
 }
 
-export function ChatComponent({
-    chatHook,
-    className,
-}: // showHeader = false,
-// showInput = false,
-ChatComponentProps) {
+export function ChatComponent({ className }: ChatComponentProps) {
+    const chatMode = useAppSelector((state) => state.ui.chatMode);
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
-    // const [content, setContent] = useState("");
 
-    // Use the provided chatHook directly
+    // Always use shared chat context
+    const { chat } = useSharedChatContext();
+    const chatHook = useChat({ chat });
+
+    // Analytics //
+    const analytics = useChatAnalytics(chatHook);
+    useEffect(() => {
+        if (chatMode) {
+            analytics.logCustomEvent("chat_mode_activated");
+        } else {
+            analytics.logCustomEvent("chat_mode_deactivated");
+        }
+    }, [chatMode, analytics]);
+    //
+
+    // Use the chatHook from shared context
     const { messages, status } = chatHook;
 
     // Auto-scroll refs and logic
@@ -108,12 +118,6 @@ ChatComponentProps) {
         }
         prevIsProcessingRef.current = isProcessing;
     }, [isProcessing]);
-
-    // Function to clear chat
-    // const handleClearChat = () => {
-    //     dispatch(clearChat());
-    //     // The useChat hook will automatically reset when id changes
-    // };
 
     return (
         <div
