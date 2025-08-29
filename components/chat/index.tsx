@@ -193,7 +193,7 @@ function ChatMessage({
     );
 }
 
-// Message part renderer with regex-based case handling
+// Message part renderer with proper type handling
 function MessagePartRenderer({
     part,
     displayToolInfo,
@@ -203,38 +203,44 @@ function MessagePartRenderer({
     displayToolInfo: boolean;
     isUserMessage: boolean;
 }) {
-    const { type } = part;
-    const sourceTypes = ["source-url", "source-document", "file", "step-start"];
+    console.log("Rendering message part:", part);
 
-    // Helper function to get case pattern for regex-based switching
-    const getCasePattern = (type: string) => {
-        if (type === "text" || type === "reasoning") return "text-like";
-        if (sourceTypes.includes(type)) return "source-like";
-        if (/^data-/.test(type)) return "data-like";
-        if (/^tool-/.test(type) || type === "dynamic-tool") return "tool-like";
-        return "unknown";
-    };
-
-    switch (getCasePattern(type)) {
-        case "text-like":
-            return (
-                <TextPartRenderer
-                    part={part as TextUIPart | ReasoningPart}
-                    isUserMessage={isUserMessage}
-                />
-            );
-        case "tool-like":
-            return (
-                <ToolPartComponent
-                    part={part as ToolUIPart | DynamicToolUIPart}
-                    displayToolInfo={displayToolInfo}
-                />
-            );
-        case "source-like":
-        case "data-like":
-        default:
-            return null;
+    // Handle text and reasoning parts
+    if (part.type === "text" || part.type === "reasoning") {
+        return (
+            <TextPartRenderer
+                part={part as TextUIPart | ReasoningPart}
+                isUserMessage={isUserMessage}
+            />
+        );
     }
+
+    // Handle tool parts (pattern: tool-{toolName} or dynamic-tool)
+    if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+        return (
+            <ToolPartComponent
+                part={part as ToolUIPart | DynamicToolUIPart}
+                displayToolInfo={displayToolInfo}
+            />
+        );
+    }
+
+    // Handle data parts (pattern: data-{dataType})
+    if (part.type.startsWith("data-")) {
+        // For now, we don't render data parts, but you can add handling here
+        return null;
+    }
+
+    // Handle source-like parts
+    const sourceTypes = ["source-url", "source-document", "file", "step-start"];
+    if (sourceTypes.includes(part.type)) {
+        // For now, we don't render source parts, but you can add handling here
+        return null;
+    }
+
+    // Fallback for unknown part types
+    console.warn("Unknown message part type:", part.type, part);
+    return null;
 }
 
 // Tool part component for AI SDK 5
@@ -245,16 +251,21 @@ function ToolPartComponent({
     part: ToolUIPart | DynamicToolUIPart; // Tool part with type 'tool-${toolName}' or 'data-${string}'
     displayToolInfo: boolean;
 }) {
+    console.log("Rendering tool part:", part);
+
+    // Extract tool name from type (remove 'tool-' prefix)
+    const toolName = part.type.startsWith("tool-")
+        ? part.type.substring(5)
+        : part.type;
+
     switch (part.state) {
         case "input-streaming":
         case "input-available":
-            return (
-                displayToolInfo && <ToolCallIndicator toolName={part.type} />
-            );
+            return displayToolInfo && <ToolCallIndicator toolName={toolName} />;
         case "output-available":
             return (
                 <ToolResultRenderer
-                    toolName={part.type}
+                    toolName={toolName}
                     result={part.output}
                     displayToolInfo={displayToolInfo}
                 />
@@ -270,15 +281,15 @@ function ToolCallIndicator({ toolName }: { toolName: string }) {
     const agentStatus = useAppSelector((state) => state.agent.status);
     const getToolMessage = (tool: string) => {
         switch (tool) {
-            case "tool-filterNotes":
+            case "filterNotes":
                 return "Searching your notes...";
-            case "tool-searchNotesBySimilarity":
+            case "searchNotesBySimilarity":
                 return "Finding related notes using AI...";
-            case "tool-getFilterOptions":
+            case "getFilterOptions":
                 return "Getting available filter options...";
-            case "tool-summarizeNotes":
+            case "summarizeNotes":
                 return "Generating summary...";
-            case "tool-answer":
+            case "answer":
                 return "Done";
             default:
                 return "Processing...";

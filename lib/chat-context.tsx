@@ -10,7 +10,8 @@ import React, {
 import { Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useChatAnalytics } from "./chat-loggers/client-chat-logger";
-import { useAppSelector } from "@/store";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { setDisplayToolInfo } from "@/store/agentSlice";
 import { useChat } from "@ai-sdk/react";
 
 interface ChatContextValue {
@@ -31,10 +32,22 @@ function createChat() {
 export function ChatProvider({ children }: { children: ReactNode }) {
     const [chat, setChat] = useState(() => createChat());
     const chatMode = useAppSelector((state) => state.ui.chatMode);
+    const dispatch = useAppDispatch();
 
     const clearChat = () => {
         setChat(createChat());
     };
+
+    // Initialize displayToolInfo from environment variable
+    useEffect(() => {
+        const displayToolInfo =
+            process.env.NEXT_PUBLIC_DISPLAY_TOOL_INFO === "true";
+        dispatch(setDisplayToolInfo(displayToolInfo));
+
+        // For development: You can override this by dispatching setDisplayToolInfo(true)
+        // or calling dispatch(toggleDisplayToolInfo()) from browser console
+        console.log("Tool info display initialized:", displayToolInfo);
+    }, [dispatch]);
 
     const chatHook = useChat({ chat });
 

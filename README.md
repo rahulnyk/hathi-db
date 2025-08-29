@@ -104,6 +104,9 @@ yarn install
 
     # Optional: Performance Logging
     LOG_PERF_TO_CSV=false
+
+    # Optional: Development Settings
+    NEXT_PUBLIC_DISPLAY_TOOL_INFO=false  # Set to true to show AI tool execution info in chat
     ```
 
     You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
@@ -153,6 +156,17 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application.
 -   `yarn db:reset` - Reset database and run all migrations
 -   `yarn db:tables` - List all database tables
 -   `yarn db:data <table>` - View data from a specific table
+
+### Development Tools
+
+#### AI Tool Debugging
+
+To see AI tool execution information in the chat interface during development:
+
+1. Set `NEXT_PUBLIC_DISPLAY_TOOL_INFO=true` in your `.env.local` file, or
+2. Open browser console and call `window.toggleToolInfo()` to toggle on/off
+
+This will show detailed information about AI tool calls and their results.
 
 ### Project Structure
 

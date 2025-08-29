@@ -210,40 +210,40 @@ export const tools: ToolSet = {
         },
     }),
 
-    summarizeNotes: tool({
-        description:
-            "Generate an AI-powered intelligent summary with key insights, themes, and action items from the provided notes. Uses advanced AI analysis to identify patterns and extract meaningful information.",
-        inputSchema: z.object({
-            noteIds: z
-                .array(z.string())
-                .describe(
-                    "Array of note IDs to summarize. Use this after filtering notes to get their IDs."
-                ),
-            includeMetadata: z
-                .boolean()
-                .optional()
-                .default(true)
-                .describe(
-                    "Whether to include metadata like creation date and contexts in the summary"
-                ),
-        }),
-        execute: async (params) => {
-            try {
-                const result = await summarizeNotes(params);
-                return result;
-            } catch (error) {
-                return {
-                    success: false,
-                    summary: "",
-                    noteCount: 0,
-                    error:
-                        error instanceof Error
-                            ? error.message
-                            : "Unknown error occurred",
-                    message:
-                        "Failed to generate notes summary. Please try again.",
-                };
-            }
-        },
-    }),
+    // summarizeNotes: tool({
+    //     description:
+    //         "Generate an AI-powered intelligent summary with key insights, themes, and action items from the provided notes.",
+    //     inputSchema: z.object({
+    //         noteIds: z
+    //             .array(z.string())
+    //             .describe(
+    //                 "Array of note IDs to summarize. Use this after filtering notes to get their IDs."
+    //             ),
+    //         includeMetadata: z
+    //             .boolean()
+    //             .optional()
+    //             .default(true)
+    //             .describe(
+    //                 "Whether to include metadata like creation date and contexts in the summary"
+    //             ),
+    //     }),
+    //     execute: async (params) => {
+    //         try {
+    //             const result = await summarizeNotes(params);
+    //             return result;
+    //         } catch (error) {
+    //             return {
+    //                 success: false,
+    //                 summary: "",
+    //                 noteCount: 0,
+    //                 error:
+    //                     error instanceof Error
+    //                         ? error.message
+    //                         : "Unknown error occurred",
+    //                 message:
+    //                     "Failed to generate notes summary. Please try again.",
+    //             };
+    //         }
+    //     },
+    // }),
 };

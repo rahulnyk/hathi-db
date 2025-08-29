@@ -31,9 +31,6 @@ const agentSlice = createSlice({
         setDisplayToolInfo: (state, action: PayloadAction<boolean>) => {
             state.displayToolInfo = action.payload;
         },
-        toggleDisplayToolInfo: (state) => {
-            state.displayToolInfo = !state.displayToolInfo;
-        },
         resetAgent: (state) => {
             state.status = "idle";
             state.isProcessing = false;
@@ -42,12 +39,7 @@ const agentSlice = createSlice({
 });
 
 // Export actions
-export const {
-    setStatus,
-    setDisplayToolInfo,
-    toggleDisplayToolInfo,
-    resetAgent,
-} = agentSlice.actions;
+export const { setStatus, setDisplayToolInfo, resetAgent } = agentSlice.actions;
 
 // Export selectors
 export const selectAgentStatus = (state: { agent: AgentState }) =>
