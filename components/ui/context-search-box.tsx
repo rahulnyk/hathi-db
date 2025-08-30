@@ -10,7 +10,7 @@ import {
     SuggestionItem,
 } from "@/components/ui/suggestion-dropdown";
 import { searchContexts } from "@/app/actions/contexts";
-import { ContextStatParams } from "@/app/actions/contexts";
+import { ContextStats } from "@/db/adapter/types";
 import { cn, slugToSentenceCase } from "@/lib/utils";
 import { useDebounce } from "use-debounce"; // Import from use-debounce library
 
@@ -56,7 +56,7 @@ export const ContextSearchBox = ({
             try {
                 const results = await searchContexts(term, maxSuggestions);
                 const suggestionItems: SuggestionItem[] = results.map(
-                    (context: ContextStatParams) => ({
+                    (context: ContextStats) => ({
                         id: context.context,
                         label: slugToSentenceCase(context.context),
                         count: context.count,
@@ -115,7 +115,7 @@ export const ContextSearchBox = ({
     };
 
     const handleSuggestionSelect = (item: SuggestionItem) => {
-        const contextSlug = (item.data as ContextStatParams).context;
+        const contextSlug = (item.data as ContextStats).context;
         setSelectedContext(contextSlug);
         setSelectedContextLabel(item.label);
         setSearchTerm(item.label);

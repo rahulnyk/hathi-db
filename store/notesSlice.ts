@@ -11,39 +11,24 @@ import { extractDeadlineFromContent } from "@/app/actions/ai"; // Import AI acti
 import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 import { setActiveNoteId } from "./uiSlice"; // Import setActiveNoteId
 
-// Enhanced persistence status
-export type PersistenceStatus = "pending" | "persisted" | "failed" | "deleting";
+// Import types from database adapter
+import type {
+    Note as DbNote,
+    NoteType,
+    PersistenceStatus,
+} from "@/db/adapter/types";
 
-// Define possible note types
-export type NoteType = "note" | "todo" | "ai-todo" | "ai-note" | null;
+import { TodoStatus } from "@/db/adapter/types";
 
-// Define possible TODO statuses
-export enum TodoStatus {
-    TODO = "TODO",
-    DOING = "DOING",
-    DONE = "DONE",
-    OBSOLETE = "OBSOLETE",
-}
-
-export type Note = {
-    id: string;
-    content: string;
-    created_at: string;
-    persistenceStatus: PersistenceStatus;
-    errorMessage?: string;
-    key_context?: string;
-    contexts?: string[];
-    tags?: string[];
-    note_type?: NoteType;
-    suggested_contexts?: string[];
-    embedding?: number[];
-    embedding_model?: string;
-    embedding_created_at?: string;
+// Extended Note type for Redux state with additional UI properties
+export type Note = DbNote & {
     isSearchResult?: boolean; // Flag for notes from agent search results
-    // Fields for TODO notes
-    deadline?: string | null; // ISO date string
-    status?: TodoStatus | null;
+    errorMessage?: string;
 };
+
+// Re-export types for backward compatibility
+export type { PersistenceStatus, NoteType } from "@/db/adapter/types";
+export { TodoStatus } from "@/db/adapter/types";
 
 interface NotesState {
     notes: Note[];

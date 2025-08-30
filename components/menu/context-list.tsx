@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
 // import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType } from "@/store/uiSlice";
-import { ContextStatParams } from "@/app/actions/contexts";
+import { ContextStats } from "@/db/adapter/types";
 import { cn, slugToSentenceCase } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -78,7 +78,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
             )}
 
             {/* Context List */}
-            {contexts.map((contextStat: ContextStatParams) => (
+            {contexts.map((contextStat: ContextStats) => (
                 <div
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}

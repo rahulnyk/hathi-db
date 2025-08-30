@@ -1,14 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import {
-    fetchContextStats,
-    ContextStatParams,
-    fetchContextStatsPaginated,
-    FetchContextStatsParams,
-} from "@/app/actions/contexts";
+
+import { fetchContextStatsPaginated } from "@/app/actions/contexts";
+
+import type { ContextStats, FetchContextStatsParams } from "@/db/adapter/types";
 
 // 1. Define the state shape
 interface NotesMetadataState {
-    contexts: ContextStatParams[];
+    contexts: ContextStats[];
     status: "idle" | "loading" | "succeeded" | "failed";
     error: string | null;
     hasMore: boolean;
@@ -29,7 +27,7 @@ const initialState: NotesMetadataState = {
 // 4. Single async thunk to handle both initial load and pagination
 export const fetchContextsPaginated = createAsyncThunk<
     {
-        contexts: ContextStatParams[];
+        contexts: ContextStats[];
         hasMore: boolean;
         totalCount: number;
         isLoadingMore: boolean;
@@ -99,7 +97,7 @@ const notesMetadataSlice = createSlice({
                 if (action.payload.isLoadingMore) {
                     // Append new contexts to existing ones, removing duplicates
                     const existingContexts = new Set(
-                        state.contexts.map((c) => c.context)
+                        state.contexts.map((c: ContextStats) => c.context)
                     );
                     const newContexts = action.payload.contexts.filter(
                         (c) => !existingContexts.has(c.context)

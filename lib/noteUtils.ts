@@ -93,6 +93,7 @@ export const createOptimisticNote = (
         id: uuidv4(),
         content,
         created_at: now,
+        updated_at: now,
         persistenceStatus: "pending",
         key_context: currentContext,
         contexts: distinctContexts,

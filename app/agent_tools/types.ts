@@ -5,30 +5,7 @@
  * to ensure consistency in responses and rendering.
  */
 
-import type { Note } from "@/store/notesSlice";
-
-/**
- * Base note interface for search results
- * Includes similarity score for semantic search results
- */
-export interface SearchResultNote
-    extends Pick<
-        Note,
-        | "persistenceStatus"
-        | "id"
-        | "content"
-        | "key_context"
-        | "contexts"
-        | "tags"
-        | "note_type"
-        | "suggested_contexts"
-        | "created_at"
-        | "deadline"
-        | "status"
-    > {
-    /** Similarity score for semantic search results (0.0-1.0) */
-    similarity?: number;
-}
+import type { SearchResultNote } from "@/db/adapter/types";
 
 /**
  * Unified response interface for all note search tools
@@ -58,15 +35,6 @@ export interface FilterSearchParams {
     contexts?: string[];
     hashtags?: string[];
     noteType?: string;
-    limit?: number;
-}
-
-/**
- * Parameters for semantic similarity search
- */
-export interface SemanticSearchParams {
-    query: string;
-    similarityThreshold?: number;
     limit?: number;
 }
 
