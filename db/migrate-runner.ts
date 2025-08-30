@@ -86,6 +86,8 @@ async function resetDatabase() {
         // Drop all tables
         console.log("🗑️ Dropping existing tables...");
         await client.query(`
+      DROP TABLE IF EXISTS notes_contexts CASCADE;
+      DROP TABLE IF EXISTS contexts CASCADE;
       DROP TABLE IF EXISTS notes CASCADE;
       DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
       DROP FUNCTION IF EXISTS get_user_context_stats() CASCADE;

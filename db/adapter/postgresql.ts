@@ -8,7 +8,15 @@
 
 import { createClient, createDb } from "@/db/connection";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { notes, type Note as DbNote } from "@/db/schema";
+import {
+    notes,
+    contexts,
+    notesContexts,
+    schema,
+    type Note as DbNote,
+    type Database,
+} from "@/db/schema";
+import { v4 as uuidv4 } from "uuid";
 import { measureExecutionTime } from "@/lib/performance";
 import {
     eq,
@@ -50,13 +58,40 @@ import { TodoStatus } from "./types";
  */
 export class PostgreSQLAdapter implements DatabaseAdapter {
     /**
+     * Fetches contexts for a note by note ID
+     */
+    private async fetchContextsForNote(
+        db: Database,
+        noteId: string
+    ): Promise<string[]> {
+        const noteContexts = await db
+            .select({
+                contextName: contexts.name,
+            })
+            .from(notesContexts)
+            .innerJoin(contexts, eq(notesContexts.context_id, contexts.id))
+            .where(eq(notesContexts.note_id, noteId));
+
+        return noteContexts.map((nc: any) => nc.contextName);
+    }
+
+    /**
      * Converts a database note record to the application Note type
      */
-    private convertDbNoteToNote(dbNote: DbNote): Note {
+    private async convertDbNoteToNote(
+        dbNote: DbNote,
+        db?: Database
+    ): Promise<Note> {
+        let contextsList: string[] = [];
+
+        if (db) {
+            contextsList = await this.fetchContextsForNote(db, dbNote.id);
+        }
+
         return {
             ...dbNote,
             key_context: dbNote.key_context ?? undefined,
-            contexts: dbNote.contexts ?? [],
+            contexts: contextsList,
             tags: dbNote.tags ?? [],
             suggested_contexts: dbNote.suggested_contexts ?? undefined,
             note_type: dbNote.note_type as NoteType,
@@ -74,11 +109,20 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
     /**
      * Converts a database note record to SearchResultNote type
      */
-    private convertDbNoteToSearchResult(dbNote: DbNote): SearchResultNote {
+    private async convertDbNoteToSearchResult(
+        dbNote: DbNote,
+        db?: Database
+    ): Promise<SearchResultNote> {
+        let contextsList: string[] = [];
+
+        if (db) {
+            contextsList = await this.fetchContextsForNote(db, dbNote.id);
+        }
+
         return {
             ...dbNote,
             key_context: dbNote.key_context ?? undefined,
-            contexts: dbNote.contexts ?? undefined,
+            contexts: contextsList,
             tags: dbNote.tags ?? undefined,
             suggested_contexts: dbNote.suggested_contexts ?? undefined,
             note_type: dbNote.note_type as NoteType | undefined,
@@ -88,6 +132,69 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
             updated_at: dbNote.updated_at.toISOString(),
             persistenceStatus: "persisted" as const,
         };
+    }
+
+    /**
+     * Upserts contexts and returns their IDs
+     */
+    private async upsertContexts(
+        db: Database,
+        contextNames: string[]
+    ): Promise<string[]> {
+        if (!contextNames || contextNames.length === 0) {
+            return [];
+        }
+
+        const contextIds: string[] = [];
+
+        for (const contextName of contextNames) {
+            // Try to find existing context
+            let existingContext = await db
+                .select()
+                .from(contexts)
+                .where(eq(contexts.name, contextName))
+                .limit(1);
+
+            if (existingContext.length > 0) {
+                contextIds.push(existingContext[0].id);
+            } else {
+                // Create new context
+                const newContextId = uuidv4();
+                await db.insert(contexts).values({
+                    id: newContextId,
+                    name: contextName,
+                });
+                contextIds.push(newContextId);
+            }
+        }
+
+        return contextIds;
+    }
+
+    /**
+     * Links a note to contexts via the junction table
+     */
+    private async linkNoteToContexts(
+        db: Database,
+        noteId: string,
+        contextIds: string[]
+    ): Promise<void> {
+        if (!contextIds || contextIds.length === 0) {
+            return;
+        }
+
+        // First delete existing links for this note
+        await db.delete(notesContexts).where(eq(notesContexts.note_id, noteId));
+
+        // Insert new links
+        const linksToInsert = contextIds.map((contextId) => ({
+            note_id: noteId,
+            context_id: contextId,
+        }));
+
+        if (linksToInsert.length > 0) {
+            await db.insert(notesContexts).values(linksToInsert);
+        }
     }
 
     /**
@@ -108,10 +215,16 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
         }
 
         if (filters.contexts && filters.contexts.length > 0) {
-            const contextConditions = filters.contexts.map((context) =>
-                arrayContains(notes.contexts, [context])
+            // Use EXISTS subquery to check for contexts in the junction table
+            const contextExistsConditions = filters.contexts.map(
+                (context) =>
+                    sql`EXISTS (
+                    SELECT 1 FROM ${notesContexts} nc 
+                    JOIN ${contexts} c ON nc.context_id = c.id 
+                    WHERE nc.note_id = ${notes.id} AND c.name = ${context}
+                )`
             );
-            conditions.push(and(...contextConditions)!);
+            conditions.push(and(...contextExistsConditions)!);
         }
 
         if (filters.hashtags && filters.hashtags.length > 0) {
@@ -229,13 +342,12 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
 
                 const noteToInsert = {
                     id: params.id,
                     content: params.content,
                     key_context: params.key_context,
-                    contexts: params.contexts || [],
                     tags: params.tags || [],
                     note_type: params.note_type,
                     deadline: params.deadline
@@ -253,7 +365,16 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                     throw new Error("No data returned after insert");
                 }
 
-                return this.convertDbNoteToNote(result[0]);
+                // Handle contexts
+                if (params.contexts && params.contexts.length > 0) {
+                    const contextIds = await this.upsertContexts(
+                        db,
+                        params.contexts
+                    );
+                    await this.linkNoteToContexts(db, params.id, contextIds);
+                }
+
+                return await this.convertDbNoteToNote(result[0], db);
             } catch (error: unknown) {
                 const errorMessage =
                     error instanceof Error
@@ -276,12 +397,12 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
 
                 const updateData: Record<string, unknown> = {};
 
                 Object.entries(params).forEach(([key, value]) => {
-                    if (value !== undefined) {
+                    if (value !== undefined && key !== "contexts") {
                         if (key === "deadline" && typeof value === "string") {
                             updateData[key] = new Date(value);
                         } else if (
@@ -295,17 +416,49 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                     }
                 });
 
-                const result = await db
-                    .update(notes)
-                    .set(updateData)
-                    .where(eq(notes.id, noteId))
-                    .returning();
+                // Check if there's anything to update besides contexts
+                const hasDataToUpdate = Object.keys(updateData).length > 0;
+                const hasContextsToUpdate = params.contexts !== undefined;
 
-                if (!result || result.length === 0) {
-                    throw new Error("No data returned after update");
+                if (!hasDataToUpdate && !hasContextsToUpdate) {
+                    throw new Error("No values to update");
                 }
 
-                return this.convertDbNoteToNote(result[0]);
+                let result: any[] = [];
+
+                // Only perform database update if there are fields to update
+                if (hasDataToUpdate) {
+                    result = await db
+                        .update(notes)
+                        .set(updateData)
+                        .where(eq(notes.id, noteId))
+                        .returning();
+
+                    if (!result || result.length === 0) {
+                        throw new Error("No data returned after update");
+                    }
+                } else {
+                    // If only contexts are being updated, fetch the current note
+                    result = await db
+                        .select()
+                        .from(notes)
+                        .where(eq(notes.id, noteId));
+
+                    if (!result || result.length === 0) {
+                        throw new Error("Note not found");
+                    }
+                }
+
+                // Handle contexts if provided
+                if (hasContextsToUpdate) {
+                    const contextIds = await this.upsertContexts(
+                        db,
+                        params.contexts!
+                    );
+                    await this.linkNoteToContexts(db, noteId, contextIds);
+                }
+
+                return await this.convertDbNoteToNote(result[0], db);
             } catch (error: unknown) {
                 const errorMessage =
                     error instanceof Error
@@ -328,8 +481,14 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
 
+                // First delete the note-context relationships
+                await db
+                    .delete(notesContexts)
+                    .where(eq(notesContexts.note_id, noteId));
+
+                // Then delete the note itself
                 await db.delete(notes).where(eq(notes.id, noteId));
 
                 return { noteId };
@@ -364,48 +523,64 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
+
+                let result: DbNote[];
 
                 if (params.contexts && params.contexts.length > 0) {
                     if (params.method === "AND") {
-                        const andConditions = params.contexts.map((context) =>
-                            arrayContains(notes.contexts, [context])
+                        // For AND logic, the note must have ALL specified contexts
+                        const conditions = params.contexts.map(
+                            (context) =>
+                                sql`EXISTS (
+                                SELECT 1 FROM ${notesContexts} nc 
+                                JOIN ${contexts} c ON nc.context_id = c.id 
+                                WHERE nc.note_id = ${notes.id} AND c.name = ${context}
+                            )`
                         );
-                        const result = await db
+                        result = await db
                             .select()
                             .from(notes)
-                            .where(and(...andConditions))
+                            .where(and(...conditions))
                             .orderBy(desc(notes.created_at));
-
-                        return result.map((note) =>
-                            this.convertDbNoteToNote(note)
-                        );
                     } else {
-                        const result = await db
+                        // For OR logic, the note must have ANY of the specified contexts
+                        // Use individual OR conditions for each context
+                        const contextConditions = params.contexts.map(
+                            (contextName) =>
+                                sql`EXISTS (
+                                SELECT 1 FROM ${notesContexts} nc 
+                                JOIN ${contexts} c ON nc.context_id = c.id 
+                                WHERE nc.note_id = ${notes.id} AND c.name = ${contextName}
+                            )`
+                        );
+                        result = await db
                             .select()
                             .from(notes)
-                            .where(
-                                arrayContains(notes.contexts, params.contexts)
-                            )
+                            .where(or(...contextConditions))
                             .orderBy(desc(notes.created_at));
-
-                        return result.map((note) =>
-                            this.convertDbNoteToNote(note)
-                        );
                     }
                 } else if (params.keyContext) {
-                    const result = await db
+                    const contextCondition = sql`EXISTS (
+                        SELECT 1 FROM ${notesContexts} nc 
+                        JOIN ${contexts} c ON nc.context_id = c.id 
+                        WHERE nc.note_id = ${notes.id} AND c.name = ${params.keyContext}
+                    )`;
+                    result = await db
                         .select()
                         .from(notes)
-                        .where(
-                            arrayContains(notes.contexts, [params.keyContext])
-                        )
+                        .where(contextCondition)
                         .orderBy(desc(notes.created_at));
-
-                    return result.map((note) => this.convertDbNoteToNote(note));
+                } else {
+                    result = [];
                 }
 
-                return [];
+                // Convert notes and fetch their contexts
+                const notesWithContexts = await Promise.all(
+                    result.map((note) => this.convertDbNoteToNote(note, db))
+                );
+
+                return notesWithContexts;
             } catch (error) {
                 console.error("Error fetching notes:", error);
                 throw error;
@@ -428,14 +603,19 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
 
                 const result = await db
                     .select()
                     .from(notes)
                     .where(inArray(notes.id, noteIds));
 
-                return result.map((note) => this.convertDbNoteToNote(note));
+                // Convert notes and fetch their contexts
+                const notesWithContexts = await Promise.all(
+                    result.map((note) => this.convertDbNoteToNote(note, db))
+                );
+
+                return notesWithContexts;
             } catch (error) {
                 const errorMessage =
                     error instanceof Error
@@ -456,10 +636,11 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
         return measureExecutionTime("filterNotes", async () => {
             console.log("Filtering notes with filters:", filters);
 
-            const db = createDb();
+            const client = createClient();
 
             try {
-                await db.$client.connect();
+                await client.connect();
+                const db = drizzle(client, { schema });
 
                 const limit = Math.min(filters.limit || 20, 50);
                 const conditions = this.buildFilterConditions(filters);
@@ -511,10 +692,15 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                     limit,
                 };
 
+                // Convert notes and fetch their contexts
+                const notesWithContexts = await Promise.all(
+                    notesResult.map((note) =>
+                        this.convertDbNoteToSearchResult(note, db)
+                    )
+                );
+
                 return {
-                    notes: notesResult.map((note) =>
-                        this.convertDbNoteToSearchResult(note)
-                    ),
+                    notes: notesWithContexts,
                     totalCount: Number(totalCount),
                     appliedFilters,
                 };
@@ -526,7 +712,7 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                 console.error("Error in filterNotes:", errorMessage);
                 throw new Error(`Failed to filter notes: ${errorMessage}`);
             } finally {
-                await db.$client.end();
+                await client.end();
             }
         });
     }
@@ -664,29 +850,35 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
             try {
                 await client.connect();
-                const db = drizzle(client, { schema: { notes } });
+                const db = drizzle(client, { schema });
 
-                const result = await db
+                // Get unique contexts from the contexts table
+                const contextResults = await db
+                    .select({ name: contexts.name })
+                    .from(contexts)
+                    .orderBy(contexts.name);
+
+                // Get other filter options from notes table
+                const noteResults = await db
                     .select({
-                        contexts: notes.contexts,
                         tags: notes.tags,
                         note_type: notes.note_type,
                         status: notes.status,
                     })
                     .from(notes);
 
-                const contextSet = this.extractUniqueArrayValues(
-                    result,
-                    "contexts"
+                const contextSet = new Set(contextResults.map((c) => c.name));
+                const tagSet = this.extractUniqueArrayValues(
+                    noteResults,
+                    "tags"
                 );
-                const tagSet = this.extractUniqueArrayValues(result, "tags");
                 const noteTypeSet = this.extractUniqueScalarValues(
-                    result,
+                    noteResults,
                     "note_type"
                 );
 
                 const statusSet = new Set<TodoStatus>();
-                result.forEach((record) => {
+                noteResults.forEach((record) => {
                     const status = record.status;
                     if (
                         status &&
@@ -769,8 +961,10 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
 
                 const contexts = result.rows.map((row) => ({
                     context: row.context,
-                    count: row.count,
-                    lastUsed: row.lastused,
+                    count: parseInt(row.count, 10),
+                    lastUsed: row.lastused
+                        ? new Date(row.lastused).toISOString()
+                        : undefined,
                 }));
 
                 const totalCount =

@@ -9,14 +9,14 @@ RETURNS TABLE(context text, "count" bigint, "lastUsed" timestamptz) AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    ctx AS context,
+    c.name AS context,
     COUNT(*) AS "count",
-    MAX(n.created_at) AS "lastUsed"
+    MAX(nc.created_at) AS "lastUsed"
   FROM
-    notes AS n,
-    unnest(n.contexts) AS ctx
+    contexts c
+    JOIN notes_contexts nc ON c.id = nc.context_id
   GROUP BY
-    ctx
+    c.name
   ORDER BY
     "count" DESC,
     "lastUsed" DESC;
@@ -35,32 +35,32 @@ DECLARE
 BEGIN
     -- First, get the total count of contexts for pagination info
     IF p_search_term IS NOT NULL AND p_search_term != '' THEN
-        SELECT COUNT(DISTINCT ctx) INTO total_contexts
-        FROM notes AS n,
-             unnest(n.contexts) AS ctx
-        WHERE LOWER(ctx) LIKE LOWER('%' || p_search_term || '%');
+        SELECT COUNT(DISTINCT c.name) INTO total_contexts
+        FROM contexts c
+        JOIN notes_contexts nc ON c.id = nc.context_id
+        WHERE LOWER(c.name) LIKE LOWER('%' || p_search_term || '%');
     ELSE
-        SELECT COUNT(DISTINCT ctx) INTO total_contexts
-        FROM notes AS n,
-             unnest(n.contexts) AS ctx;
+        SELECT COUNT(DISTINCT c.name) INTO total_contexts
+        FROM contexts c
+        JOIN notes_contexts nc ON c.id = nc.context_id;
     END IF;
 
     -- Return the paginated results with search filtering
     RETURN QUERY
     SELECT
-        ctx AS context,
+        c.name AS context,
         COUNT(*) AS "count",
-        MAX(n.created_at) AS "lastUsed",
+        MAX(nc.created_at) AS "lastUsed",
         total_contexts AS total_count
     FROM
-        notes AS n,
-        unnest(n.contexts) AS ctx
+        contexts c
+        JOIN notes_contexts nc ON c.id = nc.context_id
     WHERE
         p_search_term IS NULL 
         OR p_search_term = '' 
-        OR LOWER(ctx) LIKE LOWER('%' || p_search_term || '%')
+        OR LOWER(c.name) LIKE LOWER('%' || p_search_term || '%')
     GROUP BY
-        ctx
+        c.name
     ORDER BY
         "lastUsed" DESC,
         "count" DESC
@@ -78,16 +78,16 @@ RETURNS TABLE(context text, "count" bigint, "lastUsed" timestamptz) AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        ctx AS context,
+        c.name AS context,
         COUNT(*) AS "count",
-        MAX(n.created_at) AS "lastUsed"
+        MAX(nc.created_at) AS "lastUsed"
     FROM
-        notes AS n,
-        unnest(n.contexts) AS ctx
+        contexts c
+        JOIN notes_contexts nc ON c.id = nc.context_id
     WHERE
-        LOWER(ctx) LIKE LOWER('%' || p_search_term || '%')
+        LOWER(c.name) LIKE LOWER('%' || p_search_term || '%')
     GROUP BY
-        ctx
+        c.name
     ORDER BY
         "count" DESC,
         "lastUsed" DESC
@@ -118,7 +118,12 @@ BEGIN
         n.id,
         n.content,
         n.key_context,
-        n.contexts,
+        ARRAY(
+            SELECT c.name 
+            FROM notes_contexts nc 
+            JOIN contexts c ON nc.context_id = c.id 
+            WHERE nc.note_id = n.id
+        ) AS contexts,
         n.tags,
         n.note_type,
         n.suggested_contexts,

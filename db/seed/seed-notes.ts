@@ -6,7 +6,7 @@ import { GeminiAI } from "../../lib/ai/gemini";
 import { getCurrentEmbeddingConfig } from "../../lib/ai/ai-config";
 import { dateToSlug } from "../../lib/utils";
 import { createClient } from "../connection";
-import { notes } from "../schema";
+import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 
@@ -34,15 +34,17 @@ interface NoteToInsert {
     id: string;
     content: string;
     key_context: string;
-    contexts: string[];
     tags: string[];
     note_type: string;
+    // Contexts suggested by the AI or seed data, not necessarily linked in the DB
     suggested_contexts: string[];
     created_at: Date;
     updated_at: Date;
     embedding?: number[];
     embedding_model?: string;
     embedding_created_at?: Date;
+    // Context names to be linked in the DB (includes date context and explicit contexts)
+    contextNames: string[];
 }
 
 // Function to generate document embedding using AI provider
@@ -113,9 +115,15 @@ async function generateBatchEmbeddings(
     }
 }
 
+import { NodePgDatabase } from "drizzle-orm/node-postgres";
+
 // Function to update notes with embeddings in the database
 async function updateNotesWithEmbeddings(
-    db: any,
+    db: NodePgDatabase<{
+        notes: typeof notes;
+        contexts: typeof contexts;
+        notesContexts: typeof notesContexts;
+    }>,
     embeddingsData: Array<{ id: string; embedding: number[] }>
 ): Promise<void> {
     console.log(
@@ -146,6 +154,84 @@ async function updateNotesWithEmbeddings(
     }
 
     console.log(`✅ Completed updating all notes with embeddings`);
+}
+
+// Function to upsert contexts and return their IDs
+async function upsertContexts(
+    db: NodePgDatabase<{
+        notes: typeof notes;
+        contexts: typeof contexts;
+        notesContexts: typeof notesContexts;
+    }>,
+    contextNames: string[]
+): Promise<{ [name: string]: string }> {
+    const contextMap: { [name: string]: string } = {};
+
+    for (const contextName of contextNames) {
+        // Try to find existing context
+        const existingContext = await db
+            .select()
+            .from(contexts)
+            .where(eq(contexts.name, contextName))
+            .limit(1);
+
+        if (existingContext.length > 0) {
+            contextMap[contextName] = existingContext[0].id;
+        } else {
+            // Create new context
+            const newContextId = uuidv4();
+            await db.insert(contexts).values({
+                id: newContextId,
+                name: contextName,
+            });
+            contextMap[contextName] = newContextId;
+        }
+    }
+
+    return contextMap;
+}
+
+// Function to link notes to contexts
+async function linkNotesToContexts(
+    db: NodePgDatabase<{
+        notes: typeof notes;
+        contexts: typeof contexts;
+        notesContexts: typeof notesContexts;
+    }>,
+    notesToInsert: NoteToInsert[]
+): Promise<void> {
+    console.log("🔗 Creating note-context relationships...");
+
+    // Collect all unique context names
+    const allContextNames = new Set<string>();
+    notesToInsert.forEach((note) => {
+        note.contextNames.forEach((contextName) =>
+            allContextNames.add(contextName)
+        );
+    });
+
+    console.log(`📋 Found ${allContextNames.size} unique contexts to upsert`);
+
+    // Upsert all contexts
+    const contextMap = await upsertContexts(db, Array.from(allContextNames));
+
+    // Create junction table entries
+    const junctionEntries = [];
+    for (const note of notesToInsert) {
+        for (const contextName of note.contextNames) {
+            junctionEntries.push({
+                note_id: note.id,
+                context_id: contextMap[contextName],
+            });
+        }
+    }
+
+    if (junctionEntries.length > 0) {
+        await db.insert(notesContexts).values(junctionEntries);
+        console.log(
+            `✅ Created ${junctionEntries.length} note-context relationships`
+        );
+    }
 }
 
 // Get past 7 days (excluding today)
@@ -191,7 +277,9 @@ async function runSeedNotes() {
         // Create database connection
         const client = createClient();
         await client.connect();
-        const db = drizzle(client);
+        const db = drizzle(client, {
+            schema: { notes, contexts, notesContexts },
+        });
 
         // Load seed data
         const seedFilePath = path.join(__dirname, "entrepreneur-notes.json");
@@ -249,7 +337,7 @@ async function runSeedNotes() {
                     id: uuidv4(),
                     content: seedNote.content,
                     key_context: daySlug,
-                    contexts: allContexts,
+                    contextNames: allContexts,
                     tags: seedNote.tags,
                     note_type: seedNote.note_type,
                     suggested_contexts: seedNote.suggested_contexts,
@@ -263,14 +351,28 @@ async function runSeedNotes() {
 
         console.log(`🎯 Prepared ${notesToInsert.length} notes for insertion`);
 
-        // Insert notes into database
+        // Insert notes into database (without contexts)
         console.log("💾 Inserting notes into database...");
+        const notesForDb = notesToInsert.map((note) => ({
+            id: note.id,
+            content: note.content,
+            key_context: note.key_context,
+            tags: note.tags,
+            note_type: note.note_type,
+            suggested_contexts: note.suggested_contexts,
+            created_at: note.created_at,
+            updated_at: note.updated_at,
+        }));
+
         const insertedNotes = await db
             .insert(notes)
-            .values(notesToInsert)
+            .values(notesForDb)
             .returning();
 
         console.log(`✅ Successfully inserted ${insertedNotes.length} notes!`);
+
+        // Link notes to contexts via junction table
+        await linkNotesToContexts(db, notesToInsert);
 
         // Generate embeddings for all notes in batch
         const embeddingsData = await generateBatchEmbeddings(insertedNotes);

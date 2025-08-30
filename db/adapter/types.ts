@@ -191,7 +191,7 @@ export interface RawSemanticSearchResult {
 export interface ContextStats {
     context: string;
     count: number;
-    lastUsed: string;
+    lastUsed?: string;
 }
 
 /**

@@ -5,7 +5,9 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { createDb } from "../connection.js";
-import { notes } from "../schema.js";
+import { notes, contexts, notesContexts } from "../schema.js";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
 
 /**
  * Generate a random embedding vector for testing purposes
@@ -14,6 +16,75 @@ import { notes } from "../schema.js";
  */
 function generateRandomEmbedding(dimensions: number = 1536): number[] {
     return Array.from({ length: dimensions }, () => Math.random() * 2 - 1);
+}
+
+// Helper function to upsert contexts and return their IDs
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+
+async function upsertContexts(
+    db: NodePgDatabase<{
+        notes: typeof notes;
+        contexts: typeof contexts;
+        notesContexts: typeof notesContexts;
+    }>,
+    contextNames: string[]
+): Promise<{ [name: string]: string }> {
+    const contextMap: { [name: string]: string } = {};
+
+    for (const contextName of contextNames) {
+        // Try to find existing context
+        const existingContext = await db
+            .select()
+            .from(contexts)
+            .where(eq(contexts.name, contextName))
+            .limit(1);
+
+        if (existingContext.length > 0) {
+            contextMap[contextName] = existingContext[0].id;
+        } else {
+            // Create new context
+            const newContextId = uuidv4();
+            await db.insert(contexts).values({
+                id: newContextId,
+                name: contextName,
+            });
+            contextMap[contextName] = newContextId;
+        }
+    }
+
+    return contextMap;
+}
+
+// Helper function to link notes to contexts
+async function linkNotesToContexts(
+    db: any,
+    noteContextPairs: Array<{ noteId: string; contextNames: string[] }>
+): Promise<void> {
+    // Collect all unique context names
+    const allContextNames = new Set<string>();
+    noteContextPairs.forEach((pair) => {
+        pair.contextNames.forEach((contextName) =>
+            allContextNames.add(contextName)
+        );
+    });
+
+    // Upsert all contexts
+    const contextMap = await upsertContexts(db, Array.from(allContextNames));
+
+    // Create junction table entries
+    const junctionEntries = [];
+    for (const pair of noteContextPairs) {
+        for (const contextName of pair.contextNames) {
+            junctionEntries.push({
+                note_id: pair.noteId,
+                context_id: contextMap[contextName],
+            });
+        }
+    }
+
+    if (junctionEntries.length > 0) {
+        await db.insert(notesContexts).values(junctionEntries);
+    }
 }
 
 export async function seedTestData() {
@@ -25,84 +96,100 @@ export async function seedTestData() {
     try {
         // Connect to the database
         await client.connect();
+        const drizzleDb = drizzle(client, {
+            schema: { notes, contexts, notesContexts },
+        });
         console.log("📦 Connected to test database");
 
-        // Simple test notes with random embeddings
-        const testNotes = [
+        // Simple test notes with contexts stored separately
+        const testNotesData = [
             {
-                id: uuidv4(),
-                content:
-                    "Test note 1 - Project planning meeting #planning #important",
-                key_context: "test-planning",
+                note: {
+                    id: uuidv4(),
+                    content:
+                        "Test note 1 - Project planning meeting #planning #important",
+                    key_context: "test-planning",
+                    tags: ["planning", "important"],
+                    note_type: "note",
+                    embedding: generateRandomEmbedding(),
+                    embedding_model: "test-random-1536",
+                    embedding_created_at: new Date("2025-08-20T10:00:00Z"),
+                    created_at: new Date("2025-08-20T10:00:00Z"),
+                    updated_at: new Date("2025-08-20T10:00:00Z"),
+                },
                 contexts: ["test-planning", "meetings"],
-                tags: ["planning", "important"],
-                note_type: "note",
-                embedding: generateRandomEmbedding(),
-                embedding_model: "test-random-1536",
-                embedding_created_at: new Date("2025-08-20T10:00:00Z"),
-                created_at: new Date("2025-08-20T10:00:00Z"),
-                updated_at: new Date("2025-08-20T10:00:00Z"),
             },
             {
-                id: uuidv4(),
-                content:
-                    "Test note 2 - Development tasks and priorities #development #tasks",
-                key_context: "development",
+                note: {
+                    id: uuidv4(),
+                    content:
+                        "Test note 2 - Development tasks and priorities #development #tasks",
+                    key_context: "development",
+                    tags: ["development", "tasks"],
+                    note_type: "note",
+                    embedding: generateRandomEmbedding(),
+                    embedding_model: "test-random-1536",
+                    embedding_created_at: new Date("2025-08-21T14:30:00Z"),
+                    created_at: new Date("2025-08-21T14:30:00Z"),
+                    updated_at: new Date("2025-08-21T14:30:00Z"),
+                },
                 contexts: ["development", "tasks"],
-                tags: ["development", "tasks"],
-                note_type: "note",
-                embedding: generateRandomEmbedding(),
-                embedding_model: "test-random-1536",
-                embedding_created_at: new Date("2025-08-21T14:30:00Z"),
-                created_at: new Date("2025-08-21T14:30:00Z"),
-                updated_at: new Date("2025-08-21T14:30:00Z"),
             },
             {
-                id: uuidv4(),
-                content:
-                    "Test note 3 - Marketing strategy review #marketing #strategy",
-                key_context: "marketing",
+                note: {
+                    id: uuidv4(),
+                    content:
+                        "Test note 3 - Marketing strategy review #marketing #strategy",
+                    key_context: "marketing",
+                    tags: ["marketing", "strategy"],
+                    note_type: "note",
+                    embedding: generateRandomEmbedding(),
+                    embedding_model: "test-random-1536",
+                    embedding_created_at: new Date("2025-08-22T09:15:00Z"),
+                    created_at: new Date("2025-08-22T09:15:00Z"),
+                    updated_at: new Date("2025-08-22T09:15:00Z"),
+                },
                 contexts: ["marketing", "strategy"],
-                tags: ["marketing", "strategy"],
-                note_type: "note",
-                embedding: generateRandomEmbedding(),
-                embedding_model: "test-random-1536",
-                embedding_created_at: new Date("2025-08-22T09:15:00Z"),
-                created_at: new Date("2025-08-22T09:15:00Z"),
-                updated_at: new Date("2025-08-22T09:15:00Z"),
             },
             {
-                id: uuidv4(),
-                content:
-                    "Test note 4 - Team feedback and retrospective #team #feedback",
-                key_context: "team",
+                note: {
+                    id: uuidv4(),
+                    content:
+                        "Test note 4 - Team feedback and retrospective #team #feedback",
+                    key_context: "team",
+                    tags: ["team", "feedback"],
+                    note_type: "note",
+                    embedding: generateRandomEmbedding(),
+                    embedding_model: "test-random-1536",
+                    embedding_created_at: new Date("2025-08-23T16:45:00Z"),
+                    created_at: new Date("2025-08-23T16:45:00Z"),
+                    updated_at: new Date("2025-08-23T16:45:00Z"),
+                },
                 contexts: ["team", "feedback"],
-                tags: ["team", "feedback"],
-                note_type: "note",
-                embedding: generateRandomEmbedding(),
-                embedding_model: "test-random-1536",
-                embedding_created_at: new Date("2025-08-23T16:45:00Z"),
-                created_at: new Date("2025-08-23T16:45:00Z"),
-                updated_at: new Date("2025-08-23T16:45:00Z"),
             },
             {
-                id: uuidv4(),
-                content:
-                    "Test note 5 - Product roadmap discussion #product #roadmap",
-                key_context: "product",
+                note: {
+                    id: uuidv4(),
+                    content:
+                        "Test note 5 - Product roadmap discussion #product #roadmap",
+                    key_context: "product",
+                    tags: ["product", "roadmap"],
+                    note_type: "note",
+                    embedding: generateRandomEmbedding(),
+                    embedding_model: "test-random-1536",
+                    embedding_created_at: new Date("2025-08-23T11:00:00Z"),
+                    created_at: new Date("2025-08-23T11:00:00Z"),
+                    updated_at: new Date("2025-08-23T11:00:00Z"),
+                },
                 contexts: ["product", "roadmap"],
-                tags: ["product", "roadmap"],
-                note_type: "note",
-                embedding: generateRandomEmbedding(),
-                embedding_model: "test-random-1536",
-                embedding_created_at: new Date("2025-08-23T11:00:00Z"),
-                created_at: new Date("2025-08-23T11:00:00Z"),
-                updated_at: new Date("2025-08-23T11:00:00Z"),
             },
         ];
 
+        // Extract notes for insertion (without contexts)
+        const testNotes = testNotesData.map((data) => data.note);
+
         // Insert test notes
-        const insertedNotes = await db
+        const insertedNotes = await drizzleDb
             .insert(notes)
             .values(testNotes)
             .returning();
@@ -110,21 +197,34 @@ export async function seedTestData() {
         console.log(
             `✅ Successfully inserted ${insertedNotes.length} test notes`
         );
+
+        // Link notes to contexts
+        const noteContextPairs = testNotesData.map((data) => ({
+            noteId: data.note.id,
+            contextNames: data.contexts,
+        }));
+
+        await linkNotesToContexts(drizzleDb, noteContextPairs);
+        console.log("✅ Successfully linked notes to contexts");
+
         console.log("📊 Test data summary:");
         console.log(`  - Total notes: ${insertedNotes.length}`);
         console.log(
             `  - Contexts: ${
-                Array.from(new Set(testNotes.flatMap((n) => n.contexts))).length
+                Array.from(new Set(testNotesData.flatMap((n) => n.contexts)))
+                    .length
             } unique`
         );
         console.log(
             `  - Tags: ${
-                Array.from(new Set(testNotes.flatMap((n) => n.tags))).length
+                Array.from(new Set(testNotesData.flatMap((n) => n.note.tags)))
+                    .length
             } unique`
         );
         console.log(
             `  - Note types: ${
-                Array.from(new Set(testNotes.map((n) => n.note_type))).length
+                Array.from(new Set(testNotesData.map((n) => n.note.note_type)))
+                    .length
             } unique`
         );
         console.log(
@@ -132,7 +232,7 @@ export async function seedTestData() {
         );
 
         // Verify data was inserted
-        const count = await db.select().from(notes);
+        const count = await drizzleDb.select().from(notes);
         console.log(`🔍 Verification: Found ${count.length} notes in database`);
 
         return insertedNotes;
