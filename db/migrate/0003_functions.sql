@@ -3,42 +3,20 @@
 -- =============================================================================
 -- This migration creates all the database functions required by the application
 
--- Function to get paginated context statistics with search (used by contexts.ts)
+-- Function to get paginated context statistics (used by contexts.ts)
 CREATE OR REPLACE FUNCTION get_user_context_stats_paginated(
     p_limit integer DEFAULT 30,
-    p_offset integer DEFAULT 0,
-    p_search_term text DEFAULT NULL
+    p_offset integer DEFAULT 0
 )
 RETURNS TABLE(context text, "count" bigint, "lastUsed" timestamptz, total_count bigint) AS $$
-DECLARE
-    total_contexts bigint;
-BEGIN
-    -- First, get the total count of contexts for pagination info
-    IF p_search_term IS NOT NULL AND p_search_term != '' THEN
-        SELECT COUNT(DISTINCT c.name) INTO total_contexts
-        FROM contexts c
-        JOIN notes_contexts nc ON c.id = nc.context_id
-        WHERE LOWER(c.name) LIKE LOWER('%' || p_search_term || '%');
-    ELSE
-        SELECT COUNT(DISTINCT c.name) INTO total_contexts
-        FROM contexts c
-        JOIN notes_contexts nc ON c.id = nc.context_id;
-    END IF;
-
-    -- Return the paginated results with search filtering
-    RETURN QUERY
     SELECT
         c.name AS context,
         COUNT(*) AS "count",
         MAX(nc.created_at) AS "lastUsed",
-        total_contexts AS total_count
+        COUNT(*) OVER() AS total_count
     FROM
         contexts c
         JOIN notes_contexts nc ON c.id = nc.context_id
-    WHERE
-        p_search_term IS NULL 
-        OR p_search_term = '' 
-        OR LOWER(c.name) LIKE LOWER('%' || p_search_term || '%')
     GROUP BY
         c.name
     ORDER BY
@@ -46,8 +24,7 @@ BEGIN
         "count" DESC
     LIMIT p_limit
     OFFSET p_offset;
-END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE sql;
 
 -- Function to search user contexts (used by contexts.ts)
 CREATE OR REPLACE FUNCTION search_user_contexts(

@@ -209,7 +209,6 @@ export interface PaginatedContextStats {
 export interface FetchContextStatsParams {
     limit?: number;
     offset?: number;
-    searchTerm?: string;
 }
 
 /**

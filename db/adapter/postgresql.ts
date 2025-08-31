@@ -916,15 +916,15 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
         params: FetchContextStatsParams = {}
     ): Promise<PaginatedContextStats> {
         return measureExecutionTime("fetchContextStatsPaginated", async () => {
-            const { limit = 30, offset = 0, searchTerm } = params;
+            const { limit = 30, offset = 0 } = params;
             const client = createClient();
 
             try {
                 await client.connect();
 
                 const result = await client.query(
-                    "SELECT * FROM get_user_context_stats_paginated($1, $2, $3)",
-                    [limit, offset, searchTerm || null]
+                    "SELECT * FROM get_user_context_stats_paginated($1, $2)",
+                    [limit, offset]
                 );
 
                 const contexts = result.rows.map((row) => ({
