@@ -910,38 +910,6 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
     }
 
     /**
-     * Fetches statistics for all distinct contexts
-     */
-    async fetchContextStats(): Promise<ContextStats[]> {
-        return measureExecutionTime("fetchContextStats", async () => {
-            const client = createClient();
-
-            try {
-                await client.connect();
-
-                const result = await client.query(
-                    "SELECT * FROM get_user_context_stats()"
-                );
-
-                return result.rows.map((row) => ({
-                    context: row.context,
-                    count: row.count,
-                    lastUsed: row.lastused,
-                }));
-            } catch (error) {
-                const errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : "Could not fetch context statistics.";
-                console.error("Error in fetchContextStats:", errorMessage);
-                throw new Error(errorMessage);
-            } finally {
-                await client.end();
-            }
-        });
-    }
-
-    /**
      * Fetches paginated statistics for distinct contexts
      */
     async fetchContextStatsPaginated(

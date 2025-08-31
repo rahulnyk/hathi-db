@@ -47,7 +47,6 @@ Triggers and utility functions:
 
 Application database functions:
 
--   `get_user_context_stats()` - Basic context statistics
 -   `get_user_context_stats_paginated()` - Paginated context stats with search
 -   `search_user_contexts()` - Context search functionality
 -   `search_notes_by_similarity()` - Semantic search using embeddings

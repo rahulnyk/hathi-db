@@ -16,7 +16,7 @@ async function checkFunctions() {
             FROM pg_proc p
             JOIN pg_namespace n ON p.pronamespace = n.oid
             WHERE n.nspname = 'public' 
-            AND p.proname IN ('get_user_context_stats_paginated', 'get_user_context_stats', 'search_user_contexts')
+            AND p.proname IN ('get_user_context_stats_paginated', 'search_user_contexts')
             ORDER BY p.proname, p.oid;
         `);
 

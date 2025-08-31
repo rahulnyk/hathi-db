@@ -241,7 +241,6 @@ export interface DatabaseAdapter {
     getFilterOptions(): Promise<FilterOptions>;
 
     // Context operations
-    fetchContextStats(): Promise<ContextStats[]>;
     fetchContextStatsPaginated(
         params: FetchContextStatsParams
     ): Promise<PaginatedContextStats>;

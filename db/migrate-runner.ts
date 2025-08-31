@@ -90,7 +90,6 @@ async function resetDatabase() {
       DROP TABLE IF EXISTS contexts CASCADE;
       DROP TABLE IF EXISTS notes CASCADE;
       DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
-      DROP FUNCTION IF EXISTS get_user_context_stats() CASCADE;
       DROP FUNCTION IF EXISTS get_user_context_stats_paginated(integer, integer, text) CASCADE;
       DROP FUNCTION IF EXISTS search_user_contexts(text, integer) CASCADE;
       DROP FUNCTION IF EXISTS search_notes_by_similarity(vector, float, integer) CASCADE;

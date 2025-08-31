@@ -9,31 +9,6 @@ import type {
 } from "@/db/adapter/types";
 
 /**
- * Fetches statistics for all distinct contexts.
- * This includes the occurrence count and the most recent usage timestamp for each context.
- *
- * This action relies on the `get_user_context_stats` PostgreSQL function, which must be
- * created in the Supabase database for this to work.
- *
- * @returns A promise that resolves to an array of ContextStats objects,
- *          sorted by count and then by last used date in descending order.
- */
-export async function fetchContextStats(): Promise<ContextStats[]> {
-    return measureExecutionTime("fetchContextStats", async () => {
-        try {
-            return await databaseAdapter.fetchContextStats();
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Could not fetch context statistics.";
-            console.error("Error in fetchContextStats:", errorMessage);
-            throw new Error(errorMessage);
-        }
-    });
-}
-
-/**
  * Fetches paginated statistics for distinct contexts.
  * Supports pagination and optional search filtering.
  *

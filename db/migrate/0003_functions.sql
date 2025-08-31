@@ -3,26 +3,6 @@
 -- =============================================================================
 -- This migration creates all the database functions required by the application
 
--- Function to get context statistics (used by contexts.ts)
-CREATE OR REPLACE FUNCTION get_user_context_stats()
-RETURNS TABLE(context text, "count" bigint, "lastUsed" timestamptz) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    c.name AS context,
-    COUNT(*) AS "count",
-    MAX(nc.created_at) AS "lastUsed"
-  FROM
-    contexts c
-    JOIN notes_contexts nc ON c.id = nc.context_id
-  GROUP BY
-    c.name
-  ORDER BY
-    "count" DESC,
-    "lastUsed" DESC;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Function to get paginated context statistics with search (used by contexts.ts)
 CREATE OR REPLACE FUNCTION get_user_context_stats_paginated(
     p_limit integer DEFAULT 30,

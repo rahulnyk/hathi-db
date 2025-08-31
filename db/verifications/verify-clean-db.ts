@@ -40,7 +40,7 @@ async function checkCleanFunctions() {
             FROM pg_proc p
             JOIN pg_namespace n ON p.pronamespace = n.oid
             WHERE n.nspname = 'public' 
-            AND p.proname IN ('get_user_context_stats', 'get_user_context_stats_paginated', 'search_user_contexts', 'search_notes_by_similarity')
+            AND p.proname IN ('get_user_context_stats_paginated', 'search_user_contexts', 'search_notes_by_similarity')
             ORDER BY p.proname;
         `);
 
