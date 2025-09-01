@@ -104,7 +104,7 @@ export class SqliteAdapter implements DatabaseAdapter {
             tags: tags,
             suggested_contexts: suggestedContexts,
             note_type: dbNote.note_type as NoteType,
-            embedding: undefined, // Embeddings are stored separately in vec0 table
+            embedding: undefined, // Embeddings are stored in notes.embedding column as JSON
             embedding_model: dbNote.embedding_model ?? undefined,
             embedding_created_at: dbNote.embedding_created_at
                 ? new Date(dbNote.embedding_created_at).toISOString()
@@ -440,8 +440,8 @@ export class SqliteAdapter implements DatabaseAdapter {
                                 ? JSON.stringify(value)
                                 : value;
                         } else if (key === "embedding") {
-                            // Handle embedding separately - don't store in main table
-                            // Embeddings are stored in the vec0 virtual table
+                            // Handle embedding separately - stored as JSON in notes.embedding column
+                            // The embedding will be updated via upsertEmbedding() method
                             if (params.embedding_model) {
                                 updateData["embedding_model"] =
                                     params.embedding_model;

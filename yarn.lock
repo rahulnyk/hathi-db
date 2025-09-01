@@ -6995,41 +6995,10 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
 
-sqlite-vec-darwin-arm64@0.1.7-alpha.2, sqlite-vec-darwin-arm64@^0.1.7-alpha.2:
+sqlite-vec-darwin-arm64@^0.1.7-alpha.2:
   version "0.1.7-alpha.2"
   resolved "https://registry.yarnpkg.com/sqlite-vec-darwin-arm64/-/sqlite-vec-darwin-arm64-0.1.7-alpha.2.tgz#d4b0c79a072f366f1d29a99a3b3c1f210146acf3"
   integrity sha512-raIATOqFYkeCHhb/t3r7W7Cf2lVYdf4J3ogJ6GFc8PQEgHCPEsi+bYnm2JT84MzLfTlSTIdxr4/NKv+zF7oLPw==
-
-sqlite-vec-darwin-x64@0.1.7-alpha.2:
-  version "0.1.7-alpha.2"
-  resolved "https://registry.yarnpkg.com/sqlite-vec-darwin-x64/-/sqlite-vec-darwin-x64-0.1.7-alpha.2.tgz#f3800f29b45a9bc1993a63af29882bd729c2426b"
-  integrity sha512-jeZEELsQjjRsVojsvU5iKxOvkaVuE+JYC8Y4Ma8U45aAERrDYmqZoHvgSG7cg1PXL3bMlumFTAmHynf1y4pOzA==
-
-sqlite-vec-linux-arm64@0.1.7-alpha.2:
-  version "0.1.7-alpha.2"
-  resolved "https://registry.yarnpkg.com/sqlite-vec-linux-arm64/-/sqlite-vec-linux-arm64-0.1.7-alpha.2.tgz#fd2882e7ce87d1513cc382b56bf168d01fa2a388"
-  integrity sha512-6Spj4Nfi7tG13jsUG+W7jnT0bCTWbyPImu2M8nWp20fNrd1SZ4g3CSlDAK8GBdavX7wRlbBHCZ+BDa++rbDewA==
-
-sqlite-vec-linux-x64@0.1.7-alpha.2:
-  version "0.1.7-alpha.2"
-  resolved "https://registry.yarnpkg.com/sqlite-vec-linux-x64/-/sqlite-vec-linux-x64-0.1.7-alpha.2.tgz#dd5a1ed1ad19632e8ded25e448e863ddd2cd88ac"
-  integrity sha512-IcgrbHaDccTVhXDf8Orwdc2+hgDLAFORl6OBUhcvlmwswwBP1hqBTSEhovClG4NItwTOBNgpwOoQ7Qp3VDPWLg==
-
-sqlite-vec-windows-x64@0.1.7-alpha.2:
-  version "0.1.7-alpha.2"
-  resolved "https://registry.yarnpkg.com/sqlite-vec-windows-x64/-/sqlite-vec-windows-x64-0.1.7-alpha.2.tgz#0fa5d3bf170281f9e587855c11b7e97e99317c05"
-  integrity sha512-TRP6hTjAcwvQ6xpCZvjP00pdlda8J38ArFy1lMYhtQWXiIBmWnhMaMbq4kaeCYwvTTddfidatRS+TJrwIKB/oQ==
-
-sqlite-vec@^0.1.7-alpha.2:
-  version "0.1.7-alpha.2"
-  resolved "https://registry.yarnpkg.com/sqlite-vec/-/sqlite-vec-0.1.7-alpha.2.tgz#669843011c0de46e196a1924a485ac4741d04190"
-  integrity sha512-rNgRCv+4V4Ed3yc33Qr+nNmjhtrMnnHzXfLVPeGb28Dx5mmDL3Ngw/Wk8vhCGjj76+oC6gnkmMG8y73BZWGBwQ==
-  optionalDependencies:
-    sqlite-vec-darwin-arm64 "0.1.7-alpha.2"
-    sqlite-vec-darwin-x64 "0.1.7-alpha.2"
-    sqlite-vec-linux-arm64 "0.1.7-alpha.2"
-    sqlite-vec-linux-x64 "0.1.7-alpha.2"
-    sqlite-vec-windows-x64 "0.1.7-alpha.2"
 
 stable-hash@^0.0.5:
   version "0.0.5"

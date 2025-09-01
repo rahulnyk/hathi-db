@@ -85,13 +85,6 @@ async function truncate() {
         rawDb.prepare("DELETE FROM notes").run();
         rawDb.prepare("DELETE FROM contexts").run();
 
-        // Clear vector table if it exists
-        try {
-            rawDb.prepare("DELETE FROM vec0").run();
-        } catch (error) {
-            console.warn("Vector table might not exist:", error);
-        }
-
         console.log("✅ SQLite tables truncated");
     } catch (error) {
         console.error("❌ SQLite truncate failed:", error);

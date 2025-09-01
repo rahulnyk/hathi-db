@@ -2,7 +2,8 @@
  * SQLite Database Connection Management
  *
  * This module handles SQLite database connections using better-sqlite3
- * and loads the sqlite-vec extension for vector operations.
+ * and loads the sqlite-vec extension for vector operations using manual
+ * extension loading for better compatibility with Next.js applications.
  */
 
 import Database, { Database as DatabaseInstance } from "better-sqlite3";
@@ -40,88 +41,55 @@ function loadSqliteVecExtension(db: Database.Database): void {
     }
 
     try {
-        let extensionPath: string;
-        let usingFallback = false;
+        // Manual extension loading approach for better compatibility
+        const platform = process.platform;
+        const arch = process.arch;
 
-        // First, try the official sqlite-vec package method
-        try {
-            const sqliteVec = require("sqlite-vec");
-            extensionPath = sqliteVec.getLoadablePath();
-            console.log("🔍 Using sqlite-vec package path:", extensionPath);
-        } catch (vecError) {
-            const errorMessage =
-                vecError instanceof Error ? vecError.message : String(vecError);
-            console.warn(
-                "⚠️  sqlite-vec.getLoadablePath() failed:",
-                errorMessage
-            );
-
-            // Fallback: construct the path manually based on platform
-            const path = require("path");
-            const platform = process.platform;
-            const arch = process.arch;
-
-            let platformPkg: string;
-            if (platform === "darwin" && arch === "arm64") {
-                platformPkg = "sqlite-vec-darwin-arm64";
-            } else if (platform === "darwin" && arch === "x64") {
-                platformPkg = "sqlite-vec-darwin-x64";
-            } else if (platform === "linux" && arch === "arm64") {
-                platformPkg = "sqlite-vec-linux-arm64";
-            } else if (platform === "linux" && arch === "x64") {
-                platformPkg = "sqlite-vec-linux-x64";
-            } else if (platform === "win32" && arch === "x64") {
-                platformPkg = "sqlite-vec-windows-x64";
-            } else {
-                throw new Error(`Unsupported platform: ${platform}-${arch}`);
-            }
-
-            const libFile =
-                platform === "win32"
-                    ? "vec0.dll"
-                    : platform === "darwin"
-                    ? "vec0.dylib"
-                    : "vec0.so";
-
-            extensionPath = path.join(
-                process.cwd(),
-                "node_modules",
-                platformPkg,
-                libFile
-            );
-            usingFallback = true;
-            console.log("🔧 Using fallback path:", extensionPath);
+        let platformPkg: string;
+        if (platform === "darwin" && arch === "arm64") {
+            platformPkg = "sqlite-vec-darwin-arm64";
+        } else if (platform === "darwin" && arch === "x64") {
+            platformPkg = "sqlite-vec-darwin-x64";
+        } else if (platform === "linux" && arch === "arm64") {
+            platformPkg = "sqlite-vec-linux-arm64";
+        } else if (platform === "linux" && arch === "x64") {
+            platformPkg = "sqlite-vec-linux-x64";
+        } else if (platform === "win32" && arch === "x64") {
+            platformPkg = "sqlite-vec-windows-x64";
+        } else {
+            throw new Error(`Unsupported platform: ${platform}-${arch}`);
         }
+
+        const libFile =
+            platform === "win32"
+                ? "vec0.dll"
+                : platform === "darwin"
+                ? "vec0.dylib"
+                : "vec0.so";
+
+        const extensionPath = path.join(
+            process.cwd(),
+            "node_modules",
+            platformPkg,
+            libFile
+        );
 
         // Verify the extension file exists
-        const fs = require("fs");
         if (!fs.existsSync(extensionPath)) {
-            const errorMsg = `sqlite-vec extension file not found at: ${extensionPath}`;
-            console.error("❌", errorMsg);
-
-            // Try to provide helpful debugging info
-            const path = require("path");
-            const nodeModulesPath = path.join(process.cwd(), "node_modules");
-            const vecDirs = fs
-                .readdirSync(nodeModulesPath)
-                .filter((dir: string) => dir.includes("sqlite-vec"));
-            console.log("🔍 Available sqlite-vec directories:", vecDirs);
-
-            throw new Error(errorMsg);
+            throw new Error(
+                `sqlite-vec extension file not found at: ${extensionPath}`
+            );
         }
 
-        // Load the extension
+        // Load the extension using better-sqlite3's loadExtension method
         db.loadExtension(extensionPath);
 
         extensionLoaded = true;
-        const method = usingFallback ? "fallback path" : "sqlite-vec package";
-        console.log(
-            `✅ sqlite-vec extension loaded successfully (via ${method})`
-        );
+        console.log("✅ sqlite-vec extension loaded successfully");
     } catch (error) {
         console.error("❌ Failed to load sqlite-vec extension:", error);
         console.error(
-            "💡 Make sure sqlite-vec and sqlite-vec-darwin-arm64 packages are installed"
+            "💡 Make sure platform-specific sqlite-vec package is installed (e.g., sqlite-vec-darwin-arm64)"
         );
         throw new Error(
             "sqlite-vec extension is required for vector operations"
@@ -205,28 +173,6 @@ export function executeSql(sql: string, params: any[] = []): any {
 }
 
 /**
- * Create vector table for embeddings
- */
-export function createVectorTable(): void {
-    const db = createSqliteConnection();
-
-    try {
-        // Create vector table using sqlite-vec
-        db.exec(`
-            CREATE VIRTUAL TABLE IF NOT EXISTS vec0 USING vec0(
-                id TEXT PRIMARY KEY,
-                embedding FLOAT[1536]
-            )
-        `);
-
-        console.log("✓ Vector table created successfully");
-    } catch (error) {
-        console.error("Failed to create vector table:", error);
-        throw error;
-    }
-}
-
-/**
  * Run database migrations
  */
 export function runMigrations(): void {
@@ -272,9 +218,6 @@ export function runMigrations(): void {
             throw error;
         }
     }
-
-    // Create vector table after migrations
-    createVectorTable();
 
     console.log("✓ All SQLite migrations completed");
 }
