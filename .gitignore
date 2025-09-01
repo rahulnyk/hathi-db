@@ -47,3 +47,5 @@ next-env.d.ts
 performance_log.csv
 .github/instructions
 *.csv
+.vscode/*
+data/
