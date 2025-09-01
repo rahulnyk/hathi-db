@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 import { fetchContextStatsPaginated } from "@/app/actions/contexts";
 
-import type { ContextStats, FetchContextStatsParams } from "@/db/adapter/types";
+import type { ContextStats, FetchContextStatsParams } from "@/db/types";
 
 // 1. Define the state shape
 interface NotesMetadataState {

@@ -2,8 +2,8 @@
  * Utility functions for detecting and managing note types
  */
 
-import { NoteType } from "@/store/notesSlice";
-
+// import { NoteType } from "@/store/notesSlice";
+import { NoteType } from "@/db/types";
 /**
  * Keywords and patterns that indicate a todo/task note
  */

@@ -1,14 +1,13 @@
 import * as dotenv from "dotenv";
-import { promises as fs } from "fs";
-import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { GeminiAI } from "../../lib/ai/gemini";
-import { getCurrentEmbeddingConfig } from "../../lib/ai/ai-config";
-import { dateToSlug } from "../../lib/utils";
+import { GeminiAI } from "@/lib/ai/gemini";
+import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
+import { dateToSlug } from "@/lib/utils";
 import { createClient } from "../connection";
 import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
+import seedData from "@/db/seed-data/entrepreneur-notes.json";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -281,15 +280,7 @@ async function runSeedNotes() {
             schema: { notes, contexts, notesContexts },
         });
 
-        // Load seed data
-        const seedFilePath = path.join(__dirname, "entrepreneur-notes.json");
-        const seedData = JSON.parse(
-            await fs.readFile(seedFilePath, "utf-8")
-        ) as SeedNote[];
-
-        console.log(
-            `📚 Loaded ${seedData.length} seed notes from ${seedFilePath}`
-        );
+        console.log(`📚 Loaded ${seedData.length} seed notes`);
 
         // Get past 7 days
         const pastDays = getPastSevenDays();

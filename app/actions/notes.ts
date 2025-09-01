@@ -1,13 +1,13 @@
 "use server";
 
-import { databaseAdapter } from "@/db/adapter";
+import { databaseAdapter } from "@/db/postgres/adapter";
 import { measureExecutionTime } from "@/lib/performance";
 import type {
     Note,
     CreateNoteParams,
     UpdateNoteParams,
     FetchNotesParams,
-} from "@/db/adapter/types";
+} from "@/db/types";
 
 /**
  * Adds a new note to the database.

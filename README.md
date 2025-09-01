@@ -26,9 +26,12 @@
 
 ### 🔐 Database & Performance
 
--   **Local PostgreSQL**: Full database control with pgvector extension
--   **Drizzle ORM**: Type-safe database operations
--   **Vector Search**: Semantic similarity search with embeddings
+-   **Dual Database Support**: Choose between PostgreSQL (production) or SQLite (embedded)
+-   **Environment Switching**: Switch databases with `USE_DB=postgres|sqlite` environment variable
+-   **PostgreSQL**: Full-featured with pgvector extension for production deployments
+-   **SQLite + sqlite-vec**: Lightweight embedded option with vector search capabilities
+-   **Drizzle ORM**: Type-safe database operations across both backends
+-   **Vector Search**: Semantic similarity search with embeddings (both databases)
 -   **Performance Monitoring**: Built-in performance logging and optimization
 
 ### 🎨 User Experience
@@ -111,32 +114,41 @@ yarn install
 
     You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
 
-### 4. Start the Database
+### 4. Choose Your Database Backend
 
-Start the PostgreSQL database using Docker:
+Hathi supports two database options. Choose one based on your needs:
+
+#### Option A: SQLite (Embedded - Recommended for Development/Personal Use)
+
+SQLite provides a lightweight, embedded database perfect for development, personal use, or standalone deployments.
 
 ```bash
+# Set SQLite as your database
+echo "USE_DB=sqlite" >> .env.local
+
+# Run SQLite migrations and seed with sample data
+USE_DB=sqlite yarn db:sqlite:migrate
+USE_DB=sqlite yarn db:sqlite:seed
+```
+
+#### Option B: PostgreSQL (Recommended for Production)
+
+PostgreSQL provides a full-featured database with advanced capabilities, ideal for production deployments.
+
+```bash
+# Start PostgreSQL using Docker
 cd docker
 docker-compose up -d
-```
 
-### 5. Set Up the Database Schema
+# Set PostgreSQL as your database (default)
+echo "USE_DB=postgres" >> .env.local
 
-Run the database migrations to set up the required tables and functions:
-
-```bash
+# Run PostgreSQL migrations and seed with sample data
 yarn db:migrate
+yarn db:seed
 ```
 
-This will create:
-
--   Notes table with vector support
--   Context and tags support with array indexes
--   Database functions for context statistics
--   Embedding support for AI features (1536-dimensional vectors for Google gemini-embedding-exp-03-07)
--   Pagination and search functions
-
-### 6. Start the Development Server
+### 5. Start the Development Server
 
 ```bash
 yarn dev
@@ -148,14 +160,38 @@ Visit [http://localhost:3000](http://localhost:3000) to see your application.
 
 ### Available Scripts
 
+#### General
+
 -   `yarn dev` - Start development server with Turbopack
 -   `yarn build` - Build for production
 -   `yarn start` - Start production server
 -   `yarn lint` - Run ESLint
--   `yarn db:migrate` - Run database migrations
--   `yarn db:reset` - Reset database and run all migrations
--   `yarn db:tables` - List all database tables
--   `yarn db:data <table>` - View data from a specific table
+
+#### PostgreSQL Database
+
+-   `yarn db:migrate` - Run PostgreSQL migrations
+-   `yarn db:reset` - Reset PostgreSQL database and run all migrations
+-   `yarn db:seed` - Seed PostgreSQL with sample data
+-   `yarn db:tables` - List all PostgreSQL tables
+-   `yarn db:data <table>` - View data from a specific PostgreSQL table
+
+#### SQLite Database
+
+-   `yarn db:sqlite:migrate` - Run SQLite migrations
+-   `yarn db:sqlite:reset` - Reset SQLite database and run all migrations
+-   `yarn db:sqlite:seed` - Seed SQLite with sample data
+-   `yarn db:sqlite:test` - Test SQLite connection
+-   `yarn db:sqlite:fresh` - Truncate and reseed SQLite database
+
+#### Environment Switching
+
+```bash
+# Use SQLite (embedded)
+USE_DB=sqlite yarn dev
+
+# Use PostgreSQL (production)
+USE_DB=postgres yarn dev  # or just yarn dev (default)
+```
 
 ### Development Tools
 

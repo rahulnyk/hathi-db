@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { createClient } from "../connection";
+import { createClient } from "@/db/postgres/connection";
 
 async function checkCleanFunctions() {
     const client = createClient();

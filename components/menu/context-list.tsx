@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
 // import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType } from "@/store/uiSlice";
-import { ContextStats } from "@/db/adapter/types";
+import { ContextStats } from "@/db/types";
 import { cn, slugToSentenceCase } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";

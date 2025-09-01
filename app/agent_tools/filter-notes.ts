@@ -1,12 +1,8 @@
 "use server";
 
-import { databaseAdapter } from "@/db/adapter";
+import { databaseAdapter } from "@/db/postgres/adapter";
 import { measureExecutionTime } from "@/lib/performance";
-import type {
-    NotesFilter,
-    FilterNotesResult,
-    FilterOptions,
-} from "@/db/adapter/types";
+import type { NotesFilter, FilterNotesResult, FilterOptions } from "@/db/types";
 
 /**
  * Filters and retrieves notes based on given parameters

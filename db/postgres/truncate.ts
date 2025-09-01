@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { createClient } from "./connection";
+import { createClient } from "@/db/postgres/connection";
 
 /**
  * Truncate all tables (keep schema, remove data)

@@ -12,23 +12,18 @@ import { refreshContextsMetadata } from "@/store/notesMetadataSlice";
 import { setActiveNoteId } from "./uiSlice"; // Import setActiveNoteId
 
 // Import types from database adapter
-import type {
-    Note as DbNote,
-    NoteType,
-    PersistenceStatus,
-} from "@/db/adapter/types";
+import type { Note as DbNote, NoteType, PersistenceStatus } from "@/db/types";
 
-import { TodoStatus } from "@/db/adapter/types";
+import { TodoStatus } from "@/db/types";
+
+// Re-export TodoStatus for components to use
+export { TodoStatus };
 
 // Extended Note type for Redux state with additional UI properties
 export type Note = DbNote & {
     isSearchResult?: boolean; // Flag for notes from agent search results
     errorMessage?: string;
 };
-
-// Re-export types for backward compatibility
-export type { PersistenceStatus, NoteType } from "@/db/adapter/types";
-export { TodoStatus } from "@/db/adapter/types";
 
 interface NotesState {
     notes: Note[];

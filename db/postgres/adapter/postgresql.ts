@@ -6,7 +6,7 @@
  * a clean interface for the application layer.
  */
 
-import { createClient, createDb } from "@/db/connection";
+import { createClient, createDb } from "@/db/postgres/connection";
 import { drizzle } from "drizzle-orm/node-postgres";
 import {
     notes,
@@ -15,7 +15,7 @@ import {
     schema,
     type Note as DbNote,
     type Database,
-} from "@/db/schema";
+} from "@/db/postgres/schema";
 import { v4 as uuidv4 } from "uuid";
 import { measureExecutionTime } from "@/lib/performance";
 import {
@@ -49,9 +49,9 @@ import type {
     FetchContextStatsParams,
     FilterOptions,
     NoteType,
-} from "./types";
+} from "../../types";
 
-import { TodoStatus } from "./types";
+import { TodoStatus } from "../../types";
 
 /**
  * PostgreSQL implementation of the DatabaseAdapter interface

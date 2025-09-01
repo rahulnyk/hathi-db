@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useAppDispatch } from "@/store";
 import { addSearchResultNotes } from "@/store/notesSlice";
 import { SearchToolResponse } from "@/app/agent_tools/types";
-import { SearchResultNote } from "@/db/adapter";
+import { SearchResultNote } from "@/db/postgres/adapter";
 import { NoteCard } from "@/components/journal/note_card/notes-card";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,0 +1,2 @@
+-- This migration is no longer needed as embeddings are now stored 
+-- directly in the notes table to match PostgreSQL schema

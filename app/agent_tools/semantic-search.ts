@@ -1,12 +1,9 @@
 "use server";
 
-import { databaseAdapter } from "@/db/adapter";
+import { databaseAdapter } from "@/db/postgres/adapter";
 import { generateQueryEmbedding } from "@/app/actions/ai";
 import { measureExecutionTime } from "@/lib/performance";
-import type {
-    SemanticSearchParams,
-    SemanticSearchResult,
-} from "@/db/adapter/types";
+import type { SemanticSearchParams, SemanticSearchResult } from "@/db/types";
 import { formatSearchMessage } from "./types";
 
 /**

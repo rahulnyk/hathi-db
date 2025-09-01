@@ -1,5 +1,6 @@
 import { sentenceCaseToSlug } from "./utils";
-import { NoteType, Note } from "@/store/notesSlice";
+import { NoteType } from "@/db/types";
+import { Note } from "@/store/notesSlice";
 import { v4 as uuidv4 } from "uuid";
 /**
  * Extracts context slugs from note content.

@@ -1,0 +1,41 @@
+{
+    "version": "6",
+    "dialect": "sqlite",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "6",
+            "when": 1679567120000,
+            "tag": "0000_init",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1679567121000,
+            "tag": "0001_tables",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1679567122000,
+            "tag": "0002_triggers",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "6",
+            "when": 1679567123000,
+            "tag": "0003_vectors",
+            "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "6",
+            "when": 1734737720000,
+            "tag": "0004_add_embedding_column",
+            "breakpoints": true
+        }
+    ]
+}

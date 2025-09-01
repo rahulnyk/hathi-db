@@ -1,12 +1,12 @@
 "use server";
 
-import { databaseAdapter } from "@/db/adapter";
+import { databaseAdapter } from "@/db/postgres/adapter";
 import { measureExecutionTime } from "@/lib/performance";
 import type {
     ContextStats,
     PaginatedContextStats,
     FetchContextStatsParams,
-} from "@/db/adapter/types";
+} from "@/db/types";
 
 /**
  * Fetches paginated statistics for distinct contexts.

@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { filterNotes, getFilterOptions } from "@/app/agent_tools/filter-notes";
-import { TodoStatus } from "@/db/adapter/types";
+import { TodoStatus } from "@/db/types";
 import { searchNotesBySimilarity } from "@/app/agent_tools/semantic-search";
 import type { ToolSet } from "ai";
 import type { SearchToolResponse } from "@/app/agent_tools/types";

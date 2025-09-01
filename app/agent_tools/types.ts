@@ -5,7 +5,7 @@
  * to ensure consistency in responses and rendering.
  */
 
-import type { SearchResultNote } from "@/db/adapter/types";
+import type { SearchResultNote } from "@/db/types";
 
 /**
  * Unified response interface for all note search tools

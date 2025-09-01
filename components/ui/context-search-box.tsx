@@ -10,7 +10,7 @@ import {
     SuggestionItem,
 } from "@/components/ui/suggestion-dropdown";
 import { searchContexts } from "@/app/actions/contexts";
-import { ContextStats } from "@/db/adapter/types";
+import { ContextStats } from "@/db/types";
 import { cn, slugToSentenceCase } from "@/lib/utils";
 import { useDebounce } from "use-debounce"; // Import from use-debounce library
 
