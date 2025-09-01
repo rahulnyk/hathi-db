@@ -15,6 +15,7 @@ import * as path from "path";
 import * as dotenv from "dotenv";
 import { GeminiAI } from "../../../lib/ai/gemini";
 import { getCurrentEmbeddingConfig } from "../../../lib/ai/ai-config";
+import { dateToSlug } from "../../../lib/utils";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -28,6 +29,31 @@ if (!googleApiKey) {
 
 const aiProvider = googleApiKey ? new GeminiAI(googleApiKey) : null;
 
+// Define types for better type safety
+interface SeedNote {
+    content: string;
+    contexts: string[];
+    tags: string[];
+    note_type: string;
+    suggested_contexts: string[];
+    status: string | null;
+    deadline: string | null;
+}
+
+interface NoteToInsert {
+    id: string;
+    content: string;
+    key_context: string;
+    contextNames: string[];
+    tags: string[];
+    note_type: string;
+    suggested_contexts: string[];
+    created_at: Date;
+    updated_at: Date;
+    status: string | null;
+    deadline: number | null;
+}
+
 // Load entrepreneur notes from seed data
 const seedDataPath = path.join(
     __dirname,
@@ -36,9 +62,8 @@ const seedDataPath = path.join(
 const entrepreneurNotes = JSON.parse(fs.readFileSync(seedDataPath, "utf8"));
 
 // Transform the data to match our expected format
-const sampleNotes = entrepreneurNotes.map((note: any) => ({
+const sampleNotes: SeedNote[] = entrepreneurNotes.map((note: any) => ({
     content: note.content,
-    key_context: note.contexts?.[0] || "general", // Use first context as key_context
     contexts: note.contexts || [],
     tags: note.tags || [],
     note_type: note.note_type || "note",
@@ -170,6 +195,48 @@ async function updateNotesWithEmbeddings(
 }
 
 /**
+ * Get past 5 days (excluding today)
+ */
+function getPastFiveDays(): Date[] {
+    const dates: Date[] = [];
+    const now = new Date();
+
+    // Start from yesterday and go back 5 days
+    for (let i = 1; i <= 5; i++) {
+        const date = new Date(now);
+        date.setDate(now.getDate() - i);
+        dates.push(date);
+    }
+
+    return dates.reverse(); // Return in chronological order (oldest first)
+}
+
+/**
+ * Shuffle array to distribute notes randomly across days
+ */
+function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+/**
+ * Generate random time for a given date (business hours: 8 AM - 8 PM)
+ */
+function getRandomTimeForDate(date: Date): Date {
+    const newDate = new Date(date);
+    const hour = Math.floor(Math.random() * 12) + 8; // 8 AM to 7 PM
+    const minute = Math.floor(Math.random() * 60);
+    const second = Math.floor(Math.random() * 60);
+
+    newDate.setHours(hour, minute, second, 0);
+    return newDate;
+}
+
+/**
  * Seeds the SQLite database with sample data and embeddings
  */
 async function seedSqliteDatabase() {
@@ -177,6 +244,25 @@ async function seedSqliteDatabase() {
         console.log("🌱 Seeding SQLite database...");
 
         const db = createSqliteDb();
+        console.log(`📚 Loaded ${sampleNotes.length} seed notes`);
+
+        // Get past 5 days
+        const pastDays = getPastFiveDays();
+        console.log(`📅 Distributing notes across past 5 days:`);
+        pastDays.forEach((date, index) => {
+            console.log(
+                `  Day ${index + 1}: ${dateToSlug(
+                    date
+                )} (${date.toDateString()})`
+            );
+        });
+
+        // Shuffle notes to distribute randomly
+        const shuffledNotes = shuffleArray(sampleNotes);
+
+        // Distribute notes across the 5 days (max 4 notes per day for 20 total notes)
+        const notesToInsert: NoteToInsert[] = [];
+
         const notesDataForEmbeddings: Array<{
             id: string;
             content: string;
@@ -185,70 +271,143 @@ async function seedSqliteDatabase() {
             note_type?: string;
         }> = [];
 
-        // Insert sample notes
-        for (const noteData of sampleNotes) {
-            const noteId = uuidv4();
+        const maxNotesPerDay = Math.min(4, Math.ceil(shuffledNotes.length / 5));
 
-            // Insert note
-            await db.insert(notes).values({
-                id: noteId,
-                content: noteData.content,
-                key_context: noteData.key_context,
-                tags: JSON.stringify(noteData.tags),
-                note_type: noteData.note_type,
-                suggested_contexts:
-                    noteData.suggested_contexts?.length > 0
-                        ? JSON.stringify(noteData.suggested_contexts)
+        let noteIndex = 0;
+        for (const date of pastDays) {
+            const daySlug = dateToSlug(date);
+            const notesForThisDay = Math.min(
+                maxNotesPerDay,
+                shuffledNotes.length - noteIndex
+            );
+
+            console.log(`📝 Creating ${notesForThisDay} notes for ${daySlug}`);
+
+            for (
+                let i = 0;
+                i < notesForThisDay && noteIndex < shuffledNotes.length;
+                i++
+            ) {
+                const seedNote = shuffledNotes[noteIndex];
+                const noteTimestamp = getRandomTimeForDate(date);
+                const noteId = uuidv4();
+
+                // Add date context to existing contexts
+                const allContexts = [daySlug, ...seedNote.contexts];
+
+                notesToInsert.push({
+                    id: noteId,
+                    content: seedNote.content,
+                    key_context: daySlug,
+                    contextNames: allContexts,
+                    tags: seedNote.tags,
+                    note_type: seedNote.note_type,
+                    suggested_contexts: seedNote.suggested_contexts,
+                    created_at: noteTimestamp,
+                    updated_at: noteTimestamp,
+                    status: seedNote.status,
+                    deadline: seedNote.deadline
+                        ? new Date(seedNote.deadline).getTime()
                         : null,
-                status: noteData.status || null,
-                deadline: noteData.deadline
-                    ? new Date(noteData.deadline).getTime()
-                    : null,
-            });
+                });
 
-            // Collect note data for embedding generation
-            notesDataForEmbeddings.push({
-                id: noteId,
-                content: noteData.content,
-                contexts: noteData.contexts,
-                tags: noteData.tags,
-                note_type: noteData.note_type,
-            });
+                // Collect note data for embedding generation
+                notesDataForEmbeddings.push({
+                    id: noteId,
+                    content: seedNote.content,
+                    contexts: allContexts,
+                    tags: seedNote.tags,
+                    note_type: seedNote.note_type,
+                });
 
-            // Insert contexts and link them
-            if (noteData.contexts && noteData.contexts.length > 0) {
-                for (const contextName of noteData.contexts) {
-                    // Check if context exists
-                    const existingContext = await db
+                noteIndex++;
+            }
+
+            if (noteIndex >= shuffledNotes.length) {
+                break;
+            }
+        }
+
+        console.log(`📝 Prepared ${notesToInsert.length} notes for insertion`);
+
+        // Insert all notes
+        for (const noteToInsert of notesToInsert) {
+            await db.insert(notes).values({
+                id: noteToInsert.id,
+                content: noteToInsert.content,
+                key_context: noteToInsert.key_context,
+                tags: JSON.stringify(noteToInsert.tags),
+                note_type: noteToInsert.note_type,
+                suggested_contexts:
+                    noteToInsert.suggested_contexts?.length > 0
+                        ? JSON.stringify(noteToInsert.suggested_contexts)
+                        : null,
+                status: noteToInsert.status || null,
+                deadline: noteToInsert.deadline,
+                created_at: noteToInsert.created_at.getTime(),
+                updated_at: noteToInsert.updated_at.getTime(),
+            });
+        }
+
+        console.log(`✅ Successfully inserted ${notesToInsert.length} notes`);
+
+        // Create contexts and note-context relationships
+        console.log("🔗 Creating contexts and relationships...");
+        const createdContexts = new Set<string>();
+
+        for (const noteToInsert of notesToInsert) {
+            for (const contextName of noteToInsert.contextNames) {
+                // Create context if not already created
+                if (!createdContexts.has(contextName)) {
+                    try {
+                        // Check if context exists
+                        const existingContext = await db
+                            .select()
+                            .from(contexts)
+                            .where(eq(contexts.name, contextName))
+                            .limit(1);
+
+                        if (existingContext.length === 0) {
+                            const contextId = uuidv4();
+                            await db.insert(contexts).values({
+                                id: contextId,
+                                name: contextName,
+                            });
+                            console.log(`  ✅ Created context: ${contextName}`);
+                        }
+                        createdContexts.add(contextName);
+                    } catch (error) {
+                        console.error(
+                            `  ❌ Error creating context ${contextName}:`,
+                            error
+                        );
+                    }
+                }
+
+                // Create note-context relationship
+                try {
+                    const contextRecord = await db
                         .select()
                         .from(contexts)
                         .where(eq(contexts.name, contextName))
                         .limit(1);
 
-                    let contextId: string;
-                    if (existingContext.length > 0) {
-                        contextId = existingContext[0].id;
-                    } else {
-                        // Create new context
-                        contextId = uuidv4();
-                        await db.insert(contexts).values({
-                            id: contextId,
-                            name: contextName,
+                    if (contextRecord.length > 0) {
+                        await db.insert(notesContexts).values({
+                            note_id: noteToInsert.id,
+                            context_id: contextRecord[0].id,
                         });
                     }
-
-                    // Link note to context
-                    await db.insert(notesContexts).values({
-                        note_id: noteId,
-                        context_id: contextId,
-                    });
+                } catch (error) {
+                    console.error(
+                        `  ❌ Error linking note ${noteToInsert.id} to context ${contextName}:`,
+                        error
+                    );
                 }
             }
         }
 
-        console.log(
-            `✅ Successfully seeded ${sampleNotes.length} entrepreneur notes`
-        );
+        console.log(`✅ Created contexts and note-context relationships`);
 
         // Generate and store embeddings if AI provider is available
         if (aiProvider && notesDataForEmbeddings.length > 0) {
@@ -268,6 +427,20 @@ async function seedSqliteDatabase() {
                 "⚠️  Skipping embedding generation - no AI provider available"
             );
         }
+
+        // Log summary
+        console.log("📊 Seeding Summary:");
+        console.log(`  - Total notes created: ${notesToInsert.length}`);
+        console.log(
+            `  - Date range: ${dateToSlug(pastDays[0])} to ${dateToSlug(
+                pastDays[pastDays.length - 1]
+            )}`
+        );
+        console.log(
+            `  - Distribution: ~${Math.ceil(
+                notesToInsert.length / 5
+            )} notes per day`
+        );
 
         console.log("🏁 SQLite database seeding completed");
     } catch (error) {
