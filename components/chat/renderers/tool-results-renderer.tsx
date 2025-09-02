@@ -1,10 +1,8 @@
 import {
     SearchToolResponse,
     SummarizeToolResponse,
-    AnswerToolResponse,
 } from "@/app/agent_tools/types";
 
-import { AnswerRenderer } from "./answer-tool-renderer";
 import { SummaryRenderer } from "./summary-tool-renderer";
 import { SearchResultsRenderer } from "./search-tool-renderer";
 // Tool result renderer with switch case
@@ -41,14 +39,6 @@ export function ToolResultRenderer({
             return (
                 <SummaryRenderer
                     result={result as SummarizeToolResponse}
-                    toolInfoHeader={toolInfoHeader}
-                />
-            );
-
-        case "answer":
-            return (
-                <AnswerRenderer
-                    result={result as AnswerToolResponse}
                     toolInfoHeader={toolInfoHeader}
                 />
             );
