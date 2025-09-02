@@ -23,7 +23,9 @@ export async function POST(req: Request) {
 
         const result = streamText({
             model: gemini("gemini-2.5-flash"),
-            messages: convertToModelMessages(messages),
+            messages: convertToModelMessages(messages, {
+                ignoreIncompleteToolCalls: true,
+            }),
             maxRetries: 2,
             system: agentSystemPrompt(),
             stopWhen: stepCountIs(5),
