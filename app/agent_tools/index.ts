@@ -6,6 +6,7 @@ import { searchNotesBySimilarity } from "@/app/agent_tools/semantic-search";
 import type { ToolSet } from "ai";
 import type { SearchToolResponse } from "@/app/agent_tools/types";
 import { formatSearchMessage } from "@/app/agent_tools/types";
+import { answerToolInputSchema } from "@/app/agent_tools/types";
 
 export const tools: ToolSet = {
     filterNotes: tool({
@@ -180,33 +181,7 @@ export const tools: ToolSet = {
     answer: tool({
         description:
             "Use this tool to provide a final answer to the user's question. DO NOT take any further actions after this step. This should be your last step.",
-        inputSchema: z.object({
-            foundNotes: z
-                .array(z.string())
-                .describe(
-                    "Array of note IDs that were found and used to formulate the answer"
-                ),
-            answer: z
-                .string()
-                .describe(
-                    "The comprehensive but succinct answer to the user's question based on the retrieved notes"
-                ),
-            searchStrategy: z
-                .string()
-                .optional()
-                .describe(
-                    "Brief description of what search approach was used (e.g., 'semantic search for AI concepts', 'filtered by work context and date')"
-                ),
-        }),
-        execute: async (params) => {
-            return {
-                success: true,
-                foundNoteIds: params.foundNotes,
-                answer: params.answer,
-                searchStrategy: params.searchStrategy,
-                message: `Found ${params.foundNotes.length} relevant notes and provided comprehensive answer.`,
-            };
-        },
+        inputSchema: answerToolInputSchema,
     }),
 
     // summarizeNotes: tool({

@@ -185,3 +185,57 @@
     /* This targets the bottom date */
     @apply hidden; /* Hide content and bottom date when collapsed */
 }
+
+/* React Toastify custom styles */
+.toast-container {
+    @apply z-50;
+}
+
+.Toastify__toast {
+    @apply rounded-lg shadow-lg border;
+    font-family: "Outfit", sans-serif;
+}
+
+.Toastify__toast--error {
+    @apply bg-red-500 text-white border-red-600;
+}
+
+.Toastify__toast--success {
+    @apply bg-green-500 text-white border-green-600;
+}
+
+.Toastify__toast--warning {
+    @apply bg-yellow-500 text-white border-yellow-600;
+}
+
+.Toastify__toast--info {
+    @apply bg-blue-500 text-white border-blue-600;
+}
+
+.Toastify__toast-body {
+    @apply text-sm font-medium p-0;
+}
+
+.Toastify__close-button {
+    @apply opacity-70 hover:opacity-100 transition-opacity;
+}
+
+.Toastify__progress-bar {
+    @apply h-1;
+}
+
+.Toastify__progress-bar--error {
+    @apply bg-red-300;
+}
+
+.Toastify__progress-bar--success {
+    @apply bg-green-300;
+}
+
+.Toastify__progress-bar--warning {
+    @apply bg-yellow-300;
+}
+
+.Toastify__progress-bar--info {
+    @apply bg-blue-300;
+}

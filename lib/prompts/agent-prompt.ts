@@ -16,10 +16,11 @@ TODAY: ${currentDateString}
 - filterNotes: Search by date, contexts, type
 - searchNotesBySimilarity: Find related notes by meaning
 - getFilterOptions: Get available contexts/types
-- answer: Final response (ALWAYS your last step)
+- answer: Final response (ALWAYS your last step). Always finish with answer tool. 
 
 # CORE RULES:
 - Maximum ${maxToolCalls} tool calls
+- Always finish your response with Answer Tool. 
 - Use each tool ONCE only
 - Use answer tool for final response (no text response after)
 - NO lengthy explanations or filler text

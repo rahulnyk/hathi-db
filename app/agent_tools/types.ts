@@ -1,3 +1,4 @@
+import z from "zod";
 /**
  * Shared types for agent tools
  *
@@ -120,3 +121,32 @@ export interface FilterOptionsResponse {
     /** Error message if operation failed */
     error?: string;
 }
+
+// Answer tool input schema
+export const answerToolInputSchema = z.object({
+    foundNotes: z
+        .array(z.string())
+        .describe(
+            "Array of note IDs that were found and used to formulate the answer"
+        ),
+    answer: z
+        .string()
+        .describe(
+            "The comprehensive but succinct answer to the user's question based on the retrieved notes"
+        ),
+    searchStrategy: z
+        .string()
+        .optional()
+        .describe(
+            "Brief description of what search approach was used (e.g., 'semantic search for AI concepts', 'filtered by work context and date')"
+        ),
+    summary: z
+        .string()
+        .optional()
+        .describe(
+            "Brief summary of the steps performed to arrive at this answer in first person speech"
+        ),
+});
+
+// Export the input type for the answer tool
+export type AnswerToolInput = z.infer<typeof answerToolInputSchema>;
