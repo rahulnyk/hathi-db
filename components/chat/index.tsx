@@ -29,6 +29,8 @@ import type {
 } from "ai";
 import { ReasoningPart } from "@ai-sdk/provider-utils";
 import Placeholder from "./placeholder";
+import { AnswerRenderer } from "./renderers/answer-tool-renderer";
+import { AnswerToolInput } from "@/app/agent_tools/types";
 
 export interface ChatComponentProps {
     className?: string;
@@ -46,7 +48,7 @@ export function ChatComponent({ className }: ChatComponentProps) {
     const chatHook = useChat({ chat });
 
     // Use the chatHook from shared context
-    const { messages, status } = chatHook;
+    const { messages, status, error } = chatHook;
 
     // Auto-scroll refs and logic
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -261,6 +263,11 @@ function ToolPartComponent({
     switch (part.state) {
         case "input-streaming":
         case "input-available":
+            if (part.type === "tool-answer") {
+                return (
+                    <AnswerRenderer inputs={part.input as AnswerToolInput} />
+                );
+            }
             return displayToolInfo && <ToolCallIndicator toolName={toolName} />;
         case "output-available":
             return (
