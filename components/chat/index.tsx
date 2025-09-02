@@ -15,6 +15,7 @@ import {
     AgentStatus,
 } from "@/store/agentSlice";
 import { useSharedChatContext } from "@/lib/chat-context";
+import { useToast } from "@/components/ui/toast";
 
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
@@ -42,6 +43,7 @@ export function ChatComponent({ className }: ChatComponentProps) {
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
+    const { addToast } = useToast();
 
     // Always use shared chat context
     const { chat } = useSharedChatContext();
@@ -62,6 +64,20 @@ export function ChatComponent({ className }: ChatComponentProps) {
     useEffect(() => {
         dispatch(setStatus(status as AgentStatus));
     }, [status, dispatch]);
+
+    // Handle errors by showing toast notifications
+    useEffect(() => {
+        if (status === "error" && error) {
+            console.error("Chat error:", error);
+            addToast({
+                type: "error",
+                message: `Chat Error: ${
+                    error.message || "An unexpected error occurred"
+                }`,
+                duration: 8000,
+            });
+        }
+    }, [status, error, addToast]);
 
     // Function to scroll to bottom
     const scrollToBottom = () => {
@@ -262,8 +278,11 @@ function ToolPartComponent({
 
     switch (part.state) {
         case "input-streaming":
+            return displayToolInfo && <ToolCallIndicator toolName={toolName} />;
         case "input-available":
             if (part.type === "tool-answer") {
+                // The answer tool only has input, since it does not have any execution function,
+                // It does not have any output, we will only render the inputs to the answer tool.
                 return (
                     <AnswerRenderer inputs={part.input as AnswerToolInput} />
                 );

@@ -3,13 +3,13 @@ import { AnswerToolInput } from "@/app/agent_tools/types";
 
 // Answer Component
 export function AnswerRenderer({ inputs }: { inputs: AnswerToolInput }) {
-    if (!inputs.answer) {
-        return (
-            <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
-                Failed to provide answer
-            </div>
-        );
-    }
+    // if (!inputs.answer) {
+    //     return (
+    //         <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
+    //             Failed to provide answer
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="space-y-3">
@@ -21,9 +21,11 @@ export function AnswerRenderer({ inputs }: { inputs: AnswerToolInput }) {
             )}
 
             {/* Render the main answer */}
-            <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base break-words">
-                <ReactMarkdown>{inputs.answer}</ReactMarkdown>
-            </div>
+            {inputs.answer && (
+                <div className="prose prose-sm max-w-none dark:prose-invert text-sm sm:text-base break-words">
+                    <ReactMarkdown>{inputs.answer}</ReactMarkdown>
+                </div>
+            )}
         </div>
     );
 }

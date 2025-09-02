@@ -66,6 +66,7 @@
         "react-redux": "^9.2.0",
         "react-spinners": "^0.17.0",
         "react-textarea-autosize": "^8.5.9",
+        "react-toastify": "^11.0.5",
         "remark-gfm": "^4.0.1",
         "sqlite-vec": "^0.1.7-alpha.2",
         "sqlite-vec-darwin-arm64": "^0.1.7-alpha.2",
