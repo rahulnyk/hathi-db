@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 
 import { Loader2 } from "lucide-react";
@@ -180,6 +180,25 @@ function ChatMessage({
     message: UIMessage;
     displayToolInfo: boolean;
 }) {
+    const [answerAvailable, setAnswerAvailable] = useState<boolean>(false);
+
+    // Calculate answerAvailable when message parts change
+    useEffect(() => {
+        const hasAnswerTool = message.parts.some(
+            (part) =>
+                part.type === "tool-answer" && part.state === "input-available"
+        );
+        console.log("ChatMessage answerAvailable calculation:", {
+            messageRole: message.role,
+            hasAnswerTool,
+            parts: message.parts.map((p) => ({
+                type: p.type,
+                state: (p as any).state,
+            })),
+        });
+        setAnswerAvailable(hasAnswerTool);
+    }, [message.parts]);
+
     return (
         <div
             className={cn(
@@ -203,6 +222,7 @@ function ChatMessage({
                             part={part}
                             displayToolInfo={displayToolInfo}
                             isUserMessage={message.role === "user"}
+                            isAnswerAvailable={answerAvailable}
                         />
                     ))}
                 </div>
@@ -216,10 +236,12 @@ function MessagePartRenderer({
     part,
     displayToolInfo,
     isUserMessage,
+    isAnswerAvailable,
 }: {
     part: UIMessagePart<UIDataTypes, UITools>; // Use the actual UIMessage part type
     displayToolInfo: boolean;
     isUserMessage: boolean;
+    isAnswerAvailable: boolean;
 }) {
     console.log("Rendering message part:", part);
 
@@ -229,6 +251,7 @@ function MessagePartRenderer({
             <TextPartRenderer
                 part={part as TextUIPart | ReasoningPart}
                 isUserMessage={isUserMessage}
+                defaultCollapsed={!isUserMessage && isAnswerAvailable}
             />
         );
     }
