@@ -56,7 +56,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     // Use draft content for new notes, note content for edit mode
     const [content, setContent] = useState(
-        isEditMode ? note?.content || "" : draftContent
+        isEditMode ? note?.content ?? "" : draftContent
     );
 
     // Update content when draft changes (only for new notes)
