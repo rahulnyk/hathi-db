@@ -19,7 +19,7 @@ import {
 } from "@/store/aiSlice";
 // import { ContextContainer } from "./context-container";
 import { CodeBlock } from "./code-block";
-import { NotesEditor } from "../notes_editor";
+import { NotesEditor } from "../editor";
 import { NoteStatusIndicator } from "./note-status-indicator";
 import { CardHeader } from "./card-header";
 

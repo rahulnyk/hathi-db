@@ -7,7 +7,8 @@ import {
     createNoteOptimistically,
     Note,
 } from "@/store/notesSlice";
-import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
+import { setEditingNoteId } from "@/store/uiSlice";
+import { updateDraftContent, clearDraft } from "@/store/draftSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
 import { cn } from "@/lib/utils";
@@ -15,96 +16,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import { ContextContainer } from "./note_card/context-container";
+import { ContextContainer } from "../note_card/context-container";
 import { useChat } from "@ai-sdk/react";
 import { useSharedChatContext } from "@/lib/chat-context";
+import { processEditorCommands, CommandManagerContext } from "./editorCommands";
+import { processKeyboardEvent, PluginContext } from "./editorPlugins";
 
 interface NotesEditorProps {
     note?: Note;
 }
 
-const BRACKET_PAIRS: Record<string, string> = {
-    "[": "]",
-    "(": ")",
-    "{": "}",
-    "<": ">",
-};
-
 // Q&A command constants
 const QA_COMMAND = "/q or qq";
 const NOTES_COMMAND = "/n or nn";
-// const QA_COMMAND_PATTERN = /^\/q\s+/i;
-
-// New unified helper function for bracket insertion (wrapping selection or empty pair)
-function handleBracketInsertion(
-    openingBracket: string,
-    currentContent: string,
-    selection: { start: number; end: number },
-    localBracketPairs: Record<string, string>
-): { newValue: string; newSelectionStart: number; newSelectionEnd: number } {
-    const closingBracket = localBracketPairs[openingBracket];
-    // It's assumed openingBracket is a valid key, otherwise closingBracket would be undefined.
-    // Robustness: if (!closingBracket) { /* return original or throw error */ }
-
-    const textBefore = currentContent.substring(0, selection.start);
-    const selectedText = currentContent.substring(
-        selection.start,
-        selection.end
-    );
-    const textAfter = currentContent.substring(selection.end);
-
-    const newValue =
-        textBefore + openingBracket + selectedText + closingBracket + textAfter;
-
-    let newSelectionStart: number;
-    let newSelectionEnd: number;
-
-    if (selectedText.length > 0) {
-        // Text was selected, keep it selected
-        newSelectionStart = selection.start + openingBracket.length;
-        newSelectionEnd = newSelectionStart + selectedText.length;
-    } else {
-        // No text selected, cursor goes between brackets
-        newSelectionStart = selection.start + openingBracket.length;
-        newSelectionEnd = newSelectionStart; // Cursor, not a selection
-    }
-
-    return { newValue, newSelectionStart, newSelectionEnd };
-}
-
-// Helper function for auto-deleting bracket pairs
-function handleAutoDeleteBracketPair(
-    currentValue: string,
-    cursorPosition: number,
-    charBeforeCursor: string,
-    localBracketPairs: Record<string, string>
-): { newValue: string; newCursorPosition: number } | null {
-    const expectedClosingBracket = localBracketPairs[charBeforeCursor];
-    if (expectedClosingBracket) {
-        const charAfterCursor = currentValue.substring(
-            cursorPosition,
-            cursorPosition + 1
-        );
-        if (charAfterCursor === expectedClosingBracket) {
-            const textBeforePair = currentValue.substring(
-                0,
-                cursorPosition - 1
-            );
-            const textAfterPair = currentValue.substring(cursorPosition + 1);
-            return {
-                newValue: textBeforePair + textAfterPair,
-                newCursorPosition: cursorPosition - 1,
-            };
-        }
-    }
-    return null;
-}
 
 export function NotesEditor({ note }: NotesEditorProps) {
     const isEditMode = !!note;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isUserInteracting = useRef(false);
-    const [content, setContent] = useState(note?.content || "");
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeSelection, setActiveSelection] = useState({
@@ -123,6 +52,19 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const originalNoteState = useAppSelector((state) =>
         note?.id ? state.ui.originalNoteStates[note.id] : null
     );
+    const draftContent = useAppSelector((state) => state.draft.content);
+
+    // Use draft content for new notes, note content for edit mode
+    const [content, setContent] = useState(
+        isEditMode ? note?.content ?? "" : draftContent
+    );
+
+    // Update content when draft changes (only for new notes)
+    useEffect(() => {
+        if (!isEditMode) {
+            setContent(draftContent);
+        }
+    }, [draftContent, isEditMode]);
 
     useEffect(() => {
         if (note?.id) {
@@ -131,13 +73,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [note?.id]); // Important!! // Only run when note ID changes, not content or contexts
-
-    // // Sync content with chatHook's input when in chat mode
-    // useEffect(() => {
-    //     if (chatMode && chatHook && !isEditMode) {
-    //         setContent(chatHook.input);
-    //     }
-    // }, [chatMode, chatHook, isEditMode, chatHook?.input]);
 
     const saveNote = (
         patches: Partial<Pick<Note, "content" | "contexts" | "tags">>
@@ -168,6 +103,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
             end: event.currentTarget.selectionEnd,
         });
     };
+
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
@@ -178,37 +114,20 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
         setContent(newFullValue);
 
-        // In chat mode, delegate to chatHook's handleInputChange
-        // if (chatMode && chatHook && !isEditMode) {
-        //     chatHook.handleInputChange(event);
-        // }
-
-        // Check for mode switching commands (only when not in edit mode)
-        // Only trigger if the input is exactly the command (not part of other text)
+        // Save draft for new notes (not in edit mode)
         if (!isEditMode) {
-            const trimmedContent = newFullValue.trim().toLowerCase();
+            dispatch(updateDraftContent(newFullValue));
+        }
 
-            // Switch to assistant mode
-            if (
-                (trimmedContent === "/q" || trimmedContent === "qq") &&
-                newFullValue.length <= 3
-            ) {
-                dispatch(setChatMode(true));
-                setContent(""); // Clear the content after triggering
-                return; // Exit early to prevent further processing
-            }
+        // Handle mode switching commands using command manager
+        if (!isEditMode) {
+            const commandContext: CommandManagerContext = {
+                dispatch,
+                setContent,
+            };
 
-            // Switch to normal mode
-            if (
-                (trimmedContent === "/n" || trimmedContent === "nn") &&
-                newFullValue.length <= 3
-            ) {
-                // Add a small delay to show the command was recognized
-                setTimeout(() => {
-                    dispatch(setChatMode(false));
-                    setContent(""); // Clear the content after triggering
-                }, 100);
-                return; // Exit early to prevent further processing
+            if (processEditorCommands(newFullValue, commandContext)) {
+                return; // Exit early if command was processed
             }
         }
 
@@ -224,97 +143,26 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }, 10);
     };
 
+    // Refactored handleKeyDown function using plugin system
     const handleKeyDown = async (
         event: React.KeyboardEvent<HTMLTextAreaElement>
     ) => {
-        const pressedKey = event.key;
+        const pluginContext: PluginContext = {
+            content,
+            setContent,
+            activeSelection,
+            setActiveSelection,
+            textareaRef,
+            dispatch,
+            isEditMode,
+            isSubmitting,
+            chatMode,
+            chatHook,
+            handleSaveEdit,
+            handleCreateNote,
+        };
 
-        if (pressedKey === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            if (!content.trim() || isSubmitting) return;
-
-            // If in chat mode and chatHook is provided, use chat instead of creating notes
-            if (chatMode && chatHook && !isEditMode) {
-                // Create a synthetic form submit event
-                event.preventDefault();
-                const form = event.currentTarget.form;
-                if (form) {
-                    // Trigger form submission which will be handled by handleSubmit
-                    form.requestSubmit();
-                }
-                return;
-            }
-
-            if (isEditMode) {
-                handleSaveEdit();
-            } else {
-                await handleCreateNote();
-            }
-            return;
-        }
-
-        if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
-            event.preventDefault();
-
-            const result = handleBracketInsertion(
-                pressedKey,
-                content,
-                activeSelection,
-                BRACKET_PAIRS
-            );
-
-            setContent(result.newValue);
-
-            requestAnimationFrame(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.setSelectionRange(
-                        result.newSelectionStart,
-                        result.newSelectionEnd
-                    );
-                    setActiveSelection({
-                        start: result.newSelectionStart,
-                        end: result.newSelectionEnd,
-                    });
-                }
-            });
-            return;
-        }
-
-        if (pressedKey === "Backspace") {
-            const currentValue = content;
-            const cursorPosition = event.currentTarget.selectionStart;
-
-            if (cursorPosition === 0) {
-                return;
-            }
-
-            const charBeforeCursor = currentValue.substring(
-                cursorPosition - 1,
-                cursorPosition
-            );
-
-            const deleteResult = handleAutoDeleteBracketPair(
-                currentValue,
-                cursorPosition,
-                charBeforeCursor,
-                BRACKET_PAIRS
-            );
-
-            if (deleteResult) {
-                event.preventDefault();
-                setContent(deleteResult.newValue);
-
-                requestAnimationFrame(() => {
-                    if (textareaRef.current) {
-                        textareaRef.current.setSelectionRange(
-                            deleteResult.newCursorPosition,
-                            deleteResult.newCursorPosition
-                        );
-                    }
-                });
-                return;
-            }
-        }
+        await processKeyboardEvent(event, pluginContext);
     };
 
     const handleContextsChange = (newContexts: string[]) => {
@@ -325,11 +173,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
-        // // If in chat mode and chatHook is provided, use chat instead of creating notes
+        // If in chat mode and chatHook is provided, use chat instead of creating notes
         if (chatMode && chatHook && !isEditMode) {
             // Use chatHook's handleSubmit method
             chatHook.sendMessage({ text: content.trim() });
             setContent("");
+            dispatch(clearDraft()); // Clear draft after chat submission
             return;
         }
 
@@ -368,6 +217,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
         setContent("");
         setContexts([]);
+        dispatch(clearDraft()); // Clear draft after successful note creation
         setIsSubmitting(false);
     };
 
