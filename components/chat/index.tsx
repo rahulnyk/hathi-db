@@ -188,14 +188,6 @@ function ChatMessage({
             (part) =>
                 part.type === "tool-answer" && part.state === "input-available"
         );
-        console.log("ChatMessage answerAvailable calculation:", {
-            messageRole: message.role,
-            hasAnswerTool,
-            parts: message.parts.map((p) => ({
-                type: p.type,
-                state: (p as any).state,
-            })),
-        });
         setAnswerAvailable(hasAnswerTool);
     }, [message.parts]);
 

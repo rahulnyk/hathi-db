@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { CardHeader } from "./card-header";
-import { NotesEditor } from "../notes_editor";
+import { NotesEditor } from "../editor";
 import {
     Popover,
     PopoverContent,

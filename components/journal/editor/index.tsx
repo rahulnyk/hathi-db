@@ -7,7 +7,7 @@ import {
     createNoteOptimistically,
     Note,
 } from "@/store/notesSlice";
-import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
+import { setEditingNoteId } from "@/store/uiSlice";
 import { updateDraftContent, clearDraft } from "@/store/draftSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
@@ -16,90 +16,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
-import { ContextContainer } from "./note_card/context-container";
+import { ContextContainer } from "../note_card/context-container";
 import { useChat } from "@ai-sdk/react";
 import { useSharedChatContext } from "@/lib/chat-context";
+import { processEditorCommands, CommandManagerContext } from "./editorCommands";
+import { processKeyboardEvent, PluginContext } from "./editorPlugins";
 
 interface NotesEditorProps {
     note?: Note;
 }
 
-const BRACKET_PAIRS: Record<string, string> = {
-    "[": "]",
-    "(": ")",
-    "{": "}",
-    "<": ">",
-};
-
 // Q&A command constants
 const QA_COMMAND = "/q or qq";
 const NOTES_COMMAND = "/n or nn";
-// const QA_COMMAND_PATTERN = /^\/q\s+/i;
-
-// New unified helper function for bracket insertion (wrapping selection or empty pair)
-function handleBracketInsertion(
-    openingBracket: string,
-    currentContent: string,
-    selection: { start: number; end: number },
-    localBracketPairs: Record<string, string>
-): { newValue: string; newSelectionStart: number; newSelectionEnd: number } {
-    const closingBracket = localBracketPairs[openingBracket];
-    // It's assumed openingBracket is a valid key, otherwise closingBracket would be undefined.
-    // Robustness: if (!closingBracket) { /* return original or throw error */ }
-
-    const textBefore = currentContent.substring(0, selection.start);
-    const selectedText = currentContent.substring(
-        selection.start,
-        selection.end
-    );
-    const textAfter = currentContent.substring(selection.end);
-
-    const newValue =
-        textBefore + openingBracket + selectedText + closingBracket + textAfter;
-
-    let newSelectionStart: number;
-    let newSelectionEnd: number;
-
-    if (selectedText.length > 0) {
-        // Text was selected, keep it selected
-        newSelectionStart = selection.start + openingBracket.length;
-        newSelectionEnd = newSelectionStart + selectedText.length;
-    } else {
-        // No text selected, cursor goes between brackets
-        newSelectionStart = selection.start + openingBracket.length;
-        newSelectionEnd = newSelectionStart; // Cursor, not a selection
-    }
-
-    return { newValue, newSelectionStart, newSelectionEnd };
-}
-
-// Helper function for auto-deleting bracket pairs
-function handleAutoDeleteBracketPair(
-    currentValue: string,
-    cursorPosition: number,
-    charBeforeCursor: string,
-    localBracketPairs: Record<string, string>
-): { newValue: string; newCursorPosition: number } | null {
-    const expectedClosingBracket = localBracketPairs[charBeforeCursor];
-    if (expectedClosingBracket) {
-        const charAfterCursor = currentValue.substring(
-            cursorPosition,
-            cursorPosition + 1
-        );
-        if (charAfterCursor === expectedClosingBracket) {
-            const textBeforePair = currentValue.substring(
-                0,
-                cursorPosition - 1
-            );
-            const textAfterPair = currentValue.substring(cursorPosition + 1);
-            return {
-                newValue: textBeforePair + textAfterPair,
-                newCursorPosition: cursorPosition - 1,
-            };
-        }
-    }
-    return null;
-}
 
 export function NotesEditor({ note }: NotesEditorProps) {
     const isEditMode = !!note;
@@ -190,9 +119,16 @@ export function NotesEditor({ note }: NotesEditorProps) {
             dispatch(updateDraftContent(newFullValue));
         }
 
-        // Handle mode switching commands
-        if (!isEditMode && handleModeCommands(newFullValue)) {
-            return; // Exit early if command was processed
+        // Handle mode switching commands using command manager
+        if (!isEditMode) {
+            const commandContext: CommandManagerContext = {
+                dispatch,
+                setContent,
+            };
+
+            if (processEditorCommands(newFullValue, commandContext)) {
+                return; // Exit early if command was processed
+            }
         }
 
         // Always update active selection to track cursor position
@@ -207,160 +143,26 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }, 10);
     };
 
-    // Helper function to handle mode switching commands
-    const handleModeCommands = (newFullValue: string): boolean => {
-        const trimmedContent = newFullValue.trim().toLowerCase();
-
-        // Switch to assistant mode
-        if (
-            (trimmedContent === "/q" || trimmedContent === "qq") &&
-            newFullValue.length <= 3
-        ) {
-            dispatch(setChatMode(true));
-            setContent("");
-            dispatch(clearDraft()); // Clear draft when switching modes
-            return true;
-        }
-
-        // Switch to normal mode
-        if (
-            (trimmedContent === "/n" || trimmedContent === "nn") &&
-            newFullValue.length <= 3
-        ) {
-            // Add a small delay to show the command was recognized
-            setTimeout(() => {
-                dispatch(setChatMode(false));
-                setContent("");
-                dispatch(clearDraft()); // Clear draft when switching modes
-            }, 100);
-            return true;
-        }
-
-        return false;
-    };
-
-    // Helper function to handle Enter key press
-    const handleEnterKey = async (
-        event: React.KeyboardEvent<HTMLTextAreaElement>
-    ): Promise<void> => {
-        event.preventDefault();
-        if (!content.trim() || isSubmitting) return;
-
-        // If in chat mode and chatHook is provided, use chat instead of creating notes
-        if (chatMode && chatHook && !isEditMode) {
-            event.preventDefault();
-            const form = event.currentTarget.form;
-            if (form) {
-                form.requestSubmit();
-            }
-            return;
-        }
-
-        if (isEditMode) {
-            handleSaveEdit();
-        } else {
-            await handleCreateNote();
-        }
-    };
-
-    // Helper function to handle bracket insertion
-    const handleBracketKey = (
-        event: React.KeyboardEvent<HTMLTextAreaElement>,
-        pressedKey: string
-    ): void => {
-        event.preventDefault();
-
-        const result = handleBracketInsertion(
-            pressedKey,
-            content,
-            activeSelection,
-            BRACKET_PAIRS
-        );
-
-        setContent(result.newValue);
-
-        // Update draft for new notes
-        if (!isEditMode) {
-            dispatch(updateDraftContent(result.newValue));
-        }
-
-        requestAnimationFrame(() => {
-            if (textareaRef.current) {
-                textareaRef.current.setSelectionRange(
-                    result.newSelectionStart,
-                    result.newSelectionEnd
-                );
-                setActiveSelection({
-                    start: result.newSelectionStart,
-                    end: result.newSelectionEnd,
-                });
-            }
-        });
-    };
-
-    // Helper function to handle backspace key
-    const handleBackspaceKey = (
-        event: React.KeyboardEvent<HTMLTextAreaElement>
-    ): void => {
-        const currentValue = content;
-        const cursorPosition = event.currentTarget.selectionStart;
-
-        if (cursorPosition === 0) {
-            return;
-        }
-
-        const charBeforeCursor = currentValue.substring(
-            cursorPosition - 1,
-            cursorPosition
-        );
-
-        const deleteResult = handleAutoDeleteBracketPair(
-            currentValue,
-            cursorPosition,
-            charBeforeCursor,
-            BRACKET_PAIRS
-        );
-
-        if (deleteResult) {
-            event.preventDefault();
-            setContent(deleteResult.newValue);
-
-            // Update draft for new notes
-            if (!isEditMode) {
-                dispatch(updateDraftContent(deleteResult.newValue));
-            }
-
-            requestAnimationFrame(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.setSelectionRange(
-                        deleteResult.newCursorPosition,
-                        deleteResult.newCursorPosition
-                    );
-                }
-            });
-        }
-    };
-
-    // Refactored handleKeyDown function
+    // Refactored handleKeyDown function using plugin system
     const handleKeyDown = async (
         event: React.KeyboardEvent<HTMLTextAreaElement>
     ) => {
-        const pressedKey = event.key;
+        const pluginContext: PluginContext = {
+            content,
+            setContent,
+            activeSelection,
+            setActiveSelection,
+            textareaRef,
+            dispatch,
+            isEditMode,
+            isSubmitting,
+            chatMode,
+            chatHook,
+            handleSaveEdit,
+            handleCreateNote,
+        };
 
-        if (pressedKey === "Enter" && !event.shiftKey) {
-            await handleEnterKey(event);
-            return;
-        }
-
-        if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
-            handleBracketKey(event, pressedKey);
-            return;
-        }
-
-        if (pressedKey === "Backspace") {
-            handleBackspaceKey(event);
-            return;
-        }
+        await processKeyboardEvent(event, pluginContext);
     };
 
     const handleContextsChange = (newContexts: string[]) => {

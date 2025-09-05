@@ -1,6 +1,6 @@
 "use client";
 
-import { NotesEditor } from "./notes_editor";
+import { NotesEditor } from "./editor";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store";
 
