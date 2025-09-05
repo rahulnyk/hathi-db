@@ -8,6 +8,7 @@ import {
     Note,
 } from "@/store/notesSlice";
 import { setEditingNoteId, setChatMode } from "@/store/uiSlice";
+import { updateDraftContent, clearDraft } from "@/store/draftSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
 import { cn } from "@/lib/utils";
@@ -104,7 +105,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const isEditMode = !!note;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isUserInteracting = useRef(false);
-    const [content, setContent] = useState(note?.content || "");
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeSelection, setActiveSelection] = useState({
@@ -123,6 +123,19 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const originalNoteState = useAppSelector((state) =>
         note?.id ? state.ui.originalNoteStates[note.id] : null
     );
+    const draftContent = useAppSelector((state) => state.draft.content);
+
+    // Use draft content for new notes, note content for edit mode
+    const [content, setContent] = useState(
+        isEditMode ? note?.content || "" : draftContent
+    );
+
+    // Update content when draft changes (only for new notes)
+    useEffect(() => {
+        if (!isEditMode) {
+            setContent(draftContent);
+        }
+    }, [draftContent, isEditMode]);
 
     useEffect(() => {
         if (note?.id) {
@@ -131,13 +144,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [note?.id]); // Important!! // Only run when note ID changes, not content or contexts
-
-    // // Sync content with chatHook's input when in chat mode
-    // useEffect(() => {
-    //     if (chatMode && chatHook && !isEditMode) {
-    //         setContent(chatHook.input);
-    //     }
-    // }, [chatMode, chatHook, isEditMode, chatHook?.input]);
 
     const saveNote = (
         patches: Partial<Pick<Note, "content" | "contexts" | "tags">>
@@ -168,6 +174,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
             end: event.currentTarget.selectionEnd,
         });
     };
+
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
@@ -178,38 +185,14 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
         setContent(newFullValue);
 
-        // In chat mode, delegate to chatHook's handleInputChange
-        // if (chatMode && chatHook && !isEditMode) {
-        //     chatHook.handleInputChange(event);
-        // }
-
-        // Check for mode switching commands (only when not in edit mode)
-        // Only trigger if the input is exactly the command (not part of other text)
+        // Save draft for new notes (not in edit mode)
         if (!isEditMode) {
-            const trimmedContent = newFullValue.trim().toLowerCase();
+            dispatch(updateDraftContent(newFullValue));
+        }
 
-            // Switch to assistant mode
-            if (
-                (trimmedContent === "/q" || trimmedContent === "qq") &&
-                newFullValue.length <= 3
-            ) {
-                dispatch(setChatMode(true));
-                setContent(""); // Clear the content after triggering
-                return; // Exit early to prevent further processing
-            }
-
-            // Switch to normal mode
-            if (
-                (trimmedContent === "/n" || trimmedContent === "nn") &&
-                newFullValue.length <= 3
-            ) {
-                // Add a small delay to show the command was recognized
-                setTimeout(() => {
-                    dispatch(setChatMode(false));
-                    setContent(""); // Clear the content after triggering
-                }, 100);
-                return; // Exit early to prevent further processing
-            }
+        // Handle mode switching commands
+        if (!isEditMode && handleModeCommands(newFullValue)) {
+            return; // Exit early if command was processed
         }
 
         // Always update active selection to track cursor position
@@ -224,96 +207,159 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }, 10);
     };
 
+    // Helper function to handle mode switching commands
+    const handleModeCommands = (newFullValue: string): boolean => {
+        const trimmedContent = newFullValue.trim().toLowerCase();
+
+        // Switch to assistant mode
+        if (
+            (trimmedContent === "/q" || trimmedContent === "qq") &&
+            newFullValue.length <= 3
+        ) {
+            dispatch(setChatMode(true));
+            setContent("");
+            dispatch(clearDraft()); // Clear draft when switching modes
+            return true;
+        }
+
+        // Switch to normal mode
+        if (
+            (trimmedContent === "/n" || trimmedContent === "nn") &&
+            newFullValue.length <= 3
+        ) {
+            // Add a small delay to show the command was recognized
+            setTimeout(() => {
+                dispatch(setChatMode(false));
+                setContent("");
+                dispatch(clearDraft()); // Clear draft when switching modes
+            }, 100);
+            return true;
+        }
+
+        return false;
+    };
+
+    // Helper function to handle Enter key press
+    const handleEnterKey = async (
+        event: React.KeyboardEvent<HTMLTextAreaElement>
+    ): Promise<void> => {
+        event.preventDefault();
+        if (!content.trim() || isSubmitting) return;
+
+        // If in chat mode and chatHook is provided, use chat instead of creating notes
+        if (chatMode && chatHook && !isEditMode) {
+            event.preventDefault();
+            const form = event.currentTarget.form;
+            if (form) {
+                form.requestSubmit();
+            }
+            return;
+        }
+
+        if (isEditMode) {
+            handleSaveEdit();
+        } else {
+            await handleCreateNote();
+        }
+    };
+
+    // Helper function to handle bracket insertion
+    const handleBracketKey = (
+        event: React.KeyboardEvent<HTMLTextAreaElement>,
+        pressedKey: string
+    ): void => {
+        event.preventDefault();
+
+        const result = handleBracketInsertion(
+            pressedKey,
+            content,
+            activeSelection,
+            BRACKET_PAIRS
+        );
+
+        setContent(result.newValue);
+
+        // Update draft for new notes
+        if (!isEditMode) {
+            dispatch(updateDraftContent(result.newValue));
+        }
+
+        requestAnimationFrame(() => {
+            if (textareaRef.current) {
+                textareaRef.current.setSelectionRange(
+                    result.newSelectionStart,
+                    result.newSelectionEnd
+                );
+                setActiveSelection({
+                    start: result.newSelectionStart,
+                    end: result.newSelectionEnd,
+                });
+            }
+        });
+    };
+
+    // Helper function to handle backspace key
+    const handleBackspaceKey = (
+        event: React.KeyboardEvent<HTMLTextAreaElement>
+    ): void => {
+        const currentValue = content;
+        const cursorPosition = event.currentTarget.selectionStart;
+
+        if (cursorPosition === 0) {
+            return;
+        }
+
+        const charBeforeCursor = currentValue.substring(
+            cursorPosition - 1,
+            cursorPosition
+        );
+
+        const deleteResult = handleAutoDeleteBracketPair(
+            currentValue,
+            cursorPosition,
+            charBeforeCursor,
+            BRACKET_PAIRS
+        );
+
+        if (deleteResult) {
+            event.preventDefault();
+            setContent(deleteResult.newValue);
+
+            // Update draft for new notes
+            if (!isEditMode) {
+                dispatch(updateDraftContent(deleteResult.newValue));
+            }
+
+            requestAnimationFrame(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.setSelectionRange(
+                        deleteResult.newCursorPosition,
+                        deleteResult.newCursorPosition
+                    );
+                }
+            });
+        }
+    };
+
+    // Refactored handleKeyDown function
     const handleKeyDown = async (
         event: React.KeyboardEvent<HTMLTextAreaElement>
     ) => {
         const pressedKey = event.key;
 
         if (pressedKey === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            if (!content.trim() || isSubmitting) return;
-
-            // If in chat mode and chatHook is provided, use chat instead of creating notes
-            if (chatMode && chatHook && !isEditMode) {
-                // Create a synthetic form submit event
-                event.preventDefault();
-                const form = event.currentTarget.form;
-                if (form) {
-                    // Trigger form submission which will be handled by handleSubmit
-                    form.requestSubmit();
-                }
-                return;
-            }
-
-            if (isEditMode) {
-                handleSaveEdit();
-            } else {
-                await handleCreateNote();
-            }
+            await handleEnterKey(event);
             return;
         }
 
         if (BRACKET_PAIRS.hasOwnProperty(pressedKey)) {
-            event.preventDefault();
-
-            const result = handleBracketInsertion(
-                pressedKey,
-                content,
-                activeSelection,
-                BRACKET_PAIRS
-            );
-
-            setContent(result.newValue);
-
-            requestAnimationFrame(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.setSelectionRange(
-                        result.newSelectionStart,
-                        result.newSelectionEnd
-                    );
-                    setActiveSelection({
-                        start: result.newSelectionStart,
-                        end: result.newSelectionEnd,
-                    });
-                }
-            });
+            handleBracketKey(event, pressedKey);
             return;
         }
 
         if (pressedKey === "Backspace") {
-            const currentValue = content;
-            const cursorPosition = event.currentTarget.selectionStart;
-
-            if (cursorPosition === 0) {
-                return;
-            }
-
-            const charBeforeCursor = currentValue.substring(
-                cursorPosition - 1,
-                cursorPosition
-            );
-
-            const deleteResult = handleAutoDeleteBracketPair(
-                currentValue,
-                cursorPosition,
-                charBeforeCursor,
-                BRACKET_PAIRS
-            );
-
-            if (deleteResult) {
-                event.preventDefault();
-                setContent(deleteResult.newValue);
-
-                requestAnimationFrame(() => {
-                    if (textareaRef.current) {
-                        textareaRef.current.setSelectionRange(
-                            deleteResult.newCursorPosition,
-                            deleteResult.newCursorPosition
-                        );
-                    }
-                });
-                return;
-            }
+            handleBackspaceKey(event);
+            return;
         }
     };
 
@@ -325,11 +371,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
-        // // If in chat mode and chatHook is provided, use chat instead of creating notes
+        // If in chat mode and chatHook is provided, use chat instead of creating notes
         if (chatMode && chatHook && !isEditMode) {
             // Use chatHook's handleSubmit method
             chatHook.sendMessage({ text: content.trim() });
             setContent("");
+            dispatch(clearDraft()); // Clear draft after chat submission
             return;
         }
 
@@ -368,6 +415,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
         setContent("");
         setContexts([]);
+        dispatch(clearDraft()); // Clear draft after successful note creation
         setIsSubmitting(false);
     };
 
