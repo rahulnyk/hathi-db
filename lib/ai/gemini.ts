@@ -3,7 +3,7 @@ import { generateText, LanguageModel } from "ai";
 import { embed, embedMany } from "ai";
 import {
     AIService,
-    AIModelConfig,
+    AIConfig,
     EmbeddingRequest,
     EmbeddingResponse,
     DocumentEmbeddingRequest,
@@ -39,9 +39,9 @@ import {
 
 export class GeminiAIService implements AIService {
     private google: ReturnType<typeof createGoogleGenerativeAI>;
-    private config: AIModelConfig;
+    private config: AIConfig;
 
-    constructor(config: AIModelConfig) {
+    constructor(config: AIConfig) {
         this.config = config;
 
         // Get API key from config or environment

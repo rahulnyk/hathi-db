@@ -7,7 +7,7 @@ export interface AIProviderConfig {
     baseURL?: string | null;
 }
 
-export interface AIModelConfig {
+export interface AIConfig {
     textGeneration: {
         model: string;
     };

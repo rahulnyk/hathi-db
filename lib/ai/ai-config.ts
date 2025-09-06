@@ -1,7 +1,10 @@
 /**
  * AI Model Configuration
  */
-export const AI_MODEL_CONFIG = {
+
+import { AIConfig } from "./types";
+
+export const AI_CONFIG: Record<string, AIConfig> = {
     // Google Gemini models
     GEMINI: {
         // Text generation model

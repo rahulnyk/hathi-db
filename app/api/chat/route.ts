@@ -5,11 +5,11 @@ import { aiService } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
 import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
-import { AI_MODEL_CONFIG } from "@/lib/ai/ai-config";
+import { aiConfig } from "@/lib/ai";
 
 export const maxDuration = 50;
 
-const modelname = AI_MODEL_CONFIG.GEMINI.agentModel.model;
+const modelname = aiConfig.agentModel.model;
 
 export async function POST(req: Request) {
     try {
