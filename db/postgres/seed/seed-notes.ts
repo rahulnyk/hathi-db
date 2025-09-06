@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { aiService } from "@/lib/ai";
-import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
+import { getCurrentEmbeddingConfig } from "@/lib/ai";
 import { dateToSlug } from "@/lib/utils";
 import { createClient } from "../connection";
 import { notes, contexts, notesContexts } from "../schema";

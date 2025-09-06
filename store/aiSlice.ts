@@ -10,7 +10,7 @@ import {
     updateNoteContent,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
+import { getCurrentEmbeddingConfig } from "@/lib/ai";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];

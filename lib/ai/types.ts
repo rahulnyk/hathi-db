@@ -1,5 +1,29 @@
 import type { LanguageModel } from "ai";
 
+// Configuration types
+export interface AIProviderConfig {
+    name: string;
+    apiKey?: string;
+    baseURL?: string | null;
+}
+
+export interface AIModelConfig {
+    textGeneration: {
+        model: string;
+    };
+    textGenerationLite: {
+        model: string;
+    };
+    agentModel: {
+        model: string;
+    };
+    embedding: {
+        model: string;
+        dimensions: number;
+    };
+    provider: AIProviderConfig;
+}
+
 // Shared types for AI operations
 
 export interface SuggestContextsRequest {

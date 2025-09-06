@@ -8,6 +8,7 @@ export const AI_MODEL_CONFIG = {
         textGeneration: {
             model: "gemini-2.5-flash",
         },
+        // Lite model for smaller tasks like date extraction
         textGenerationLite: {
             model: "gemini-2.0-flash-lite",
         },
@@ -19,16 +20,11 @@ export const AI_MODEL_CONFIG = {
             model: "gemini-embedding-exp-03-07",
             dimensions: 1536,
         },
+        // Provider configuration
+        provider: {
+            name: "Google",
+            apiKey: process.env.GOOGLE_AI_API_KEY,
+            baseURL: process.env.GOOGLE_AI_BASE_URL || null,
+        },
     },
 } as const;
-
-/**
- * Get current text generation model configuration
- */
-export function getCurrentTextGenerationConfig() {
-    return AI_MODEL_CONFIG.GEMINI.textGeneration;
-}
-
-export function getCurrentEmbeddingConfig() {
-    return AI_MODEL_CONFIG.GEMINI.embedding;
-}

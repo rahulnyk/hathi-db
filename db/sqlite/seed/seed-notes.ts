@@ -14,7 +14,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
 import { aiService } from "../../../lib/ai";
-import { getCurrentEmbeddingConfig } from "../../../lib/ai/ai-config";
+import { getCurrentEmbeddingConfig } from "../../../lib/ai";
 import { dateToSlug } from "../../../lib/utils";
 
 // Load environment variables

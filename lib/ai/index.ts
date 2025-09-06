@@ -1,13 +1,14 @@
 import { AIService } from "./types";
 import { GeminiAIService } from "./gemini";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { AI_MODEL_CONFIG } from "./ai-config";
+
+// Create the AI service with configuration
+export const aiService: AIService = new GeminiAIService(AI_MODEL_CONFIG.GEMINI);
 
 // Export the AI provider interface and types
 export * from "./types";
 
-// Create the AI service using Google AI
-const googleProvider = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_AI_API_KEY,
-});
-
-export const aiService: AIService = new GeminiAIService(googleProvider);
+// Current embedding model configuration.
+export function getCurrentEmbeddingConfig() {
+    return AI_MODEL_CONFIG.GEMINI.embedding;
+}
