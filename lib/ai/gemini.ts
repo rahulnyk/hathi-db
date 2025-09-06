@@ -1,4 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { embed, embedMany } from "ai";
 import {
     AIProvider,
     EmbeddingRequest,
@@ -36,18 +38,13 @@ import {
 import { AI_MODEL_CONFIG } from "./ai-config";
 
 export class GeminiAI implements AIProvider {
-    private genAI: GoogleGenAI;
+    private google: ReturnType<typeof createGoogleGenerativeAI>;
     private textModel: string;
     private embeddingModelName: string;
     private liteTextModel: string;
 
-    constructor(apiKey: string) {
-        if (!apiKey) {
-            throw new Error(
-                "Google AI API key is required. Set GOOGLE_AI_API_KEY environment variable or pass it to the constructor."
-            );
-        }
-        this.genAI = new GoogleGenAI({ apiKey });
+    constructor(googleProvider: ReturnType<typeof createGoogleGenerativeAI>) {
+        this.google = googleProvider;
         this.textModel = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
         this.liteTextModel = AI_MODEL_CONFIG.GEMINI.textGenerationLite.model;
         this.embeddingModelName = AI_MODEL_CONFIG.GEMINI.embedding.model;
@@ -63,21 +60,21 @@ export class GeminiAI implements AIProvider {
         );
 
         try {
-            const result = await this.genAI.models.generateContent({
-                model: this.liteTextModel,
-                contents: [
-                    { parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-                ],
-                config: {
-                    maxOutputTokens: 150, // Limit response size for faster generation
-                    temperature: 0.2, // Low temperature for consistent, faster responses
-                    topP: 0.8,
-                    topK: 10,
+            const result = await generateText({
+                model: this.google(this.liteTextModel),
+                system: systemPrompt,
+                prompt: userPrompt,
+                temperature: 0.2, // Low temperature for consistent, faster responses
+                topP: 0.8,
+                topK: 10,
+                providerOptions: {
+                    google: {
+                        maxOutputTokens: 150, // Limit response size for faster generation
+                    },
                 },
             });
 
-            const response =
-                result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const response = result.text || "";
 
             // Check for empty response
             if (!response || response.trim().length === 0) {
@@ -96,21 +93,19 @@ export class GeminiAI implements AIProvider {
         request: EmbeddingRequest
     ): Promise<EmbeddingResponse> {
         try {
-            const result = await this.genAI.models.embedContent({
-                model: this.embeddingModelName,
-                contents: [{ text: request.content }],
-                config: {
-                    outputDimensionality:
-                        AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+            const result = await embed({
+                model: this.google.textEmbedding(this.embeddingModelName),
+                value: request.content,
+                providerOptions: {
+                    google: {
+                        outputDimensionality:
+                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                    },
                 },
             });
-            if (!result.embeddings || !result.embeddings[0]?.values) {
-                throw new AIError("No embedding generated");
-            }
-            const embedding = result.embeddings[0].values;
 
             return {
-                embedding: embedding,
+                embedding: result.embedding,
             };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -128,21 +123,19 @@ export class GeminiAI implements AIProvider {
                 request.noteType
             );
 
-            const result = await this.genAI.models.embedContent({
-                model: this.embeddingModelName,
-                contents: [{ text: prompt }],
-                config: {
-                    outputDimensionality:
-                        AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+            const result = await embed({
+                model: this.google.textEmbedding(this.embeddingModelName),
+                value: prompt,
+                providerOptions: {
+                    google: {
+                        outputDimensionality:
+                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                    },
                 },
             });
-            if (!result.embeddings || !result.embeddings[0]?.values) {
-                throw new AIError("No embedding generated");
-            }
-            const embedding = result.embeddings[0].values;
 
             return {
-                embedding: embedding,
+                embedding: result.embedding,
             };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -155,21 +148,19 @@ export class GeminiAI implements AIProvider {
         try {
             const prompt = queryEmbeddingPrompt(request.question);
 
-            const result = await this.genAI.models.embedContent({
-                model: this.embeddingModelName,
-                contents: [{ text: prompt }],
-                config: {
-                    outputDimensionality:
-                        AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+            const result = await embed({
+                model: this.google.textEmbedding(this.embeddingModelName),
+                value: prompt,
+                providerOptions: {
+                    google: {
+                        outputDimensionality:
+                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                    },
                 },
             });
-            if (!result.embeddings || !result.embeddings[0]?.values) {
-                throw new AIError("No embedding generated");
-            }
-            const embedding = result.embeddings[0].values;
 
             return {
-                embedding: embedding,
+                embedding: result.embedding,
             };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -187,39 +178,37 @@ export class GeminiAI implements AIProvider {
             for (let i = 0; i < request.documents.length; i += batchSize) {
                 const batch = request.documents.slice(i, i + batchSize);
 
-                // Process this batch in parallel
-                const batchPromises = batch.map(async (doc) => {
-                    const prompt = documentEmbeddingPrompt(
+                // Prepare prompts for this batch
+                const prompts = batch.map((doc) =>
+                    documentEmbeddingPrompt(
                         doc.content,
                         doc.contexts,
                         doc.tags,
                         doc.noteType
-                    );
+                    )
+                );
 
-                    const result = await this.genAI.models.embedContent({
-                        model: this.embeddingModelName,
-                        contents: [{ text: prompt }],
-                        config: {
+                // Process this batch using embedMany
+                const result = await embedMany({
+                    model: this.google.textEmbedding(this.embeddingModelName),
+                    values: prompts,
+                    providerOptions: {
+                        google: {
                             outputDimensionality:
                                 AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
                         },
-                    });
-
-                    if (!result.embeddings || !result.embeddings[0]?.values) {
-                        throw new AIError(
-                            `No embedding generated for document: ${doc.content.substring(
-                                0,
-                                50
-                            )}...`
-                        );
-                    }
-
-                    return result.embeddings[0].values;
+                    },
                 });
 
-                // Wait for all embeddings in this batch to complete
-                const batchResults = await Promise.all(batchPromises);
-                embeddings.push(...batchResults);
+                if (!result.embeddings || result.embeddings.length === 0) {
+                    throw new AIError(
+                        `No embeddings generated for batch: ${i}-${
+                            i + batch.length
+                        }`
+                    );
+                }
+
+                embeddings.push(...result.embeddings);
 
                 // Add a small delay between batches to be respectful to the API
                 if (i + batchSize < request.documents.length) {
@@ -243,14 +232,12 @@ export class GeminiAI implements AIProvider {
         );
 
         try {
-            const result = await this.genAI.models.generateContent({
-                model: this.textModel,
-                contents: [
-                    { parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-                ],
+            const result = await generateText({
+                model: this.google(this.textModel),
+                system: systemPrompt,
+                prompt: userPrompt,
             });
-            const response =
-                result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const response = result.text || "";
             return { structuredContent: response };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -331,20 +318,20 @@ export class GeminiAI implements AIProvider {
         const userPrompt = extractDeadlineUserPrompt(request.content);
 
         try {
-            const result = await this.genAI.models.generateContent({
-                model: this.liteTextModel,
-                contents: [
-                    { parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-                ],
-                config: {
-                    maxOutputTokens: 20, // YYYY-MM-DD is 10 chars, "null" is 4. 20 should be safe.
-                    temperature: 0.1, // Low temperature for deterministic output
-                    topP: 0.7,
+            const result = await generateText({
+                model: this.google(this.liteTextModel),
+                system: systemPrompt,
+                prompt: userPrompt,
+                temperature: 0.1, // Low temperature for deterministic output
+                topP: 0.7,
+                providerOptions: {
+                    google: {
+                        maxOutputTokens: 20, // YYYY-MM-DD is 10 chars, "null" is 4. 20 should be safe.
+                    },
                 },
             });
 
-            const responseText =
-                result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+            const responseText = result.text?.trim() || "";
 
             if (!responseText || responseText.toLowerCase() === "null") {
                 return { deadline: null };

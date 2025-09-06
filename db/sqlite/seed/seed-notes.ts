@@ -16,6 +16,7 @@ import * as dotenv from "dotenv";
 import { GeminiAI } from "../../../lib/ai/gemini";
 import { getCurrentEmbeddingConfig } from "../../../lib/ai/ai-config";
 import { dateToSlug } from "../../../lib/utils";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -27,7 +28,10 @@ if (!googleApiKey) {
     console.log("💡 Seeding will continue without embeddings");
 }
 
-const aiProvider = googleApiKey ? new GeminiAI(googleApiKey) : null;
+const googleProvider = googleApiKey
+    ? createGoogleGenerativeAI({ apiKey: googleApiKey })
+    : null;
+const aiProvider = googleProvider ? new GeminiAI(googleProvider) : null;
 
 // Define types for better type safety
 interface SeedNote {

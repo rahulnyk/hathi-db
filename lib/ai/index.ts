@@ -5,13 +5,10 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 // Export the AI provider interface and types
 export * from "./types";
 
-// Create and export the default AI provider based on configuration
-function createAIProvider(): AIProvider {
-    return new GeminiAI(process.env.GOOGLE_AI_API_KEY!);
-}
-
-export const aiProvider: AIProvider = createAIProvider();
-
+// Create a shared Google AI provider instance
 export const gemini = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_AI_API_KEY,
 });
+
+// Create the AI provider using the shared Google AI instance
+export const aiProvider: AIProvider = new GeminiAI(gemini);

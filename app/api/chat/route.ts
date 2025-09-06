@@ -5,8 +5,11 @@ import { gemini } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
 import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
+import { AI_MODEL_CONFIG } from "@/lib/ai/ai-config";
 
 export const maxDuration = 50;
+
+const modelname = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
 
 export async function POST(req: Request) {
     try {
@@ -22,7 +25,7 @@ export async function POST(req: Request) {
         const logger = createChatLogger(id);
 
         const result = streamText({
-            model: gemini("gemini-2.5-flash"),
+            model: gemini(modelname),
             messages: convertToModelMessages(messages, {
                 ignoreIncompleteToolCalls: true,
             }),

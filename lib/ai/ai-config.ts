@@ -6,7 +6,7 @@ export const AI_MODEL_CONFIG = {
     GEMINI: {
         // Text generation model
         textGeneration: {
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
         },
         textGenerationLite: {
             model: "gemini-2.0-flash-lite",
