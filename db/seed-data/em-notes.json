@@ -1,0 +1,384 @@
+[
+    {
+        "content": "Morning [[standup]]\n- [[Timon]] working on [[search]] indexing\n- [[Pumba]] debugging [[export]] [[OOM]]\n- [[Simba]] refining [[auth]] refresh\n- [[Zazu]] polishing [[UX]] in [[editor]]\nAction: ticket for [[streaming export]].",
+        "contexts": [
+            "standup",
+            "timon",
+            "search",
+            "pumba",
+            "export",
+            "oom",
+            "simba",
+            "auth",
+            "zazu",
+            "ux",
+            "editor",
+            "streaming-export"
+        ],
+        "tags": ["team", "action"],
+        "note_type": "note",
+        "suggested_contexts": ["engineering", "export", "auth"]
+    },
+    {
+        "content": "Users want [[Hathi]] to respect one-line [[notes]]. No forced structure during quick capture.",
+        "contexts": ["hathi", "notes", "feedback"],
+        "tags": ["ux"],
+        "note_type": "note",
+        "suggested_contexts": ["search", "capture"]
+    },
+    {
+        "content": "Todo: sync with [[Trinity]] about next [[user interviews]].",
+        "contexts": ["todo", "trinity", "user-interviews"],
+        "tags": ["reminder"],
+        "note_type": "note",
+        "suggested_contexts": ["user-research"]
+    },
+    {
+        "content": "Poem fragment:\n\"Scattered [[ideas]] like broken glass,\nshine only when [[light]] passes.\"",
+        "contexts": ["poetry", "ideas", "light"],
+        "tags": ["creative"],
+        "note_type": "note",
+        "suggested_contexts": ["poem"]
+    },
+    {
+        "content": "Suggested [[contexts]] should be learned automatically via [[usage patterns]], not forced upfront.",
+        "contexts": ["contexts", "usage-patterns"],
+        "tags": ["idea"],
+        "note_type": "note",
+        "suggested_contexts": ["machine-learning"]
+    },
+    {
+        "content": "1:1 with [[Timon]]\n- Career growth towards [[lead engineer]]\n- Blocker: [[API pagination]]\n- Plan: pair with [[Pumba]].",
+        "contexts": ["timon", "lead-engineer", "api-pagination", "pumba"],
+        "tags": ["coaching"],
+        "note_type": "note",
+        "suggested_contexts": ["mentoring"]
+    },
+    {
+        "content": "Meeting with [[Trinity]] + [[Turiel]] ([[product sync]])\n- [[Onboarding]] metrics priority\n- [[Runbook]] needed for [[incidents]]\n- Try an [[A/B test]].",
+        "contexts": [
+            "trinity",
+            "turiel",
+            "product-sync",
+            "onboarding",
+            "runbook",
+            "incidents",
+            "a-b-test"
+        ],
+        "tags": ["alignment"],
+        "note_type": "note",
+        "suggested_contexts": ["onboarding"]
+    },
+    {
+        "content": "Competitor [[Notedly]] launched [[voice notes]]. Need to test [[transcription]] quality vs cost.",
+        "contexts": ["notedly", "voice-notes", "transcription"],
+        "tags": ["market"],
+        "note_type": "note",
+        "suggested_contexts": ["competition"]
+    },
+    {
+        "content": "Idea: allow pinning short [[stickers]] at top of [[notes list]].",
+        "contexts": ["stickers", "notes-list"],
+        "tags": ["ux"],
+        "note_type": "note",
+        "suggested_contexts": ["pinning"]
+    },
+    {
+        "content": "[[Support]] triage\n- [[PDF export]] crashes beyond 500 [[notes]]\n- Candidate fix: [[chunked export]]\n- Assign to [[Pumba]]\n- Update [[CS]] team.",
+        "contexts": [
+            "support",
+            "pdf-export",
+            "notes",
+            "chunked-export",
+            "pumba",
+            "cs"
+        ],
+        "tags": ["bug"],
+        "note_type": "note",
+        "suggested_contexts": ["support"]
+    },
+    {
+        "content": "Observation: [[students]] rely heavily on mobile [[capture]]. [[Voice]] input is critical.",
+        "contexts": ["students", "capture", "voice"],
+        "tags": ["research"],
+        "note_type": "note",
+        "suggested_contexts": ["mobile"]
+    },
+    {
+        "content": "Quote from [[Stoicism]] — \"What stands in the way becomes the way.\"",
+        "contexts": ["stoicism", "quote"],
+        "tags": ["books"],
+        "note_type": "note",
+        "suggested_contexts": ["motivation"]
+    },
+    {
+        "content": "[[Engineering review]]\n- [[CI]] flakiness persists\n- [[Auth refresh]] delayed\n- [[Export]] hotfix planned\nAction: [[Simba]] to draft release notes.",
+        "contexts": [
+            "engineering-review",
+            "ci",
+            "auth-refresh",
+            "export",
+            "simba"
+        ],
+        "tags": ["ops"],
+        "note_type": "note",
+        "suggested_contexts": ["ci", "release"]
+    },
+    {
+        "content": "User quote: \"I need [[search]] that works for messy 2am [[thoughts]].\" Add [[fragment search]].",
+        "contexts": ["search", "thoughts", "fragment-search"],
+        "tags": ["ux"],
+        "note_type": "note",
+        "suggested_contexts": ["search"]
+    },
+    {
+        "content": "Meeting with [[Trinity]]: [[pricing]] tiers\n- Starter free\n- Pro paid\n- Team with [[SSO]]\nSurvey to follow.",
+        "contexts": ["trinity", "pricing", "sso", "survey"],
+        "tags": ["strategy"],
+        "note_type": "note",
+        "suggested_contexts": ["pricing"]
+    },
+    {
+        "content": "Pack [[books]] for weekend — 'Deep Work' and 'Midnight Library'.",
+        "contexts": ["books", "personal"],
+        "tags": ["reminder"],
+        "note_type": "note",
+        "suggested_contexts": ["reading"]
+    },
+    {
+        "content": "Weekly sync with [[Enheduana]]\n- [[Roadmap]] progress good\n- Discuss timing for [[VP Sales]] hire\n- Feedback: clearer KPIs for [[Trinity]].",
+        "contexts": ["enheduana", "roadmap", "vp-sales", "trinity"],
+        "tags": ["leadership"],
+        "note_type": "note",
+        "suggested_contexts": ["hiring"]
+    },
+    {
+        "content": "Bug: [[customer]] saw [[data mismatch]] from [[concurrent edits]]. Add [[edit history]] warning.",
+        "contexts": [
+            "customer",
+            "data-mismatch",
+            "concurrent-edits",
+            "edit-history"
+        ],
+        "tags": ["bug"],
+        "note_type": "note",
+        "suggested_contexts": ["support"]
+    },
+    {
+        "content": "[[Retrospective]]\n- Wins: fast [[code reviews]], improved [[tests]]\n- Issues: [[CI]] instability\n- Improvement: monthly [[incident drill]].",
+        "contexts": [
+            "retrospective",
+            "code-reviews",
+            "tests",
+            "ci",
+            "incident-drill"
+        ],
+        "tags": ["process"],
+        "note_type": "note",
+        "suggested_contexts": ["team"]
+    },
+    {
+        "content": "Grateful for the [[team]]. Small [[wins]] stack together.",
+        "contexts": ["team", "wins"],
+        "tags": ["reflection"],
+        "note_type": "note",
+        "suggested_contexts": ["gratitude"]
+    },
+    {
+        "content": "Strategy note: Fix [[export]] with [[streaming]]. Medium-term refactor [[pipeline]] alongside [[auth]]. Prioritize [[onboarding]] A/B tests. Metrics: [[activation]], [[trial-to-paid]], [[NPS]]. Hire [[Support Lead]].",
+        "contexts": [
+            "export",
+            "streaming",
+            "pipeline",
+            "auth",
+            "onboarding",
+            "activation",
+            "trial-to-paid",
+            "nps",
+            "support-lead"
+        ],
+        "tags": ["roadmap"],
+        "note_type": "note",
+        "suggested_contexts": ["planning"]
+    },
+    {
+        "content": "Tiny [[UX]] tweak: toggle off [[markdown preview]] for faster typing.",
+        "contexts": ["ux", "markdown-preview"],
+        "tags": ["idea"],
+        "note_type": "note",
+        "suggested_contexts": ["editor"]
+    },
+    {
+        "content": "One-liner: \"Ship small, learn loud.\"",
+        "contexts": ["quote", "mantra"],
+        "tags": ["philosophy"],
+        "note_type": "note",
+        "suggested_contexts": ["leadership"]
+    },
+    {
+        "content": "Meeting with [[Turiel]] — update [[runbook]] for [[mobile]] incidents. Add [[customer communication]] templates.",
+        "contexts": ["turiel", "runbook", "mobile", "customer-communication"],
+        "tags": ["ops"],
+        "note_type": "note",
+        "suggested_contexts": ["support"]
+    },
+    {
+        "content": "Spike: compare [[open-source]] [[speech-to-text]] vs paid [[APIs]] for [[transcription]].",
+        "contexts": ["open-source", "speech-to-text", "apis", "transcription"],
+        "tags": ["research"],
+        "note_type": "note",
+        "suggested_contexts": ["ml"]
+    },
+    {
+        "content": "Todo: finalize [[VP Sales]] job spec and post by Monday.",
+        "contexts": ["vp-sales", "hiring"],
+        "tags": ["todo"],
+        "note_type": "note",
+        "suggested_contexts": ["recruiting"]
+    },
+    {
+        "content": "Quote from [[book]]: \"Notes are the archive of becoming.\"",
+        "contexts": ["book", "quote"],
+        "tags": ["inspiration"],
+        "note_type": "note",
+        "suggested_contexts": ["reading"]
+    },
+    {
+        "content": "Prototype: [[morning review]] card showing pinned [[stickers]], today's [[todos]], and recent [[captures]].",
+        "contexts": ["morning-review", "stickers", "todos", "captures"],
+        "tags": ["prototype"],
+        "note_type": "note",
+        "suggested_contexts": ["ux"]
+    },
+    {
+        "content": "[[Customer]] reported deleted [[note]] reappeared after [[restore]]. Suspect [[replication lag]]. Add repro steps.",
+        "contexts": ["customer", "note", "restore", "replication-lag"],
+        "tags": ["bug"],
+        "note_type": "note",
+        "suggested_contexts": ["support"]
+    },
+    {
+        "content": "Reminder: visit new [[vinyl shop]]. Look for mellow [[jazz]].",
+        "contexts": ["vinyl-shop", "jazz"],
+        "tags": ["personal"],
+        "note_type": "note",
+        "suggested_contexts": ["music"]
+    },
+    {
+        "content": "Legal check: [[GDPR]] impact of [[audio transcription]]. Confirm [[data retention]] rules for [[EU customers]].",
+        "contexts": [
+            "gdpr",
+            "audio-transcription",
+            "data-retention",
+            "eu-customers"
+        ],
+        "tags": ["legal"],
+        "note_type": "note",
+        "suggested_contexts": ["compliance"]
+    },
+    {
+        "content": "Reflection: [[Simba]] showed real leadership today during [[incident response]].",
+        "contexts": ["simba", "incident-response"],
+        "tags": ["team"],
+        "note_type": "note",
+        "suggested_contexts": ["leadership"]
+    },
+    {
+        "content": "Todo: draft [[integration roadmap]] for [[Notion]] and [[Zapier]].",
+        "contexts": ["integration-roadmap", "notion", "zapier"],
+        "tags": ["todo"],
+        "note_type": "note",
+        "suggested_contexts": ["integrations"]
+    },
+    {
+        "content": "Quick note: [[Trinity]] suggested running more [[surveys]] to validate [[pricing model]].",
+        "contexts": ["trinity", "surveys", "pricing-model"],
+        "tags": ["product"],
+        "note_type": "note",
+        "suggested_contexts": ["pricing"]
+    },
+    {
+        "content": "Personal: reread chapter in [[Deep Work]]. Quote: \"Clarity requires time in solitude.\"",
+        "contexts": ["deep-work", "quote"],
+        "tags": ["books"],
+        "note_type": "note",
+        "suggested_contexts": ["reading"]
+    },
+    {
+        "content": "Poem: \"Between [[commits]] and [[coffee]], I sketch the edges of a [[dream]].\"",
+        "contexts": ["commits", "coffee", "dream"],
+        "tags": ["creative"],
+        "note_type": "note",
+        "suggested_contexts": ["poetry"]
+    },
+    {
+        "content": "Todo: ask [[Zazu]] for final [[UX review]] of [[editor toggle]].",
+        "contexts": ["zazu", "ux-review", "editor-toggle"],
+        "tags": ["reminder"],
+        "note_type": "note",
+        "suggested_contexts": ["ux"]
+    },
+    {
+        "content": "Weekly feedback: [[Pumba]] wants clearer ownership in [[sprint planning]].",
+        "contexts": ["pumba", "sprint-planning"],
+        "tags": ["feedback"],
+        "note_type": "note",
+        "suggested_contexts": ["team"]
+    },
+    {
+        "content": "Market scan: [[Evernote]] losing share, opportunity for [[lightweight note apps]].",
+        "contexts": ["evernote", "lightweight-note-apps"],
+        "tags": ["research"],
+        "note_type": "note",
+        "suggested_contexts": ["market"]
+    },
+    {
+        "content": "Todo: prepare [[status memo]] for [[Enheduana]]. Keep 3 bullets + 2 risks.",
+        "contexts": ["status-memo", "enheduana"],
+        "tags": ["todo"],
+        "note_type": "note",
+        "suggested_contexts": ["leadership"]
+    },
+    {
+        "content": "Reflection: playing [[music]] helps with [[focus]]. Current favorite: [[State of Grace]].",
+        "contexts": ["music", "focus", "state-of-grace"],
+        "tags": ["personal"],
+        "note_type": "note",
+        "suggested_contexts": ["playlist"]
+    },
+    {
+        "content": "Research: [[mobile capture]] abandoned often halfway. Need [[telemetry]] to track drop-off.",
+        "contexts": ["mobile-capture", "telemetry"],
+        "tags": ["research"],
+        "note_type": "note",
+        "suggested_contexts": ["mobile"]
+    },
+    {
+        "content": "Reminder: schedule [[incident drill]] for next Friday.",
+        "contexts": ["incident-drill"],
+        "tags": ["todo"],
+        "note_type": "note",
+        "suggested_contexts": ["ops"]
+    },
+    {
+        "content": "Bug: [[search]] failing for [[markdown code blocks]].",
+        "contexts": ["search", "markdown-code-blocks"],
+        "tags": ["bug"],
+        "note_type": "note",
+        "suggested_contexts": ["search"]
+    },
+    {
+        "content": "Sync with [[Turiel]] on [[board deck]]. Add [[revenue forecast]].",
+        "contexts": ["turiel", "board-deck", "revenue-forecast"],
+        "tags": ["planning"],
+        "note_type": "note",
+        "suggested_contexts": ["strategy"]
+    },
+    {
+        "content": "Personal: pick up new [[vinyl]] this weekend. Genre: [[lofi]].",
+        "contexts": ["vinyl", "lofi"],
+        "tags": ["personal"],
+        "note_type": "note",
+        "suggested_contexts": ["music"]
+    }
+]

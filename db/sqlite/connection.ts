@@ -16,6 +16,7 @@ import * as fs from "fs";
 let dbInstance: DatabaseInstance | null = null;
 let drizzleInstance: DatabaseType | null = null;
 let extensionLoaded = false;
+let migrationsCompleted = false;
 
 /**
  * Get database file path
@@ -148,6 +149,7 @@ export function closeSqliteConnection(): void {
         dbInstance = null;
         drizzleInstance = null;
         extensionLoaded = false; // Reset extension flag
+        migrationsCompleted = false; // Reset migrations flag
     }
 }
 
@@ -176,9 +178,13 @@ export function executeSql(sql: string, params: any[] = []): any {
  * Run database migrations
  */
 export function runMigrations(): void {
+    // Check if migrations have already been run
+    if (migrationsCompleted) {
+        return;
+    }
+
     const db = createSqliteConnection();
 
-    // Check if migrations have already been run
     try {
         const result = db
             .prepare(
@@ -186,6 +192,7 @@ export function runMigrations(): void {
             )
             .get();
         if (result) {
+            migrationsCompleted = true;
             console.log("✓ SQLite migrations already completed (tables exist)");
             return;
         }
@@ -219,5 +226,6 @@ export function runMigrations(): void {
         }
     }
 
+    migrationsCompleted = true;
     console.log("✓ All SQLite migrations completed");
 }

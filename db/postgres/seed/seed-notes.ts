@@ -8,6 +8,7 @@ import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import seedData from "@/db/seed-data/entrepreneur-notes.json";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
@@ -19,7 +20,8 @@ if (!googleApiKey) {
     process.exit(1);
 }
 
-const aiProvider = new GeminiAI(googleApiKey);
+const googleProvider = createGoogleGenerativeAI({ apiKey: googleApiKey });
+const aiProvider = new GeminiAI(googleProvider);
 
 interface SeedNote {
     content: string;
