@@ -84,22 +84,28 @@ export function SearchResultsRenderer({
                 {/* Collapsible Content */}
                 {!collapsed && (
                     <div className="border-t p-2 sm:p-3">
-                        <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
-                            {result.notes.map((note: SearchResultNote) => (
-                                <div key={note.id} className="relative">
-                                    {note.note_type === "todo" ? (
-                                        <TodoNoteCard
-                                            note={note}
-                                            disableCardHeader
-                                        />
-                                    ) : (
-                                        <NoteCard
-                                            note={note}
-                                            disableCardHeader
-                                        />
-                                    )}
-                                </div>
-                            ))}
+                        <div className="space-y-4 max-h-64 sm:max-h-96 overflow-y-auto">
+                            {result.notes.map(
+                                (note: SearchResultNote, index: number) => (
+                                    <div key={note.id} className="relative">
+                                        {note.note_type === "todo" ? (
+                                            <TodoNoteCard
+                                                note={note}
+                                                disableCardHeader
+                                            />
+                                        ) : (
+                                            <NoteCard
+                                                note={note}
+                                                disableCardHeader
+                                            />
+                                        )}
+                                        {/* Subtle dashed divider between cards (except after the last one) */}
+                                        {index < result.notes.length - 1 && (
+                                            <div className="h-px mt-4 mx-8 border-t border-dashed border-border" />
+                                        )}
+                                    </div>
+                                )
+                            )}
                         </div>
                     </div>
                 )}
