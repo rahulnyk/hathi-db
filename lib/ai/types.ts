@@ -1,3 +1,5 @@
+import type { LanguageModel } from "ai";
+
 // Shared types for AI operations
 
 export interface SuggestContextsRequest {
@@ -77,8 +79,8 @@ export interface ExtractDeadlineResponse {
     deadline: string | null; // YYYY-MM-DD or null
 }
 
-// AI Provider interface for abstraction
-export interface AIProvider {
+// AI Service interface for abstraction
+export interface AIService {
     suggestContexts(
         request: SuggestContextsRequest
     ): Promise<SuggestContextsResponse>;
@@ -99,6 +101,8 @@ export interface AIProvider {
     extractDeadline(
         request: ExtractDeadlineRequest
     ): Promise<ExtractDeadlineResponse>;
+    // Expose the underlying AI provider for direct model usage
+    getLanguageModel(modelName?: string): LanguageModel;
 }
 
 // Error types

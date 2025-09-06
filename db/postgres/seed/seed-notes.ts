@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import { GeminiAI } from "@/lib/ai/gemini";
+import { aiService } from "@/lib/ai";
 import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
 import { dateToSlug } from "@/lib/utils";
 import { createClient } from "../connection";
@@ -8,20 +8,9 @@ import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import seedData from "@/db/seed-data/entrepreneur-notes.json";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
-
-const googleApiKey = process.env.GOOGLE_AI_API_KEY!;
-
-if (!googleApiKey) {
-    console.error("Missing required environment variables: GOOGLE_AI_API_KEY");
-    process.exit(1);
-}
-
-const googleProvider = createGoogleGenerativeAI({ apiKey: googleApiKey });
-const aiProvider = new GeminiAI(googleProvider);
 
 interface SeedNote {
     content: string;
@@ -56,7 +45,7 @@ async function generateDocumentEmbedding(
     noteType?: string
 ): Promise<number[]> {
     try {
-        const response = await aiProvider.generateDocumentEmbedding({
+        const response = await aiService.generateDocumentEmbedding({
             content,
             contexts,
             tags,
@@ -96,7 +85,7 @@ async function generateBatchEmbeddings(
         };
 
         // Generate batch embeddings
-        const response = await aiProvider.generateBatchDocumentEmbeddings(
+        const response = await aiService.generateBatchDocumentEmbeddings(
             batchRequest
         );
 

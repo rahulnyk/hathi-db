@@ -1,7 +1,7 @@
 // import { google } from "@ai-sdk/google";
 import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
-import { gemini } from "@/lib/ai";
+import { aiService } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
 import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
@@ -9,7 +9,7 @@ import { AI_MODEL_CONFIG } from "@/lib/ai/ai-config";
 
 export const maxDuration = 50;
 
-const modelname = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
+const modelname = AI_MODEL_CONFIG.GEMINI.agentModel.model;
 
 export async function POST(req: Request) {
     try {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         const logger = createChatLogger(id);
 
         const result = streamText({
-            model: gemini(modelname),
+            model: aiService.getLanguageModel(modelname),
             messages: convertToModelMessages(messages, {
                 ignoreIncompleteToolCalls: true,
             }),

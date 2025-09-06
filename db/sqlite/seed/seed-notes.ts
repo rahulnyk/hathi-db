@@ -13,25 +13,12 @@ import { eq } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
-import { GeminiAI } from "../../../lib/ai/gemini";
+import { aiService } from "../../../lib/ai";
 import { getCurrentEmbeddingConfig } from "../../../lib/ai/ai-config";
 import { dateToSlug } from "../../../lib/utils";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 // Load environment variables
 dotenv.config({ path: ".env.local" });
-
-const googleApiKey = process.env.GOOGLE_AI_API_KEY;
-
-if (!googleApiKey) {
-    console.error("❌ Missing GOOGLE_AI_API_KEY environment variable");
-    console.log("💡 Seeding will continue without embeddings");
-}
-
-const googleProvider = googleApiKey
-    ? createGoogleGenerativeAI({ apiKey: googleApiKey })
-    : null;
-const aiProvider = googleProvider ? new GeminiAI(googleProvider) : null;
 
 // Define types for better type safety
 interface SeedNote {
@@ -83,12 +70,12 @@ async function generateDocumentEmbedding(
     tags?: string[],
     noteType?: string
 ): Promise<number[]> {
-    if (!aiProvider) {
+    if (!aiService) {
         throw new Error("AI provider not available - missing API key");
     }
 
     try {
-        const response = await aiProvider.generateDocumentEmbedding({
+        const response = await aiService.generateDocumentEmbedding({
             content,
             contexts,
             tags,
@@ -113,7 +100,7 @@ async function generateBatchEmbeddings(
         note_type?: string;
     }>
 ): Promise<Array<{ id: string; embedding: number[] }>> {
-    if (!aiProvider) {
+    if (!aiService) {
         console.log(
             "⚠️  Skipping embedding generation - no AI provider available"
         );
@@ -136,7 +123,7 @@ async function generateBatchEmbeddings(
         };
 
         // Generate batch embeddings
-        const response = await aiProvider.generateBatchDocumentEmbeddings(
+        const response = await aiService.generateBatchDocumentEmbeddings(
             batchRequest
         );
 
@@ -404,7 +391,7 @@ async function seedSqliteDatabase() {
         console.log(`✅ Created contexts and note-context relationships`);
 
         // Generate and store embeddings if AI provider is available
-        if (aiProvider && notesDataForEmbeddings.length > 0) {
+        if (aiService && notesDataForEmbeddings.length > 0) {
             try {
                 console.log("🧠 Starting embedding generation process...");
                 const embeddingsData = await generateBatchEmbeddings(

@@ -1,8 +1,8 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText } from "ai";
+import { generateText, LanguageModel } from "ai";
 import { embed, embedMany } from "ai";
 import {
-    AIProvider,
+    AIService,
     EmbeddingRequest,
     EmbeddingResponse,
     DocumentEmbeddingRequest,
@@ -37,7 +37,7 @@ import {
 } from "../prompts/extract-deadline-prompts";
 import { AI_MODEL_CONFIG } from "./ai-config";
 
-export class GeminiAI implements AIProvider {
+export class GeminiAIService implements AIService {
     private google: ReturnType<typeof createGoogleGenerativeAI>;
     private textModel: string;
     private embeddingModelName: string;
@@ -244,29 +244,6 @@ export class GeminiAI implements AIProvider {
         }
     }
 
-    // async answerQuestion(request: QARequest): Promise<QAResponse> {
-    //     const systemPrompt = qaSystemPrompt();
-    //     const userPrompt = qaUserPrompt(
-    //         request.question,
-    //         request.context,
-    //         request.userContexts
-    //     );
-
-    //     try {
-    //         const result = await this.genAI.models.generateContent({
-    //             model: this.textModel,
-    //             contents: [
-    //                 { parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-    //             ],
-    //         });
-    //         const response =
-    //             result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    //         return { answer: response };
-    //     } catch (error) {
-    //         throw this.handleGeminiError(error);
-    //     }
-    // }
-
     private handleGeminiError(error: unknown): AIError {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
@@ -354,5 +331,15 @@ export class GeminiAI implements AIProvider {
         } catch (error) {
             throw this.handleGeminiError(error);
         }
+    }
+
+    /**
+     * Get the underlying language model for direct usage
+     * @param modelName - Optional model name to use (defaults to textModel)
+     * @returns The Google AI model instance
+     */
+    getLanguageModel(modelName?: string): LanguageModel {
+        const model = modelName || this.textModel;
+        return this.google(model);
     }
 }

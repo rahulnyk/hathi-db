@@ -1,6 +1,6 @@
 "use server";
 
-import { aiProvider } from "@/lib/ai";
+import { aiService } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
 
 /**
@@ -19,20 +19,19 @@ export async function suggestContexts({
 }): Promise<string[]> {
     return measureExecutionTime("suggestContexts", async () => {
         try {
-            const response = await aiProvider.suggestContexts({
+            const response = await aiService.suggestContexts({
                 content,
                 userContexts,
             });
+
             return response.suggestions;
-        } catch (error: unknown) {
+        } catch (error) {
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
-            console.error("Error generating context suggestions:", errorMessage);
-            throw new Error(
-                `Failed to generate context suggestions: ${errorMessage}`
-            );
+            console.error("Error suggesting contexts:", errorMessage);
+            throw new Error(`Failed to suggest contexts: ${errorMessage}`);
         }
     });
 }
@@ -50,7 +49,7 @@ export async function extractDeadlineFromContent({
 }): Promise<string | null> {
     return measureExecutionTime("extractDeadlineFromContent", async () => {
         try {
-            const response = await aiProvider.extractDeadline({
+            const response = await aiService.extractDeadline({
                 content,
             });
             return response.deadline;
@@ -83,7 +82,7 @@ export async function structurizeNote({
 }): Promise<string> {
     return measureExecutionTime("structurizeNote", async () => {
         try {
-            const response = await aiProvider.structurizeNote({
+            const response = await aiService.structurizeNote({
                 content,
                 userContexts,
             });
@@ -121,7 +120,7 @@ export async function generateDocumentEmbedding({
 }): Promise<number[]> {
     return measureExecutionTime("generateDocumentEmbedding", async () => {
         try {
-            const response = await aiProvider.generateDocumentEmbedding({
+            const response = await aiService.generateDocumentEmbedding({
                 content,
                 contexts,
                 tags,
@@ -134,7 +133,9 @@ export async function generateDocumentEmbedding({
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error generating document embedding:", errorMessage);
-            throw new Error(`Failed to generate document embedding: ${errorMessage}`);
+            throw new Error(
+                `Failed to generate document embedding: ${errorMessage}`
+            );
         }
     });
 }
@@ -152,7 +153,7 @@ export async function generateQueryEmbedding({
 }): Promise<number[]> {
     return measureExecutionTime("generateQueryEmbedding", async () => {
         try {
-            const response = await aiProvider.generateQueryEmbedding({
+            const response = await aiService.generateQueryEmbedding({
                 question,
             });
             return response.embedding;
@@ -162,7 +163,9 @@ export async function generateQueryEmbedding({
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error generating query embedding:", errorMessage);
-            throw new Error(`Failed to generate query embedding: ${errorMessage}`);
+            throw new Error(
+                `Failed to generate query embedding: ${errorMessage}`
+            );
         }
     });
 }
