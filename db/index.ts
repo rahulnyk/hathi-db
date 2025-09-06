@@ -7,7 +7,6 @@
 
 import { PostgreSQLAdapter } from "./postgres/adapter/postgresql";
 import { SqliteAdapter } from "./sqlite/sqlite";
-import { runMigrations } from "./sqlite/connection";
 
 // Load environment variables if not already loaded (for standalone scripts)
 if (!process.env.NEXT_RUNTIME) {
@@ -23,21 +22,13 @@ if (!process.env.NEXT_RUNTIME) {
  * Factory function to create the appropriate database adapter
  */
 export function createDatabaseAdapter() {
-    const useDb = process.env.USE_DB || "postgres";
+    const useDb = process.env.USE_DB || "sqlite";
 
     if (useDb === "sqlite") {
         console.log("🔧 Using SQLite database");
-
-        // Run migrations for SQLite if needed
-        try {
-            runMigrations();
-        } catch (error) {
-            console.warn("Warning: SQLite migrations may have failed:", error);
-        }
-
         return new SqliteAdapter();
     } else {
-        console.log("🔧 Using PostgreSQL database");
+        console.log("🔧 Using Sqlite database");
         return new PostgreSQLAdapter();
     }
 }

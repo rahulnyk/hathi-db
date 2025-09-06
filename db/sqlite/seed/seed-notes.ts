@@ -59,14 +59,12 @@ interface NoteToInsert {
 }
 
 // Load entrepreneur notes from seed data
-const seedDataPath = path.join(
-    __dirname,
-    "../../seed-data/entrepreneur-notes.json"
-);
-const entrepreneurNotes = JSON.parse(fs.readFileSync(seedDataPath, "utf8"));
+const seedDataPath = path.join(__dirname, "../../seed-data/em-notes.json");
+
+const emNotes = JSON.parse(fs.readFileSync(seedDataPath, "utf8"));
 
 // Transform the data to match our expected format
-const sampleNotes: SeedNote[] = entrepreneurNotes.map((note: any) => ({
+const sampleNotes: SeedNote[] = emNotes.map((note: any) => ({
     content: note.content,
     contexts: note.contexts || [],
     tags: note.tags || [],
@@ -199,32 +197,23 @@ async function updateNotesWithEmbeddings(
 }
 
 /**
- * Get past 5 days (excluding today)
+ * Get past days (excluding today) - enough to accommodate all notes
  */
-function getPastFiveDays(): Date[] {
+function getPastDays(noteCount: number, maxNotesPerDay: number): Date[] {
     const dates: Date[] = [];
     const now = new Date();
 
-    // Start from yesterday and go back 5 days
-    for (let i = 1; i <= 5; i++) {
+    // Calculate how many days we need to accommodate all notes
+    const daysNeeded = Math.ceil(noteCount / maxNotesPerDay);
+
+    // Start from yesterday and go back the required number of days
+    for (let i = 1; i <= daysNeeded; i++) {
         const date = new Date(now);
         date.setDate(now.getDate() - i);
         dates.push(date);
     }
 
     return dates.reverse(); // Return in chronological order (oldest first)
-}
-
-/**
- * Shuffle array to distribute notes randomly across days
- */
-function shuffleArray<T>(array: T[]): T[] {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
 }
 
 /**
@@ -250,10 +239,16 @@ async function seedSqliteDatabase() {
         const db = createSqliteDb();
         console.log(`📚 Loaded ${sampleNotes.length} seed notes`);
 
-        // Get past 5 days
-        const pastDays = getPastFiveDays();
-        console.log(`📅 Distributing notes across past 5 days:`);
-        pastDays.forEach((date, index) => {
+        // Use notes in their original order
+        const notesToProcess = sampleNotes;
+        const maxNotesPerDay = 10; // Allow up to 10 notes per day
+
+        // Get enough past days to accommodate all notes
+        const pastDays = getPastDays(notesToProcess.length, maxNotesPerDay);
+        console.log(
+            `📅 Distributing notes across past ${pastDays.length} days:`
+        );
+        pastDays.forEach((date: Date, index: number) => {
             console.log(
                 `  Day ${index + 1}: ${dateToSlug(
                     date
@@ -261,10 +256,7 @@ async function seedSqliteDatabase() {
             );
         });
 
-        // Shuffle notes to distribute randomly
-        const shuffledNotes = shuffleArray(sampleNotes);
-
-        // Distribute notes across the 5 days (max 4 notes per day for 20 total notes)
+        // Distribute notes across the calculated days
         const notesToInsert: NoteToInsert[] = [];
 
         const notesDataForEmbeddings: Array<{
@@ -275,24 +267,22 @@ async function seedSqliteDatabase() {
             note_type?: string;
         }> = [];
 
-        const maxNotesPerDay = Math.min(4, Math.ceil(shuffledNotes.length / 5));
-
         let noteIndex = 0;
         for (const date of pastDays) {
             const daySlug = dateToSlug(date);
             const notesForThisDay = Math.min(
                 maxNotesPerDay,
-                shuffledNotes.length - noteIndex
+                notesToProcess.length - noteIndex
             );
 
             console.log(`📝 Creating ${notesForThisDay} notes for ${daySlug}`);
 
             for (
                 let i = 0;
-                i < notesForThisDay && noteIndex < shuffledNotes.length;
+                i < notesForThisDay && noteIndex < notesToProcess.length;
                 i++
             ) {
-                const seedNote = shuffledNotes[noteIndex];
+                const seedNote = notesToProcess[noteIndex];
                 const noteTimestamp = getRandomTimeForDate(date);
                 const noteId = uuidv4();
 
@@ -327,7 +317,7 @@ async function seedSqliteDatabase() {
                 noteIndex++;
             }
 
-            if (noteIndex >= shuffledNotes.length) {
+            if (noteIndex >= notesToProcess.length) {
                 break;
             }
         }

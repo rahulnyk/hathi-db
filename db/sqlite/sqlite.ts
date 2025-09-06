@@ -9,7 +9,7 @@
 import {
     createSqliteDb,
     getRawSqliteConnection,
-    executeSql,
+    // executeSql,
 } from "./connection";
 import {
     notes,
