@@ -82,18 +82,6 @@ export interface StructurizeNoteResponse {
     structuredContent: string;
 }
 
-// Q&A types
-// export interface QARequest {
-//     question: string;
-//     context: string; // Combined relevant notes content
-//     userContexts: string[];
-// }
-
-// export interface QAResponse {
-//     answer: string;
-//     relevantSources?: string[]; // Note IDs that were used as context
-// }
-
 // Types for deadline extraction
 export interface ExtractDeadlineRequest {
     content: string;
