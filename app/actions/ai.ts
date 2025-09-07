@@ -1,6 +1,6 @@
 "use server";
 
-import { aiService } from "@/lib/ai";
+import { getAiService } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
 
 /**
@@ -10,6 +10,9 @@ import { measureExecutionTime } from "@/lib/performance";
  * @param userContexts - Array of existing user contexts
  * @returns Promise that resolves to an array of suggested contexts
  */
+
+const aiService = getAiService();
+
 export async function suggestContexts({
     content,
     userContexts,
@@ -19,12 +22,12 @@ export async function suggestContexts({
 }): Promise<string[]> {
     return measureExecutionTime("suggestContexts", async () => {
         try {
-            const response = await aiService.suggestContexts({
+            const { suggestions } = await aiService.suggestContexts({
                 content,
                 userContexts,
             });
 
-            return response.suggestions;
+            return suggestions;
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -49,10 +52,10 @@ export async function extractDeadlineFromContent({
 }): Promise<string | null> {
     return measureExecutionTime("extractDeadlineFromContent", async () => {
         try {
-            const response = await aiService.extractDeadline({
+            const { deadline } = await aiService.extractDeadline({
                 content,
             });
-            return response.deadline;
+            return deadline;
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -82,11 +85,11 @@ export async function structurizeNote({
 }): Promise<string> {
     return measureExecutionTime("structurizeNote", async () => {
         try {
-            const response = await aiService.structurizeNote({
+            const { structuredContent } = await aiService.structurizeNote({
                 content,
                 userContexts,
             });
-            return response.structuredContent;
+            return structuredContent;
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error

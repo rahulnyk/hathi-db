@@ -1,7 +1,7 @@
 // import { google } from "@ai-sdk/google";
 import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
-import { aiService } from "@/lib/ai";
+import { getAiService } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
 import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
@@ -10,6 +10,8 @@ import { aiConfig } from "@/lib/ai";
 export const maxDuration = 50;
 
 const modelname = aiConfig.agentModel.model;
+const aiService = getAiService();
+const model = aiService.getLanguageModel(modelname);
 
 export async function POST(req: Request) {
     try {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
         const logger = createChatLogger(id);
 
         const result = streamText({
-            model: aiService.getLanguageModel(modelname),
+            model,
             messages: convertToModelMessages(messages, {
                 ignoreIncompleteToolCalls: true,
             }),

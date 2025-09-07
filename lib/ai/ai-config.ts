@@ -27,7 +27,7 @@ export const AI_CONFIG: Record<string, AIConfig> = {
         provider: {
             name: "Google",
             apiKey: process.env.GOOGLE_AI_API_KEY,
-            baseURL: process.env.GOOGLE_AI_BASE_URL || null,
+            baseURL: process.env.GOOGLE_AI_BASE_URL,
         },
     },
 } as const;

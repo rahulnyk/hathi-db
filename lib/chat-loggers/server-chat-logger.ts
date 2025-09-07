@@ -69,7 +69,7 @@ function shouldLog(isError: boolean = false): boolean {
  * Determine if console logging is enabled
  */
 function shouldLogToConsole(): boolean {
-    return process.env.LOG_CHAT_TO_CONSOLE === "true";
+    return process.env.LOG_CHAT_TO_SERVER === "true";
 }
 
 /**

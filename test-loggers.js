@@ -2,7 +2,10 @@
 
 console.log("Environment:", process.env.NODE_ENV);
 console.log("LOG_CHAT_TO_CSV:", process.env.LOG_CHAT_TO_CSV);
-console.log("LOG_CHAT_TO_CONSOLE:", process.env.LOG_CHAT_TO_CONSOLE);
+console.log(
+    "NEXT_PUBLIC_LOG_CHAT_TO_CONSOLE:",
+    process.env.NEXT_PUBLIC_LOG_CHAT_TO_CONSOLE
+);
 
 // Test the helper functions
 function shouldLog(isError = false) {
@@ -13,7 +16,7 @@ function shouldLog(isError = false) {
 }
 
 function shouldLogToConsole() {
-    return process.env.LOG_CHAT_TO_CONSOLE === "true";
+    return process.env.NEXT_PUBLIC_LOG_CHAT_TO_CONSOLE === "true";
 }
 
 function shouldLogToCsv() {

@@ -2,7 +2,7 @@
 
 import { fetchNotesByIds } from "@/app/actions/notes";
 import { generateText } from "ai";
-import { aiService } from "@/lib/ai";
+import { getAiService } from "@/lib/ai";
 import { summarizeNotesPrompt } from "@/lib/prompts/summarize-notes-prompt";
 
 /**
@@ -36,6 +36,7 @@ export async function summarizeNotes(
     params: SummarizeNotesParams
 ): Promise<SummarizeNotesResult> {
     try {
+        const aiService = getAiService();
         const { noteIds, includeMetadata = true } = params;
 
         // Get the notes by their IDs

@@ -45,11 +45,11 @@ export class GeminiAIService implements AIService {
         this.config = config;
 
         // Get API key from config or environment
-        const apiKey = config.provider.apiKey || process.env.GOOGLE_AI_API_KEY;
+        const apiKey = config.provider.apiKey;
 
         if (!apiKey) {
             throw new Error(
-                "Google AI API key is required. Please provide it in the config or set GOOGLE_AI_API_KEY environment variable."
+                "Google AI API key is required. Please provide it in the config"
             );
         }
 

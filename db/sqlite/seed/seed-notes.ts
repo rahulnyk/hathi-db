@@ -13,10 +13,11 @@ import { eq } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
-import { aiService } from "../../../lib/ai";
+import { getAiService } from "../../../lib/ai";
 import { getCurrentEmbeddingConfig } from "../../../lib/ai";
 import { dateToSlug } from "../../../lib/utils";
 
+const aiService = getAiService();
 // Load environment variables
 dotenv.config({ path: ".env.local" });
 
@@ -60,33 +61,6 @@ const sampleNotes: SeedNote[] = emNotes.map((note: any) => ({
     status: note.status || null,
     deadline: note.deadline || null,
 }));
-
-/**
- * Generate document embedding using AI provider
- */
-async function generateDocumentEmbedding(
-    content: string,
-    contexts?: string[],
-    tags?: string[],
-    noteType?: string
-): Promise<number[]> {
-    if (!aiService) {
-        throw new Error("AI provider not available - missing API key");
-    }
-
-    try {
-        const response = await aiService.generateDocumentEmbedding({
-            content,
-            contexts,
-            tags,
-            noteType,
-        });
-        return response.embedding;
-    } catch (error) {
-        console.error("Error generating embedding:", error);
-        throw error;
-    }
-}
 
 /**
  * Generate embeddings for multiple notes in batch
