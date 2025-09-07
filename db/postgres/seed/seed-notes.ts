@@ -1,27 +1,17 @@
 import * as dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import { GeminiAI } from "@/lib/ai/gemini";
-import { getCurrentEmbeddingConfig } from "@/lib/ai/ai-config";
+import { getAiService } from "@/lib/ai";
+import { getCurrentEmbeddingConfig } from "@/lib/ai";
 import { dateToSlug } from "@/lib/utils";
 import { createClient } from "../connection";
 import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import seedData from "@/db/seed-data/entrepreneur-notes.json";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
+const aiService = getAiService();
 // Load environment variables
 dotenv.config({ path: ".env.local" });
-
-const googleApiKey = process.env.GOOGLE_AI_API_KEY!;
-
-if (!googleApiKey) {
-    console.error("Missing required environment variables: GOOGLE_AI_API_KEY");
-    process.exit(1);
-}
-
-const googleProvider = createGoogleGenerativeAI({ apiKey: googleApiKey });
-const aiProvider = new GeminiAI(googleProvider);
 
 interface SeedNote {
     content: string;
@@ -46,28 +36,6 @@ interface NoteToInsert {
     embedding_created_at?: Date;
     // Context names to be linked in the DB (includes date context and explicit contexts)
     contextNames: string[];
-}
-
-// Function to generate document embedding using AI provider
-async function generateDocumentEmbedding(
-    content: string,
-    contexts?: string[],
-    tags?: string[],
-    noteType?: string
-): Promise<number[]> {
-    try {
-        const response = await aiProvider.generateDocumentEmbedding({
-            content,
-            contexts,
-            tags,
-            noteType,
-        });
-
-        return response.embedding;
-    } catch (error) {
-        console.error("Error generating embedding:", error);
-        throw error;
-    }
 }
 
 // Function to generate embeddings for multiple notes in batch
@@ -96,7 +64,7 @@ async function generateBatchEmbeddings(
         };
 
         // Generate batch embeddings
-        const response = await aiProvider.generateBatchDocumentEmbeddings(
+        const response = await aiService.generateBatchDocumentEmbeddings(
             batchRequest
         );
 

@@ -1,8 +1,9 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText } from "ai";
+import { generateText, LanguageModel } from "ai";
 import { embed, embedMany } from "ai";
 import {
-    AIProvider,
+    AIService,
+    AIConfig,
     EmbeddingRequest,
     EmbeddingResponse,
     DocumentEmbeddingRequest,
@@ -35,19 +36,32 @@ import {
     extractDeadlineSystemPrompt,
     extractDeadlineUserPrompt,
 } from "../prompts/extract-deadline-prompts";
-import { AI_MODEL_CONFIG } from "./ai-config";
 
-export class GeminiAI implements AIProvider {
+export class GeminiAIService implements AIService {
     private google: ReturnType<typeof createGoogleGenerativeAI>;
-    private textModel: string;
-    private embeddingModelName: string;
-    private liteTextModel: string;
+    private config: AIConfig;
 
-    constructor(googleProvider: ReturnType<typeof createGoogleGenerativeAI>) {
-        this.google = googleProvider;
-        this.textModel = AI_MODEL_CONFIG.GEMINI.textGeneration.model;
-        this.liteTextModel = AI_MODEL_CONFIG.GEMINI.textGenerationLite.model;
-        this.embeddingModelName = AI_MODEL_CONFIG.GEMINI.embedding.model;
+    constructor(config: AIConfig) {
+        this.config = config;
+
+        // Get API key from config or environment
+        const apiKey = config.provider.apiKey;
+
+        if (!apiKey) {
+            throw new Error(
+                "Google AI API key is required. Please provide it in the config"
+            );
+        }
+
+        // Create provider with config
+        const providerOptions: { apiKey: string; baseURL?: string } = {
+            apiKey,
+        };
+        if (config.provider.baseURL) {
+            providerOptions.baseURL = config.provider.baseURL;
+        }
+
+        this.google = createGoogleGenerativeAI(providerOptions);
     }
 
     async suggestContexts(
@@ -61,7 +75,7 @@ export class GeminiAI implements AIProvider {
 
         try {
             const result = await generateText({
-                model: this.google(this.liteTextModel),
+                model: this.google(this.config.textGenerationLite.model),
                 system: systemPrompt,
                 prompt: userPrompt,
                 temperature: 0.2, // Low temperature for consistent, faster responses
@@ -94,12 +108,11 @@ export class GeminiAI implements AIProvider {
     ): Promise<EmbeddingResponse> {
         try {
             const result = await embed({
-                model: this.google.textEmbedding(this.embeddingModelName),
+                model: this.google.textEmbedding(this.config.embedding.model),
                 value: request.content,
                 providerOptions: {
                     google: {
-                        outputDimensionality:
-                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                        outputDimensionality: this.config.embedding.dimensions,
                     },
                 },
             });
@@ -124,12 +137,11 @@ export class GeminiAI implements AIProvider {
             );
 
             const result = await embed({
-                model: this.google.textEmbedding(this.embeddingModelName),
+                model: this.google.textEmbedding(this.config.embedding.model),
                 value: prompt,
                 providerOptions: {
                     google: {
-                        outputDimensionality:
-                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                        outputDimensionality: this.config.embedding.dimensions,
                     },
                 },
             });
@@ -149,12 +161,11 @@ export class GeminiAI implements AIProvider {
             const prompt = queryEmbeddingPrompt(request.question);
 
             const result = await embed({
-                model: this.google.textEmbedding(this.embeddingModelName),
+                model: this.google.textEmbedding(this.config.embedding.model),
                 value: prompt,
                 providerOptions: {
                     google: {
-                        outputDimensionality:
-                            AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                        outputDimensionality: this.config.embedding.dimensions,
                     },
                 },
             });
@@ -190,12 +201,14 @@ export class GeminiAI implements AIProvider {
 
                 // Process this batch using embedMany
                 const result = await embedMany({
-                    model: this.google.textEmbedding(this.embeddingModelName),
+                    model: this.google.textEmbedding(
+                        this.config.embedding.model
+                    ),
                     values: prompts,
                     providerOptions: {
                         google: {
                             outputDimensionality:
-                                AI_MODEL_CONFIG.GEMINI.embedding.dimensions,
+                                this.config.embedding.dimensions,
                         },
                     },
                 });
@@ -233,7 +246,7 @@ export class GeminiAI implements AIProvider {
 
         try {
             const result = await generateText({
-                model: this.google(this.textModel),
+                model: this.google(this.config.textGeneration.model),
                 system: systemPrompt,
                 prompt: userPrompt,
             });
@@ -243,29 +256,6 @@ export class GeminiAI implements AIProvider {
             throw this.handleGeminiError(error);
         }
     }
-
-    // async answerQuestion(request: QARequest): Promise<QAResponse> {
-    //     const systemPrompt = qaSystemPrompt();
-    //     const userPrompt = qaUserPrompt(
-    //         request.question,
-    //         request.context,
-    //         request.userContexts
-    //     );
-
-    //     try {
-    //         const result = await this.genAI.models.generateContent({
-    //             model: this.textModel,
-    //             contents: [
-    //                 { parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-    //             ],
-    //         });
-    //         const response =
-    //             result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    //         return { answer: response };
-    //     } catch (error) {
-    //         throw this.handleGeminiError(error);
-    //     }
-    // }
 
     private handleGeminiError(error: unknown): AIError {
         const errorMessage =
@@ -319,7 +309,7 @@ export class GeminiAI implements AIProvider {
 
         try {
             const result = await generateText({
-                model: this.google(this.liteTextModel),
+                model: this.google(this.config.textGenerationLite.model),
                 system: systemPrompt,
                 prompt: userPrompt,
                 temperature: 0.1, // Low temperature for deterministic output
@@ -354,5 +344,15 @@ export class GeminiAI implements AIProvider {
         } catch (error) {
             throw this.handleGeminiError(error);
         }
+    }
+
+    /**
+     * Get the underlying language model for direct usage
+     * @param modelName - Optional model name to use (defaults to textGeneration model)
+     * @returns The Google AI model instance
+     */
+    getLanguageModel(modelName?: string): LanguageModel {
+        const model = modelName || this.config.textGeneration.model;
+        return this.google(model);
     }
 }
