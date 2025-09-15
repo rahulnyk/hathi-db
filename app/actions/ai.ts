@@ -1,6 +1,6 @@
 "use server";
 
-import { getAiService } from "@/lib/ai";
+import { getAiService, getEmbeddingService } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
 
 /**
@@ -12,6 +12,7 @@ import { measureExecutionTime } from "@/lib/performance";
  */
 
 const aiService = getAiService();
+const embeddingService = getEmbeddingService();
 
 export async function suggestContexts({
     content,
@@ -123,7 +124,7 @@ export async function generateDocumentEmbedding({
 }): Promise<number[]> {
     return measureExecutionTime("generateDocumentEmbedding", async () => {
         try {
-            const response = await aiService.generateDocumentEmbedding({
+            const response = await embeddingService.generateDocumentEmbedding({
                 content,
                 contexts,
                 tags,
@@ -156,7 +157,7 @@ export async function generateQueryEmbedding({
 }): Promise<number[]> {
     return measureExecutionTime("generateQueryEmbedding", async () => {
         try {
-            const response = await aiService.generateQueryEmbedding({
+            const response = await embeddingService.generateQueryEmbedding({
                 question,
             });
             return response.embedding;

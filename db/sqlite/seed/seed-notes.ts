@@ -5,6 +5,10 @@
  * Includes embedding generation for semantic search functionality.
  */
 
+// Load environment variables FIRST
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
 import { createSqliteDb } from "../connection";
 import { notes, contexts, notesContexts } from "../schema";
 import { SqliteAdapter } from "../sqlite";
@@ -12,14 +16,11 @@ import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
-import * as dotenv from "dotenv";
-import { getAiService } from "../../../lib/ai";
-import { getCurrentEmbeddingConfig } from "../../../lib/ai";
+import { getAiService, getEmbeddingService } from "../../../lib/ai";
 import { dateToSlug } from "../../../lib/utils";
 
 const aiService = getAiService();
-// Load environment variables
-dotenv.config({ path: ".env.local" });
+const embeddingService = getEmbeddingService();
 
 // Define types for better type safety
 interface SeedNote {
@@ -97,7 +98,7 @@ async function generateBatchEmbeddings(
         };
 
         // Generate batch embeddings
-        const response = await aiService.generateBatchDocumentEmbeddings(
+        const response = await embeddingService.generateBatchDocumentEmbeddings(
             batchRequest
         );
 
@@ -133,7 +134,7 @@ async function updateNotesWithEmbeddings(
     );
 
     const sqliteAdapter = new SqliteAdapter();
-    const embeddingModel = getCurrentEmbeddingConfig().model;
+    const embeddingModel = embeddingService.getCurrentEmbeddingConfig().model;
 
     for (const embeddingData of embeddingsData) {
         try {

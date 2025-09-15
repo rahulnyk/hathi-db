@@ -1,14 +1,16 @@
-import { AIService } from "./types";
+import { AIService, EmbeddingService } from "./types";
 import { GeminiAIService } from "./gemini";
+import { GeminiEmbeddingService } from "./gemini-embedding";
 import { AI_CONFIG } from "./ai-config";
 
 const provider = "GEMINI";
 
-// Get the AI configuration for the specified provider
+// Get the AI configuration for the specified provider (now with lazy evaluation)
 export const aiConfig = AI_CONFIG[provider];
 
 // Singleton instance of the AI service
 let aiServiceInstance: AIService | null = null;
+let embeddingServiceInstance: EmbeddingService | null = null;
 
 /**
  * Returns a singleton instance of the AI service.
@@ -17,15 +19,23 @@ let aiServiceInstance: AIService | null = null;
  */
 export function getAiService(): AIService {
     if (!aiServiceInstance) {
-        aiServiceInstance = new GeminiAIService(aiConfig);
+        aiServiceInstance = new GeminiAIService(AI_CONFIG[provider]);
     }
     return aiServiceInstance;
 }
 
+/**
+ * Returns a singleton instance of the Embedding service.
+ * @returns EmbeddingService instance
+ */
+export function getEmbeddingService(): EmbeddingService {
+    if (!embeddingServiceInstance) {
+        embeddingServiceInstance = new GeminiEmbeddingService(
+            AI_CONFIG[provider]
+        );
+    }
+    return embeddingServiceInstance;
+}
+
 // Export the AI provider interface and types
 export * from "./types";
-
-// Current embedding model configuration.
-export function getCurrentEmbeddingConfig() {
-    return aiConfig.embedding;
-}

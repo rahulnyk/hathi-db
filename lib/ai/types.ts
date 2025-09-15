@@ -96,6 +96,18 @@ export interface AIService {
     suggestContexts(
         request: SuggestContextsRequest
     ): Promise<SuggestContextsResponse>;
+    structurizeNote(
+        request: StructurizeNoteRequest
+    ): Promise<StructurizeNoteResponse>;
+    // answerQuestion(request: QARequest): Promise<QAResponse>;
+    extractDeadline(
+        request: ExtractDeadlineRequest
+    ): Promise<ExtractDeadlineResponse>;
+    // Expose the underlying AI provider for direct model usage
+    getLanguageModel(modelName?: string): LanguageModel;
+}
+
+export interface EmbeddingService {
     generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResponse>;
     generateDocumentEmbedding(
         request: DocumentEmbeddingRequest
@@ -106,15 +118,7 @@ export interface AIService {
     generateBatchDocumentEmbeddings(
         request: BatchDocumentEmbeddingRequest
     ): Promise<BatchDocumentEmbeddingResponse>;
-    structurizeNote(
-        request: StructurizeNoteRequest
-    ): Promise<StructurizeNoteResponse>;
-    // answerQuestion(request: QARequest): Promise<QAResponse>;
-    extractDeadline(
-        request: ExtractDeadlineRequest
-    ): Promise<ExtractDeadlineResponse>;
-    // Expose the underlying AI provider for direct model usage
-    getLanguageModel(modelName?: string): LanguageModel;
+    getCurrentEmbeddingConfig(): { model: string; dimensions: number };
 }
 
 // Error types

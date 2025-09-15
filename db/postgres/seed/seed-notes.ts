@@ -1,7 +1,9 @@
+// Load environment variables FIRST
 import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
 import { v4 as uuidv4 } from "uuid";
-import { getAiService } from "@/lib/ai";
-import { getCurrentEmbeddingConfig } from "@/lib/ai";
+import { getAiService, getEmbeddingService } from "@/lib/ai";
 import { dateToSlug } from "@/lib/utils";
 import { createClient } from "../connection";
 import { notes, contexts, notesContexts } from "../schema";
@@ -10,8 +12,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import seedData from "@/db/seed-data/entrepreneur-notes.json";
 
 const aiService = getAiService();
-// Load environment variables
-dotenv.config({ path: ".env.local" });
+const embeddingService = getEmbeddingService();
 
 interface SeedNote {
     content: string;
@@ -64,7 +65,7 @@ async function generateBatchEmbeddings(
         };
 
         // Generate batch embeddings
-        const response = await aiService.generateBatchDocumentEmbeddings(
+        const response = await embeddingService.generateBatchDocumentEmbeddings(
             batchRequest
         );
 
@@ -105,7 +106,8 @@ async function updateNotesWithEmbeddings(
                 .update(notes)
                 .set({
                     embedding: embeddingData.embedding,
-                    embedding_model: getCurrentEmbeddingConfig().model,
+                    embedding_model:
+                        embeddingService.getCurrentEmbeddingConfig().model,
                     embedding_created_at: new Date(),
                 })
                 .where(eq(notes.id, embeddingData.id));

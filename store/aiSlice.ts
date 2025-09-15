@@ -10,7 +10,7 @@ import {
     updateNoteContent,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { getCurrentEmbeddingConfig } from "@/lib/ai";
+import { getEmbeddingService } from "@/lib/ai";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
@@ -173,7 +173,8 @@ export const generateEmbeddingThunk = createAsyncThunk(
                 noteId,
                 patches: {
                     embedding: embedding,
-                    embedding_model: getCurrentEmbeddingConfig().model,
+                    embedding_model:
+                        getEmbeddingService().getCurrentEmbeddingConfig().model,
                     embedding_created_at: new Date().toISOString(),
                 },
             });
