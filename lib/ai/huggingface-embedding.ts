@@ -120,16 +120,12 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
                 );
             }
 
-            const prefixedText = this.addE5Prefix(text);
             console.log(
-                `🔄 Generating embedding for: "${prefixedText.substring(
-                    0,
-                    50
-                )}..."`
+                `🔄 Generating embedding for: "${text.substring(0, 50)}..."`
             );
 
             const result = await Promise.race([
-                this.embeddingPipeline(prefixedText, {
+                this.embeddingPipeline(text, {
                     pooling: "mean",
                     normalize: true,
                 }),
@@ -288,20 +284,6 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
         }
     }
 
-    /**
-     * Add appropriate prefix for E5 model
-     * E5 models require "query: " or "passage: " prefixes for optimal performance
-     */
-    private addE5Prefix(text: string): string {
-        // If text already has a prefix, don't add another one
-        if (text.startsWith("query: ") || text.startsWith("passage: ")) {
-            return text;
-        }
-
-        // Use "query: " as default prefix (works for both queries and general text)
-        return `query: ${text}`;
-    }
-
     async generateEmbedding(
         request: EmbeddingRequest
     ): Promise<EmbeddingResponse> {
@@ -316,12 +298,11 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
             request.content,
             request.contexts,
             request.tags,
-            request.noteType
+            request.noteType,
+            this.config.embedding.model
         );
 
-        // For documents, use "passage: " prefix for better retrieval performance
-        const prefixedPrompt = `passage: ${prompt}`;
-        const embedding = await this.generateEmbeddingVector(prefixedPrompt);
+        const embedding = await this.generateEmbeddingVector(prompt);
 
         return { embedding };
     }
@@ -329,11 +310,12 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
     async generateQueryEmbedding(
         request: QueryEmbeddingRequest
     ): Promise<QueryEmbeddingResponse> {
-        const prompt = queryEmbeddingPrompt(request.question);
+        const prompt = queryEmbeddingPrompt(
+            request.question,
+            this.config.embedding.model
+        );
 
-        // For queries, use "query: " prefix for better retrieval performance
-        const prefixedPrompt = `query: ${prompt}`;
-        const embedding = await this.generateEmbeddingVector(prefixedPrompt);
+        const embedding = await this.generateEmbeddingVector(prompt);
 
         return { embedding };
     }
@@ -355,10 +337,10 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
                         doc.content,
                         doc.contexts,
                         doc.tags,
-                        doc.noteType
+                        doc.noteType,
+                        this.config.embedding.model
                     );
-                    const prefixedPrompt = `passage: ${prompt}`;
-                    return this.generateEmbeddingVector(prefixedPrompt);
+                    return this.generateEmbeddingVector(prompt);
                 });
 
                 const batchEmbeddings = await Promise.all(batchPromises);

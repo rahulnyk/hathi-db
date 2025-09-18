@@ -75,7 +75,8 @@ export class GeminiEmbeddingService implements EmbeddingService {
                 request.content,
                 request.contexts,
                 request.tags,
-                request.noteType
+                request.noteType,
+                this.config.embedding.model
             );
 
             const result = await embed({
@@ -100,7 +101,10 @@ export class GeminiEmbeddingService implements EmbeddingService {
         request: QueryEmbeddingRequest
     ): Promise<QueryEmbeddingResponse> {
         try {
-            const prompt = queryEmbeddingPrompt(request.question);
+            const prompt = queryEmbeddingPrompt(
+                request.question,
+                this.config.embedding.model
+            );
 
             const result = await embed({
                 model: this.google.textEmbedding(this.config.embedding.model),
@@ -137,7 +141,8 @@ export class GeminiEmbeddingService implements EmbeddingService {
                         doc.content,
                         doc.contexts,
                         doc.tags,
-                        doc.noteType
+                        doc.noteType,
+                        this.config.embedding.model
                     )
                 );
 
