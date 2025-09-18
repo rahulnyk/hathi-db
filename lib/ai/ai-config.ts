@@ -1,31 +1,23 @@
 /**
  * AI Model Configuration
+ *
+ * Separate configurations for LLM (text generation) and embedding services.
  */
 
-import { AIConfig } from "./types";
+import { AIConfig, EmbeddingConfig } from "./types";
 
-// Function to get AI config (lazy evaluation)
 export function getAIConfig(): Record<string, AIConfig> {
     return {
-        // Google Gemini models
         GEMINI: {
-            // Text generation model
             textGeneration: {
-                model: "gemini-2.5-flash",
+                model: process.env.GEMINI_TEXT_GENERATION_MODEL || "gemini-2.5-flash",
             },
-            // Lite model for smaller tasks like date extraction
             textGenerationLite: {
-                model: "gemini-2.0-flash-lite",
+                model: process.env.GEMINI_TEXT_GENERATION_LITE_MODEL || "gemini-2.0-flash-lite",
             },
             agentModel: {
-                model: "gemini-2.5-flash",
+                model: process.env.GEMINI_AGENT_MODEL || "gemini-2.5-flash",
             },
-            // Embedding model - gemini-embedding-exp-03-07 produces 1536 dimensions
-            embedding: {
-                model: "gemini-embedding-exp-03-07",
-                dimensions: 1536,
-            },
-            // Provider configuration
             provider: {
                 name: "Google",
                 apiKey: process.env.GOOGLE_AI_API_KEY,
@@ -35,8 +27,34 @@ export function getAIConfig(): Record<string, AIConfig> {
     } as const;
 }
 
-// For backward compatibility, export AI_CONFIG but with lazy evaluation
-// This ensures existing imports continue to work while fixing the environment variable issue
+export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
+    return {
+        GEMINI: {
+            embedding: {
+                model: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-exp-03-07",
+                dimensions: 1536,
+            },
+            provider: {
+                name: "Google",
+                apiKey: process.env.GOOGLE_AI_API_KEY,
+                baseURL: process.env.GOOGLE_AI_BASE_URL,
+            },
+        },
+        HUGGINGFACE: {
+            embedding: {
+                model: process.env.HUGGINGFACE_EMBEDDING_MODEL || "intfloat/multilingual-e5-base",
+                dimensions: 768,
+            },
+            provider: {
+                name: "Hugging Face",
+                apiKey: undefined,
+                baseURL: undefined,
+            },
+        },
+    } as const;
+}
+
+// Backward compatibility proxy
 export const AI_CONFIG = new Proxy({} as Record<string, AIConfig>, {
     get(_, prop: string) {
         return getAIConfig()[prop];
@@ -49,3 +67,19 @@ export const AI_CONFIG = new Proxy({} as Record<string, AIConfig>, {
         return prop in getAIConfig();
     },
 });
+
+export const EMBEDDING_CONFIG = new Proxy(
+    {} as Record<string, EmbeddingConfig>,
+    {
+        get(_, prop: string) {
+            return getEmbeddingConfig()[prop];
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ownKeys(_) {
+            return Object.keys(getEmbeddingConfig());
+        },
+        has(_, prop: string) {
+            return prop in getEmbeddingConfig();
+        },
+    }
+);

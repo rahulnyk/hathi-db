@@ -6,11 +6,26 @@ import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 
 /**
+ * Substitute environment variables in SQL content
+ */
+function substituteEnvVariables(sql: string): string {
+    // Get embedding dimensions from environment variable, default to 768 for local embeddings
+    const embeddingDims = process.env.EMBEDDINGS_DIMS || "768";
+
+    // Replace ${EMBEDDINGS_DIMS} with the actual value
+    return sql.replace(/\$\{EMBEDDINGS_DIMS\}/g, embeddingDims);
+}
+
+/**
  * Custom migration runner that handles SQL files in order
  * This ensures extensions, triggers, and functions are applied correctly
  */
 async function runMigrations() {
     console.log("🚀 Starting database migration...");
+
+    // Log the embedding dimensions being used
+    const embeddingDims = process.env.EMBEDDINGS_DIMS || "768";
+    console.log(`📏 Using embedding dimensions: ${embeddingDims}`);
 
     // Test connection first
     const connectionTest = await testConnection();
@@ -41,7 +56,10 @@ async function runMigrations() {
             console.log(`\n🔄 Executing migration: ${file}`);
 
             const filePath = join(migrateDir, file);
-            const sql = readFileSync(filePath, "utf-8");
+            let sql = readFileSync(filePath, "utf-8");
+
+            // Substitute environment variables in SQL
+            sql = substituteEnvVariables(sql);
 
             try {
                 // Split by statement-breakpoint and execute each statement

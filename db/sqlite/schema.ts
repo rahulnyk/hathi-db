@@ -77,7 +77,7 @@ export const notes = sqliteTable(
         note_type: text("note_type"),
 
         // Embedding storage (JSON array to match PostgreSQL vector)
-        embedding: text("embedding"), // JSON.stringify(number[]) - 1536 dimensions
+        embedding: text("embedding"), // JSON.stringify(number[]) - 768 dimensions (multilingual-e5-base)
         embedding_model: text("embedding_model", { length: 50 }),
         embedding_created_at: integer("embedding_created_at"),
 

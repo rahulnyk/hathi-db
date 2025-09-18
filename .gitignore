@@ -49,3 +49,6 @@ performance_log.csv
 *.csv
 .vscode/*
 data/
+
+# Huggingface
+.cache

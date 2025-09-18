@@ -2,7 +2,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { embed, embedMany } from "ai";
 import {
     EmbeddingService,
-    AIConfig,
+    EmbeddingConfig,
     EmbeddingRequest,
     EmbeddingResponse,
     DocumentEmbeddingRequest,
@@ -20,9 +20,9 @@ import {
 
 export class GeminiEmbeddingService implements EmbeddingService {
     private google: ReturnType<typeof createGoogleGenerativeAI>;
-    private config: AIConfig;
+    private config: EmbeddingConfig;
 
-    constructor(config: AIConfig) {
+    constructor(config: EmbeddingConfig) {
         this.config = config;
 
         // Get API key from config or environment

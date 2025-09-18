@@ -54,7 +54,7 @@ $$ LANGUAGE plpgsql;
 
 -- Function to search notes by semantic similarity using embeddings (used by agent tools)
 CREATE OR REPLACE FUNCTION search_notes_by_similarity(
-    p_query_embedding vector(1536), -- OpenAI embedding dimension
+    p_query_embedding vector(${EMBEDDINGS_DIMS}), -- Dynamic embedding dimension from environment
     p_similarity_threshold FLOAT DEFAULT 0.7,
     p_limit INTEGER DEFAULT 10
 )
