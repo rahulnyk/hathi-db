@@ -105,6 +105,18 @@ yarn install
     # Google AI Configuration
     GOOGLE_AI_API_KEY=your-google-ai-api-key
 
+    # AI Model Configuration (Optional - uses defaults if not specified)
+    GEMINI_TEXT_GENERATION_MODEL=gemini-2.5-flash
+    GEMINI_TEXT_GENERATION_LITE_MODEL=gemini-2.0-flash-lite
+    GEMINI_AGENT_MODEL=gemini-2.5-flash
+    GEMINI_EMBEDDING_MODEL=gemini-embedding-exp-03-07
+    HUGGINGFACE_EMBEDDING_MODEL=intfloat/multilingual-e5-base
+
+    # Provider Configuration
+    AI_PROVIDER=GEMINI                    # LLM provider
+    EMBEDDING_PROVIDER=HUGGINGFACE        # Embedding provider
+    EMBEDDINGS_DIMS=768                   # Vector dimensions
+
     # Optional: Performance Logging
     LOG_PERF_TO_CSV=false
 
@@ -113,6 +125,14 @@ yarn install
     ```
 
     You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
+
+3. **Validate your configuration** (optional):
+
+    ```bash
+    yarn validate-config
+    ```
+
+    This will check your AI provider settings and model configurations.
 
 ### 4. Choose Your Database Backend
 

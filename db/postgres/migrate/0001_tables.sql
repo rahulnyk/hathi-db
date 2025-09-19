@@ -20,7 +20,7 @@ CREATE TABLE "notes" (
 	"tags" text[],
 	"suggested_contexts" text[],
 	"note_type" text,
-	"embedding" vector(1536),
+	"embedding" vector(${EMBEDDINGS_DIMS}),
 	"embedding_model" varchar(50),
 	"embedding_created_at" timestamp with time zone,
 	"deadline" timestamp with time zone,

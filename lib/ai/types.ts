@@ -1,6 +1,5 @@
 import type { LanguageModel } from "ai";
 
-// Configuration types
 export interface AIProviderConfig {
     name: string;
     apiKey?: string;
@@ -17,14 +16,16 @@ export interface AIConfig {
     agentModel: {
         model: string;
     };
+    provider: AIProviderConfig;
+}
+
+export interface EmbeddingConfig {
     embedding: {
         model: string;
         dimensions: number;
     };
     provider: AIProviderConfig;
 }
-
-// Shared types for AI operations
 
 export interface SuggestContextsRequest {
     content: string;
@@ -35,7 +36,6 @@ export interface SuggestContextsResponse {
     suggestions: string[];
 }
 
-// Basic embedding types
 export interface EmbeddingRequest {
     content: string;
 }

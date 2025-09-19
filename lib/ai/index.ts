@@ -1,41 +1,40 @@
 import { AIService, EmbeddingService } from "./types";
 import { GeminiAIService } from "./gemini";
 import { GeminiEmbeddingService } from "./gemini-embedding";
-import { AI_CONFIG } from "./ai-config";
+import { HuggingFaceEmbeddingService } from "./huggingface-embedding";
+import { AI_CONFIG, EMBEDDING_CONFIG } from "./ai-config";
 
-const provider = "GEMINI";
+const aiProvider = process.env.AI_PROVIDER || "GEMINI";
+const embeddingProvider = process.env.EMBEDDING_PROVIDER || "HUGGINGFACE";
 
-// Get the AI configuration for the specified provider (now with lazy evaluation)
-export const aiConfig = AI_CONFIG[provider];
+export const aiConfig = AI_CONFIG[aiProvider];
 
-// Singleton instance of the AI service
 let aiServiceInstance: AIService | null = null;
 let embeddingServiceInstance: EmbeddingService | null = null;
 
-/**
- * Returns a singleton instance of the AI service.
- * This prevents the service from being instantiated on the client-side.
- * @returns AIService instance
- */
 export function getAiService(): AIService {
     if (!aiServiceInstance) {
-        aiServiceInstance = new GeminiAIService(AI_CONFIG[provider]);
+        console.log(`🔧 Using ${aiProvider} for text generation`);
+        aiServiceInstance = new GeminiAIService(AI_CONFIG[aiProvider]);
     }
     return aiServiceInstance;
 }
 
-/**
- * Returns a singleton instance of the Embedding service.
- * @returns EmbeddingService instance
- */
 export function getEmbeddingService(): EmbeddingService {
     if (!embeddingServiceInstance) {
-        embeddingServiceInstance = new GeminiEmbeddingService(
-            AI_CONFIG[provider]
-        );
+        if (embeddingProvider === "HUGGINGFACE") {
+            console.log("🔧 Using Hugging Face Local Embedding Service");
+            embeddingServiceInstance = new HuggingFaceEmbeddingService(
+                EMBEDDING_CONFIG[embeddingProvider]
+            );
+        } else {
+            console.log("🔧 Using Gemini Embedding Service");
+            embeddingServiceInstance = new GeminiEmbeddingService(
+                EMBEDDING_CONFIG[embeddingProvider]
+            );
+        }
     }
     return embeddingServiceInstance;
 }
 
-// Export the AI provider interface and types
 export * from "./types";

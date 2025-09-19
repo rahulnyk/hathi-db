@@ -64,7 +64,9 @@ export const notes = pgTable("notes", {
     note_type: text("note_type"),
 
     // Vector embeddings for semantic search
-    embedding: vector("embedding", { dimensions: 1536 }),
+    embedding: vector("embedding", {
+        dimensions: parseInt(process.env.EMBEDDINGS_DIMS || "768", 10),
+    }),
     embedding_model: varchar("embedding_model", { length: 50 }),
     embedding_created_at: timestamp("embedding_created_at", {
         withTimezone: true,

@@ -11,11 +11,13 @@ import { eq } from "drizzle-orm";
 
 /**
  * Generate a random embedding vector for testing purposes
- * @param dimensions - Number of dimensions for the embedding (default: 1536 for OpenAI)
+ * @param dimensions - Number of dimensions for the embedding (from EMBEDDINGS_DIMS env var, default: 768)
  * @returns Array of random numbers between -1 and 1
  */
-function generateRandomEmbedding(dimensions: number = 1536): number[] {
-    return Array.from({ length: dimensions }, () => Math.random() * 2 - 1);
+function generateRandomEmbedding(dimensions?: number): number[] {
+    const dims =
+        dimensions || parseInt(process.env.EMBEDDINGS_DIMS || "768", 10);
+    return Array.from({ length: dims }, () => Math.random() * 2 - 1);
 }
 
 // Helper function to upsert contexts and return their IDs
