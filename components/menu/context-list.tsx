@@ -91,10 +91,10 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                 >
                     <span
                         className={cn(
-                            "text-sm font-medium truncate",
+                            "truncate",
                             currentContext === contextStat.context
-                                ? "text-blue-900 dark:text-blue-200"
-                                : "text-neutral-700 dark:text-neutral-200"
+                                ? "menu-font-active"
+                                : "menu-font"
                         )}
                         title={contextStat.context}
                     >
@@ -102,10 +102,10 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     </span>
                     <span
                         className={cn(
-                            "ml-2 text-xs font-semibold rounded-full px-2 py-0.5",
+                            "ml-2 rounded-full px-2 py-0.5",
                             currentContext === contextStat.context
-                                ? "text-blue-900 bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200"
-                                : "text-neutral-500 bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300"
+                                ? "menu-font-active bg-blue-500/20 dark:bg-blue-500/20 text-xs"
+                                : "menu-font bg-neutral-200 dark:bg-neutral-700 text-xs"
                         )}
                     >
                         {contextStat.count}

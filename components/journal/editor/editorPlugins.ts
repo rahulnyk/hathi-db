@@ -10,6 +10,7 @@ import {
     handleBracketInsertion,
     handleAutoDeleteBracketPair,
     BRACKET_PAIRS,
+    ContextBracketInfo,
 } from "./helpers";
 import { useChat } from "@ai-sdk/react";
 
@@ -27,6 +28,9 @@ export interface PluginContext {
     chatHook?: ReturnType<typeof useChat>;
     handleSaveEdit: () => void;
     handleCreateNote: () => Promise<void>;
+    // Context suggestion state
+    contextBracketInfo?: ContextBracketInfo;
+    handleCloseSuggestionBox?: () => void;
 }
 
 // Keyboard plugin interface
@@ -57,6 +61,15 @@ const enterKeyPlugin: KeyboardPlugin = {
     modifiers: { shift: false },
     stopPropagation: true,
     handler: async (event, context) => {
+        // If context suggestion box is open, let it handle the enter key
+        if (
+            context.contextBracketInfo?.isInsideBrackets &&
+            context.contextBracketInfo.searchTerm.length >= 2
+        ) {
+            // Don't prevent default here - let the suggestion box handle it
+            return;
+        }
+
         event.preventDefault();
         if (!context.content.trim() || context.isSubmitting) return;
 
@@ -123,6 +136,24 @@ const leftCurlyBracePlugin = createBracketPlugin("{");
 const leftAngleBracketPlugin = createBracketPlugin("<");
 
 /**
+ * Escape key handler plugin for context suggestions
+ */
+const escapeKeyPlugin: KeyboardPlugin = {
+    key: "Escape",
+    handler: (event, context) => {
+        // If context suggestion box is open, close it
+        if (
+            context.contextBracketInfo?.isInsideBrackets &&
+            context.handleCloseSuggestionBox
+        ) {
+            event.preventDefault();
+            context.handleCloseSuggestionBox();
+            return;
+        }
+    },
+};
+
+/**
  * Backspace key handler plugin
  */
 const backspaceKeyPlugin: KeyboardPlugin = {
@@ -175,6 +206,7 @@ const pluginRegistry: KeyboardPlugin[] = [
     leftParenPlugin,
     leftCurlyBracePlugin,
     leftAngleBracketPlugin,
+    escapeKeyPlugin,
     backspaceKeyPlugin,
     // Future plugins can be added here
 ];

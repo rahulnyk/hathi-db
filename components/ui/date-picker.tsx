@@ -171,16 +171,16 @@ export function DatePicker({
             </div>
 
             {/* Footer with Today button */}
-            <div className="px-2 py-2 border-t">
+            {/* <div className="px-2 py-2 border-t">
                 <Button
                     variant="default"
                     size="sm"
                     onClick={handleTodayClick}
-                    className="w-full h-8 text-sm"
+                    className="w-full h-8 menu-font"
                 >
                     Today
                 </Button>
-            </div>
+            </div> */}
         </div>
     );
 }

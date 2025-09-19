@@ -97,14 +97,10 @@ export const SuggestionDropdown = ({
             {isLoading ? (
                 <div className="flex items-center justify-center py-3 px-4">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    <span className="ml-2 text-sm text-muted-foreground">
-                        Searching...
-                    </span>
+                    <span className="ml-2 menu-font">Searching...</span>
                 </div>
             ) : items.length === 0 ? (
-                <div className="py-3 px-4 text-sm text-muted-foreground">
-                    {emptyMessage}
-                </div>
+                <div className="py-3 px-4 menu-font">{emptyMessage}</div>
             ) : (
                 <div className="py-1">
                     {items.map((item, index) => (
@@ -118,7 +114,7 @@ export const SuggestionDropdown = ({
                                     : "hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <span className="text-sm font-medium truncate">
+                            <span className="menu-font truncate">
                                 {item.label}
                             </span>
                             {item.count !== undefined && (

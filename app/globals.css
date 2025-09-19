@@ -41,6 +41,23 @@
     @apply font-outfit font-black tracking-wider text-neutral-300; /* Added font-montserrat */
 }
 
+/* Menu font styles for navigation and suggestion items */
+.menu-font {
+    @apply font-outfit text-sm text-neutral-600;
+}
+
+.dark .menu-font {
+    @apply font-outfit text-sm text-neutral-400;
+}
+
+.menu-font-active {
+    @apply font-outfit text-sm text-neutral-800;
+}
+
+.dark .menu-font-active {
+    @apply font-outfit text-sm text-neutral-200;
+}
+
 .context-pill-inline {
     @apply inline-block bg-blue-700/10 dark:bg-blue-400/10 text-blue-900 dark:text-blue-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
 }

@@ -11,7 +11,7 @@ import { setEditingNoteId } from "@/store/uiSlice";
 import { updateDraftContent, clearDraft } from "@/store/draftSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
-import { cn } from "@/lib/utils";
+import { cn, slugToSentenceCase } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
@@ -21,6 +21,12 @@ import { useChat } from "@ai-sdk/react";
 import { useSharedChatContext } from "@/lib/chat-context";
 import { processEditorCommands, CommandManagerContext } from "./editorCommands";
 import { processKeyboardEvent, PluginContext } from "./editorPlugins";
+import { ContextSuggestionBox } from "./context-suggestion-box";
+import {
+    detectContextBrackets,
+    replaceContextInBrackets,
+    ContextBracketInfo,
+} from "./helpers";
 
 interface NotesEditorProps {
     note?: Note;
@@ -40,6 +46,15 @@ export function NotesEditor({ note }: NotesEditorProps) {
         start: 0,
         end: 0,
     });
+
+    // Context suggestion state
+    const [contextBracketInfo, setContextBracketInfo] =
+        useState<ContextBracketInfo>({
+            isInsideBrackets: false,
+            searchTerm: "",
+            startPosition: -1,
+            endPosition: -1,
+        });
 
     const { chat } = useSharedChatContext();
     const chatHook = useChat({ chat });
@@ -98,9 +113,77 @@ export function NotesEditor({ note }: NotesEditorProps) {
     }, [isEditMode]); // Only run when entering/exiting edit mode
 
     const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
-        setActiveSelection({
+        const newSelection = {
             start: event.currentTarget.selectionStart,
             end: event.currentTarget.selectionEnd,
+        };
+        setActiveSelection(newSelection);
+
+        // Check for context brackets when selection changes
+        checkContextBrackets(event.currentTarget.value, newSelection.start);
+    };
+
+    // Function to check and update context bracket detection
+    const checkContextBrackets = (content: string, cursorPosition: number) => {
+        // Don't process context brackets in chat mode
+        if (chatMode) {
+            return;
+        }
+
+        const bracketInfo = detectContextBrackets(content, cursorPosition);
+        setContextBracketInfo(bracketInfo);
+    };
+
+    // Handle context selection from suggestion box
+    const handleContextSelect = (selectedContext: string) => {
+        if (!contextBracketInfo.isInsideBrackets) return;
+
+        // Convert the context slug to sentence case before inserting
+        const sentenceCaseContext = slugToSentenceCase(selectedContext);
+
+        const result = replaceContextInBrackets(
+            content,
+            contextBracketInfo,
+            sentenceCaseContext
+        );
+
+        setContent(result.newContent);
+
+        // Save draft for new notes
+        if (!isEditMode) {
+            dispatch(updateDraftContent(result.newContent));
+        }
+
+        // Update cursor position and close suggestion box
+        requestAnimationFrame(() => {
+            if (textareaRef.current) {
+                textareaRef.current.setSelectionRange(
+                    result.newCursorPosition,
+                    result.newCursorPosition
+                );
+                setActiveSelection({
+                    start: result.newCursorPosition,
+                    end: result.newCursorPosition,
+                });
+            }
+        });
+
+        // Close suggestion box
+        setContextBracketInfo({
+            isInsideBrackets: false,
+            searchTerm: "",
+            startPosition: -1,
+            endPosition: -1,
+        });
+    };
+
+    // Handle closing the suggestion box
+    const handleCloseSuggestionBox = () => {
+        setContextBracketInfo({
+            isInsideBrackets: false,
+            searchTerm: "",
+            startPosition: -1,
+            endPosition: -1,
         });
     };
 
@@ -137,6 +220,9 @@ export function NotesEditor({ note }: NotesEditorProps) {
             end: newSelectionEnd,
         });
 
+        // Check for context brackets on content change
+        checkContextBrackets(newFullValue, newSelectionStart);
+
         // Reset the flag after a short delay
         setTimeout(() => {
             isUserInteracting.current = false;
@@ -160,6 +246,8 @@ export function NotesEditor({ note }: NotesEditorProps) {
             chatHook,
             handleSaveEdit,
             handleCreateNote,
+            contextBracketInfo,
+            handleCloseSuggestionBox,
         };
 
         await processKeyboardEvent(event, pluginContext);
@@ -244,7 +332,21 @@ export function NotesEditor({ note }: NotesEditorProps) {
     };
 
     return (
-        <div className="p-0">
+        <div className="p-0 relative">
+            {/* Context Suggestion Box - positioned above textarea */}
+            <ContextSuggestionBox
+                searchTerm={contextBracketInfo.searchTerm}
+                isVisible={
+                    !chatMode &&
+                    contextBracketInfo.isInsideBrackets &&
+                    contextBracketInfo.searchTerm.length >= 2
+                }
+                onContextSelect={handleContextSelect}
+                onClose={handleCloseSuggestionBox}
+                maxSuggestions={5}
+                className="mb-2"
+            />
+
             <form onSubmit={handleSubmit}>
                 <Textarea
                     ref={textareaRef}
@@ -260,6 +362,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                             : `Use Markdown to format your notes. Start with ${QA_COMMAND} to ask questions about your notes!`
                     }
                 />
+
                 <div className="flex justify-between items-end m-0 mb-1 gap-2">
                     {isEditMode && (
                         <>
