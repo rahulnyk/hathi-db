@@ -5,6 +5,8 @@
  * Run this to verify your AI model configuration is set up correctly
  */
 
+import { fileURLToPath } from "url";
+import { resolve } from "path";
 import { getAIConfig, getEmbeddingConfig } from "../lib/ai/ai-config.js";
 
 function validateConfiguration() {
@@ -79,7 +81,11 @@ function validateConfiguration() {
     console.log("   Example: GEMINI_TEXT_GENERATION_MODEL=gemini-1.5-pro");
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this script is being run directly
+const currentFile = fileURLToPath(import.meta.url);
+const entryPoint = resolve(process.argv[1]);
+
+if (currentFile === entryPoint) {
     validateConfiguration();
 }
 
