@@ -11,6 +11,110 @@ export const BRACKET_PAIRS: Record<string, string> = {
 };
 
 /**
+ * Context bracket detection result
+ */
+export interface ContextBracketInfo {
+    isInsideBrackets: boolean;
+    searchTerm: string;
+    startPosition: number;
+    endPosition: number;
+}
+
+/**
+ * Detects if the cursor is inside double square brackets [[]] and extracts search term
+ * @param content - The full content of the editor
+ * @param cursorPosition - Current cursor position
+ * @returns Object with bracket detection info
+ */
+export function detectContextBrackets(
+    content: string,
+    cursorPosition: number
+): ContextBracketInfo {
+    // Look backwards for opening [[
+    let openStart = -1;
+    for (let i = cursorPosition - 1; i >= 0; i--) {
+        if (content.substring(i, i + 2) === "[[") {
+            openStart = i;
+            break;
+        }
+        // Stop if we hit a closing ]] or newline
+        if (content.substring(i, i + 2) === "]]" || content[i] === "\n") {
+            break;
+        }
+    }
+
+    // Look forwards for closing ]]
+    let closeEnd = -1;
+    for (let i = cursorPosition; i <= content.length - 2; i++) {
+        if (content.substring(i, i + 2) === "]]") {
+            closeEnd = i + 2;
+            break;
+        }
+        // Stop if we hit an opening [[ or newline
+        if (content.substring(i, i + 2) === "[[" || content[i] === "\n") {
+            break;
+        }
+    }
+
+    // Check if we found both opening and closing brackets
+    if (openStart !== -1 && closeEnd !== -1) {
+        const searchTerm = content.substring(openStart + 2, cursorPosition);
+        return {
+            isInsideBrackets: true,
+            searchTerm,
+            startPosition: openStart,
+            endPosition: closeEnd,
+        };
+    }
+
+    // Special case: Check if we're at the end of an incomplete bracket pair
+    if (openStart !== -1 && closeEnd === -1) {
+        const searchTerm = content.substring(openStart + 2, cursorPosition);
+        return {
+            isInsideBrackets: true,
+            searchTerm,
+            startPosition: openStart,
+            endPosition: content.length, // Use content length as placeholder
+        };
+    }
+
+    return {
+        isInsideBrackets: false,
+        searchTerm: "",
+        startPosition: -1,
+        endPosition: -1,
+    };
+}
+
+/**
+ * Replaces the content within context brackets with the selected context
+ * @param content - The full content of the editor
+ * @param bracketInfo - Information about the bracket position
+ * @param selectedContext - The context to insert
+ * @returns Object with new content and cursor position
+ */
+export function replaceContextInBrackets(
+    content: string,
+    bracketInfo: ContextBracketInfo,
+    selectedContext: string
+): { newContent: string; newCursorPosition: number } {
+    const beforeBrackets = content.substring(0, bracketInfo.startPosition);
+    // Ensure endPosition does not exceed content length
+    const safeEndPosition = Math.min(bracketInfo.endPosition, content.length);
+    const afterBrackets = content.substring(safeEndPosition);
+
+    const newContent =
+        beforeBrackets + `[[${selectedContext}]]` + afterBrackets;
+    const newCursorPosition =
+        beforeBrackets.length + `[[${selectedContext}]]`.length;
+
+    return {
+        newContent,
+        newCursorPosition,
+    };
+}
+
+/**
  * Handles bracket insertion by wrapping selection or creating empty pair
  * @param openingBracket - The opening bracket character
  * @param currentContent - Current content of the editor

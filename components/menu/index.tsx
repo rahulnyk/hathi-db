@@ -95,10 +95,16 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                         />
                     </div>
 
+                    {/* Divider between date picker and context search */}
+                    {/* <div className="flex justify-center px-2">
+                        <div className="h-px bg-zinc-300/50 dark:bg-zinc-600/50 w-full"></div>
+                    </div> */}
+
                     {/* Context Search Box */}
                     <div className="px-2">
                         <ContextSearchBox
                             placeholder="Search contexts..."
+                            className="[&_input]:shadow-none"
                             onContextSelect={(context) => {
                                 // Use context navigation hook to properly exit chat mode and preserve chat history
                                 navigateToContext(context);
@@ -108,6 +114,11 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             }}
                         />
                     </div>
+
+                    {/* Divider between context search and context list */}
+                    {/* <div className="flex justify-center px-6">
+                        <div className="h-px bg-zinc-300 dark:bg-zinc-600 w-full"></div>
+                    </div> */}
 
                     <ContextList
                         onCloseMenu={onClose}
