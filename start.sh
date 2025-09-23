@@ -149,54 +149,16 @@ setup_embedding_model() {
             # Create cache directory if it doesn't exist
             mkdir -p ./.cache/huggingface
             
-            # Get the current working directory
-            CURRENT_DIR=$(pwd)
-            
-            # Create a temporary Node.js script to download the model
-            cat > "${CURRENT_DIR}/download_model_temp.js" << EOF
-const { pipeline } = require('@huggingface/transformers');
-
-async function downloadModel() {
-    try {
-        const modelName = process.env.HUGGINGFACE_EMBEDDING_MODEL || 'intfloat/multilingual-e5-base';
-        console.log(\`🤖 Downloading embedding model: \${modelName}\`);
-        console.log('📥 This process may take several minutes for the first download...');
-        
-        const startTime = Date.now();
-        const featurePipeline = await pipeline('feature-extraction', modelName, {
-            device: 'cpu',
-            dtype: 'fp32',
-            revision: 'main',
-            cache_dir: './.cache/huggingface',
-            local_files_only: false,
-        });
-        
-        const duration = Math.round((Date.now() - startTime) / 1000);
-        console.log(\`✅ Successfully downloaded embedding model: \${modelName} (\${duration}s)\`);
-        process.exit(0);
-    } catch (error) {
-        console.error('❌ Failed to download embedding model:', error.message);
-        process.exit(1);
-    }
-}
-
-downloadModel();
-EOF
-
             # Export environment variables for the Node.js script
             export HUGGINGFACE_EMBEDDING_MODEL
             
-            # Run the download script with timeout from the project directory
-            if timeout 600 node "${CURRENT_DIR}/download_model_temp.js"; then
+            # Run the download script with timeout
+            if timeout 600 node scripts/download-model.js; then
                 print_success "HuggingFace embedding model downloaded and cached successfully"
-                # Clean up temporary file
-                rm -f "${CURRENT_DIR}/download_model_temp.js"
             else
                 print_warning "Failed to download HuggingFace embedding model, but continuing setup..."
                 print_warning "The model will be downloaded automatically when the app first starts"
                 print_warning "This may cause a delay on first use"
-                # Clean up temporary file
-                rm -f "${CURRENT_DIR}/download_model_temp.js"
             fi
         else
             print_status "Not using HuggingFace embeddings or model not configured, skipping model download"
@@ -303,7 +265,7 @@ main() {
 }
 
 # Handle script interruption
-trap 'echo ""; print_status "🐘 See you soon. Goodbye!"; rm -f download_model_temp.js; exit 0' INT
+trap 'echo ""; print_status "Application stopped by user. Goodbye!"; exit 0' INT
 
 # Run main function
 main "$@"

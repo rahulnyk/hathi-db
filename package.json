@@ -33,7 +33,8 @@
         "db:sqlite:test": "tsx db/sqlite/migrate-runner.ts test",
         "db:sqlite:truncate": "tsx db/sqlite/migrate-runner.ts truncate",
         "db:sqlite:seed": "tsx db/sqlite/seed/seed-notes.ts",
-        "db:sqlite:fresh": "yarn db:sqlite:truncate && yarn db:sqlite:seed"
+        "db:sqlite:fresh": "yarn db:sqlite:truncate && yarn db:sqlite:seed",
+        "model:download": "node scripts/download-model.js"
     },
     "dependencies": {
         "@ai-sdk/google": "^2.0.8",
