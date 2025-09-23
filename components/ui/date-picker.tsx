@@ -78,11 +78,11 @@ export function DatePicker({
         setCurrentMonth(date);
     };
 
-    const handleTodayClick = () => {
-        const today = new Date();
-        onDateChange(today);
-        setCurrentMonth(today);
-    };
+    // const handleTodayClick = () => {
+    //     const today = new Date();
+    //     onDateChange(today);
+    //     setCurrentMonth(today);
+    // };
 
     const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
