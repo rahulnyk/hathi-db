@@ -52,3 +52,6 @@ data/
 
 # Huggingface
 .cache
+
+# Setup script temporary files
+download_model_temp.js
