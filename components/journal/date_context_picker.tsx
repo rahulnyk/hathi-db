@@ -11,7 +11,7 @@ import {
     fetchDatesWithNotes,
     selectDatesWithNotes,
     selectDatesWithNotesStatus,
-    selectDatesWithNotesLoading,
+    // selectDatesWithNotesLoading,
 } from "@/store/journalSlice";
 
 /**
@@ -33,7 +33,7 @@ export function DateContextPicker({
     );
     const datesWithNotes = useAppSelector(selectDatesWithNotes);
     const datesStatus = useAppSelector(selectDatesWithNotesStatus);
-    const isLoading = useAppSelector(selectDatesWithNotesLoading);
+    // const isLoading = useAppSelector(selectDatesWithNotesLoading);
 
     const selectedDate = new Date(selectedDateString); // Convert string back to Date
     const dispatch = useAppDispatch();
