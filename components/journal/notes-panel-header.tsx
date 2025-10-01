@@ -3,7 +3,7 @@
 import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
-import { Target, Home, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
+import { Target, Calendar, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
 import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
 import { useContextNavigation } from "@/lib/context-navigation";
 export function NotesPanelHeader() {
@@ -60,14 +60,23 @@ export function NotesPanelHeader() {
                     </h2>
                 </div>
 
-                {/* Home button */}
+                {/* Today button */}
                 {showHomeButton && !chatMode && (
                     <button
                         onClick={handleGoToToday}
-                        className="accent-font"
-                        title="Go to Today"
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                            "bg-gray-200 dark:bg-gray-700",
+                            "border border-gray-300 dark:border-gray-600",
+                            "hover:bg-gray-300 dark:hover:bg-gray-600",
+                            "text-gray-700 dark:text-gray-300",
+                            "transition-all duration-200",
+                            "text-xs font-medium accent-font"
+                        )}
+                        title="Go to Today's Journal"
                     >
-                        <Home size={24} />
+                        <Calendar size={14} />
+                        <span className="hidden sm:inline">Today</span>
                     </button>
                 )}
 

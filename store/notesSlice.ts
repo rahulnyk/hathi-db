@@ -30,6 +30,7 @@ interface NotesState {
     collectionStatus: "idle" | "loading" | "succeeded" | "failed";
     collectionError: string | null;
     currentContext: string;
+    notesContext: string | null; // Track which context the loaded notes belong to
 }
 
 const initialState: NotesState = {
@@ -37,6 +38,7 @@ const initialState: NotesState = {
     collectionStatus: "idle",
     collectionError: null,
     currentContext: dateToSlug(new Date()),
+    notesContext: null, // Initially no notes are loaded
 };
 
 /**
@@ -69,7 +71,14 @@ export const fetchNotes = createAsyncThunk(
                 contexts,
                 method: "OR",
             });
-            return notes;
+
+            // Return both notes and the primary context they were fetched for
+            return {
+                notes,
+                // We use the first context as the "primary" context for tracking which context the notes were fetched for,
+                // because the UI typically requests notes for a single context at a time, and the first element represents that.
+                primaryContext: contexts[0],
+            };
         } catch (error: any) {
             return rejectWithValue(error?.message || "Failed to fetch notes");
         }
@@ -254,6 +263,8 @@ const notesSlice = createSlice({
         },
         setCurrentContext: (state, action: PayloadAction<string>) => {
             state.currentContext = action.payload;
+            // Clear notesContext when changing context since notes will no longer match
+            state.notesContext = null;
         },
         updateNoteWithSuggestedContexts: (
             state,
@@ -353,14 +364,23 @@ const notesSlice = createSlice({
         builder
             .addCase(fetchNotes.pending, (state) => {
                 state.collectionStatus = "loading";
+                // Clear notesContext when starting a new fetch
+                state.notesContext = null;
             })
             .addCase(
                 fetchNotes.fulfilled,
-                (state, action: PayloadAction<Note[]>) => {
+                (
+                    state,
+                    action: PayloadAction<{
+                        notes: Note[];
+                        primaryContext: string;
+                    }>
+                ) => {
                     state.collectionStatus = "succeeded";
+                    state.notesContext = action.payload.primaryContext;
                     // Set persistenceStatus to "persisted" for all fetched notes since they exist in the database
                     // Only set it if it's not already defined (to handle cases where server might return it)
-                    state.notes = action.payload.map((note) => ({
+                    state.notes = action.payload.notes.map((note) => ({
                         ...note,
                         persistenceStatus:
                             note.persistenceStatus ||
@@ -474,5 +494,21 @@ export const {
     addSearchResultNotes,
     clearSearchResultNotes,
 } = notesSlice.actions;
+
+// Selectors
+export const selectNotesMatchCurrentContext = (state: {
+    notes: NotesState;
+}) => {
+    return state.notes.notesContext === state.notes.currentContext;
+};
+
+export const selectIsLoadingForCurrentContext = (state: {
+    notes: NotesState;
+}) => {
+    return (
+        state.notes.collectionStatus === "loading" ||
+        !selectNotesMatchCurrentContext(state)
+    );
+};
 
 export default notesSlice.reducer;
