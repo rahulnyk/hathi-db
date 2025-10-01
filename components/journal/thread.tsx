@@ -2,17 +2,25 @@
 
 import { useEffect, useRef } from "react";
 // import clsx from "clsx";
+import { HashLoader } from "react-spinners";
 import { NoteCard } from "./note_card/notes-card";
 import { AiNoteCard } from "./note_card/ai-note-card"; // Import AiNoteCard
 import { TodoNoteCard } from "./note_card/todo-note-card"; // Import TodoNoteCard
 import { useAppDispatch, useAppSelector } from "@/store";
-import { fetchNotes } from "@/store/notesSlice";
+import {
+    fetchNotes,
+    selectIsLoadingForCurrentContext,
+} from "@/store/notesSlice";
 
 export function Thread() {
     // const user = useContext(UserContext);
     const dispatch = useAppDispatch();
     const { notes, collectionStatus, collectionError, currentContext } =
         useAppSelector((state) => state.notes);
+    const { isNavigatingToContext } = useAppSelector((state) => state.ui);
+    const isLoadingForCurrentContext = useAppSelector(
+        selectIsLoadingForCurrentContext
+    );
     const threadContainerRef = useRef<HTMLDivElement>(null);
     const prevNotesLengthRef = useRef(notes.length);
 
@@ -32,12 +40,18 @@ export function Thread() {
         prevNotesLengthRef.current = notes.length;
     }, [notes]);
 
-    // Show loading state
-    if (collectionStatus === "loading" && notes.length === 0) {
+    // Show loading spinner when navigating to a new context or when notes don't match current context
+    if (isNavigatingToContext || isLoadingForCurrentContext) {
         return (
             <div className="w-full flex-grow overflow-y-auto no-scrollbar p-4 md:p-6 flex items-center justify-center">
-                <div className="text-center p-4 border rounded-lg text-muted-foreground bg-card">
-                    Loading notes...
+                <div
+                    className="flex items-center gap-3 text-muted-foreground"
+                    role="status"
+                    aria-live="polite"
+                >
+                    {/* <span className="text-sm">Loading notes...</span> */}
+                    <HashLoader size={20} color="currentColor" loading={true} />
+                    <HashLoader size={20} color="currentColor" loading={true} />
                 </div>
             </div>
         );

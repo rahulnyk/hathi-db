@@ -91,6 +91,21 @@ export function sentenceCaseToSlug(sentence: string): string {
         .replace(/\s+/g, "-") // Replace spaces with hyphens
         .replace(/[^\w-]+/g, ""); // Remove non-alphanumeric characters except hyphens
 }
+
+/**
+ * Regular expression pattern to match date slugs in 'dd-month-yyyy' format.
+ * Examples: '1-january-2025', '31-december-2024', '15-june-2023'
+ */
+export const DATE_SLUG_PATTERN = /^\d{1,2}-[a-z]+-\d{4}$/;
+
+/**
+ * Validates if a string matches the date slug format 'dd-month-yyyy'.
+ * @param slug The string to validate
+ * @returns True if the string is a valid date slug, false otherwise
+ */
+export function isValidDateSlug(slug: string): boolean {
+    return DATE_SLUG_PATTERN.test(slug);
+}
 /**
  * Checks if two arrays are equal.
  * @param a The first array.

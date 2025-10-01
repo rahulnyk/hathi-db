@@ -8,6 +8,7 @@ import notesMetadataReducer from "./notesMetadataSlice";
 import aiReducer from "./aiSlice";
 import agentReducer from "./agentSlice";
 import draftReducer from "./draftSlice";
+import journalReducer from "./journalSlice";
 import { notesMiddleware } from "./middleware/notesMiddleware";
 
 // Persist configuration for draft slice only
@@ -27,6 +28,7 @@ export const store = configureStore({
         ai: aiReducer,
         agent: agentReducer,
         draft: persistedDraftReducer,
+        journal: journalReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
