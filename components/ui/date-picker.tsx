@@ -19,20 +19,36 @@ import {
     isSameDay,
     isToday,
 } from "date-fns";
+import { dateToSlug } from "@/lib/utils";
 
+/**
+ * Props for the DatePicker component.
+ */
 interface DatePickerProps {
+    /** The currently selected date, if any. */
     selectedDate: Date | undefined;
+    /** Callback function called when a date is selected or changed. */
     onDateChange: (date: Date | undefined) => void;
+    /** Additional CSS classes to apply to the component. */
     className?: string;
+    /** An array of date slugs in 'dd-month-yyyy' format that should be highlighted with a visual indicator. */
+    datesWithNotes?: string[];
 }
 
 export function DatePicker({
     selectedDate,
     onDateChange,
     className,
+    datesWithNotes = [], // Default to an empty array
 }: DatePickerProps) {
     const [currentMonth, setCurrentMonth] = React.useState(
         () => selectedDate || new Date()
+    );
+
+    // Use a Set for efficient O(1) lookups inside the loop.
+    const datesWithNotesSet = React.useMemo(
+        () => new Set(datesWithNotes),
+        [datesWithNotes]
     );
 
     const monthStart = startOfMonth(currentMonth);
@@ -138,49 +154,43 @@ export function DatePicker({
                 {/* Calendar days */}
                 <div className="grid grid-cols-7 gap-1 w-full max-w-[280px]">
                     {calendarDays.map((date, index) => {
-                        const isCurrentMonth = isSameMonth(date, currentMonth);
+                        const isCurrentMonthDay = isSameMonth(
+                            date,
+                            currentMonth
+                        );
                         const isSelected =
                             selectedDate && isSameDay(date, selectedDate);
                         const isTodayDate = isToday(date);
+                        // Check if the current date, converted to a slug, exists in our Set.
+                        const hasNote = datesWithNotesSet.has(dateToSlug(date));
 
                         return (
                             <Button
                                 key={index}
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDateClick(date)}
                                 className={cn(
-                                    "h-7 w-9 p-0 text-xs font-normal",
+                                    "h-9 w-9 p-0 font-normal relative", // Added relative for positioning the dot
                                     "hover:bg-accent hover:text-accent-foreground",
-                                    "flex items-center justify-center",
-                                    !isCurrentMonth &&
+                                    !isCurrentMonthDay &&
                                         "text-muted-foreground opacity-50",
                                     isSelected &&
-                                        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                                        "bg-primary text-primary-foreground",
                                     isTodayDate &&
                                         !isSelected &&
-                                        "bg-accent-foreground/20 font-medium",
-                                    "transition-colors"
+                                        "border border-blue-500"
                                 )}
+                                onClick={() => handleDateClick(date)}
                             >
                                 {format(date, "d")}
+                                {hasNote && !isSelected && (
+                                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-4 rounded-full bg-blue-500 shadow-sm"></span>
+                                )}
                             </Button>
                         );
                     })}
                 </div>
             </div>
-
-            {/* Footer with Today button */}
-            {/* <div className="px-2 py-2 border-t">
-                <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleTodayClick}
-                    className="w-full h-8 menu-font"
-                >
-                    Today
-                </Button>
-            </div> */}
         </div>
     );
 }

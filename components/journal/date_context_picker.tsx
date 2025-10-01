@@ -6,10 +6,22 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { setDatePickerSelectedDate } from "@/store/uiSlice";
 import { dateToSlug } from "@/lib/utils";
 import { useContextNavigation } from "@/lib/context-navigation";
+import { useEffect } from "react";
+import {
+    fetchDatesWithNotes,
+    selectDatesWithNotes,
+    selectDatesWithNotesStatus,
+    selectDatesWithNotesLoading,
+} from "@/store/journalSlice";
 
+/**
+ * Props for the DateContextPicker component.
+ */
 interface DateContextPickerProps {
+    /** Whether the date picker is currently open/visible. */
     isOpen: boolean;
-    onDateChangeHook?: () => void; // New prop
+    /** Optional callback function to be called when a date is changed. */
+    onDateChangeHook?: () => void;
 }
 
 export function DateContextPicker({
@@ -19,9 +31,21 @@ export function DateContextPicker({
     const selectedDateString = useAppSelector(
         (state) => state.ui.datePickerSelectedDate
     );
+    const datesWithNotes = useAppSelector(selectDatesWithNotes);
+    const datesStatus = useAppSelector(selectDatesWithNotesStatus);
+    const isLoading = useAppSelector(selectDatesWithNotesLoading);
+
     const selectedDate = new Date(selectedDateString); // Convert string back to Date
     const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
+
+    // Fetch dates with notes when the calendar is opened for the first time.
+    // Also handle error cases by allowing retry.
+    useEffect(() => {
+        if (isOpen && (datesStatus === "idle" || datesStatus === "failed")) {
+            dispatch(fetchDatesWithNotes());
+        }
+    }, [isOpen, datesStatus, dispatch]);
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
@@ -54,6 +78,7 @@ export function DateContextPicker({
                 selectedDate={selectedDate}
                 onDateChange={handleDateChange}
                 className="flex-1 mx-auto my-auto" // Removed w-full from DatePicker's direct class too, as it has internal max-w-sm
+                datesWithNotes={datesWithNotes}
             />
         </div>
     ) : null;
