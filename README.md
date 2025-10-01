@@ -176,6 +176,57 @@ yarn dev
 
 Visit [http://localhost:3000](http://localhost:3000) to see your application.
 
+### 6. Alternative: Automated Setup with start.sh
+
+For a fully automated setup and launch experience, you can use the included start script:
+
+```bash
+# First-time setup and launch (handles everything automatically)
+./start.sh
+
+# Subsequent launches (automatically detects if rebuild/migration is needed)
+./start.sh
+
+# Force rebuild only
+./start.sh --force-rebuild
+
+# Force migration only
+./start.sh --force-migration
+
+# Force both rebuild and migration
+./start.sh --force-all
+```
+
+The start script will:
+
+-   ✅ Install Node.js and dependencies if needed
+-   ✅ Set up environment files
+-   ✅ Configure the database
+-   ✅ **Smart rebuild detection** - Only rebuilds when source code changes
+-   ✅ **Smart migration detection** - Only runs migrations when database schema changes
+-   ✅ Download embedding models (if using HuggingFace)
+-   ✅ Launch the application
+
+#### Smart Detection Features
+
+**Rebuild Detection:**
+The script automatically detects when a rebuild is necessary based on:
+
+-   Source file modifications (TypeScript, CSS, config files)
+-   Git commits/pulls (detects new HEAD)
+-   Uncommitted changes to source files
+-   New untracked source files
+
+**Migration Detection:**
+The script automatically detects when database migrations need to run based on:
+
+-   Changes to existing migration files
+-   New migration files added
+-   Missing database files (SQLite)
+-   Different database type selection (SQLite ↔ PostgreSQL)
+
+This ensures you always run the latest version and database schema after pulling changes, while avoiding unnecessary rebuilds and migrations.
+
 ## Development
 
 ### Available Scripts

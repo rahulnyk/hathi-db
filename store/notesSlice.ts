@@ -262,9 +262,13 @@ const notesSlice = createSlice({
             }
         },
         setCurrentContext: (state, action: PayloadAction<string>) => {
-            state.currentContext = action.payload;
-            // Clear notesContext when changing context since notes will no longer match
-            state.notesContext = null;
+            const newContext = action.payload;
+            // Only clear notesContext if we're actually changing to a different context
+            if (state.currentContext !== newContext) {
+                state.currentContext = newContext;
+                state.notesContext = null; // Clear since notes will no longer match
+            }
+            // If it's the same context, do nothing - keep existing notes and context
         },
         updateNoteWithSuggestedContexts: (
             state,
@@ -362,10 +366,20 @@ const notesSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchNotes.pending, (state) => {
+            .addCase(fetchNotes.pending, (state, action) => {
                 state.collectionStatus = "loading";
-                // Clear notesContext when starting a new fetch
-                state.notesContext = null;
+                // Only clear notesContext if we're fetching for a different context
+                const requestedContext =
+                    action.meta?.arg?.contexts &&
+                    action.meta.arg.contexts.length > 0
+                        ? action.meta.arg.contexts[0]
+                        : null;
+                if (
+                    requestedContext &&
+                    state.notesContext !== requestedContext
+                ) {
+                    state.notesContext = null;
+                }
             })
             .addCase(
                 fetchNotes.fulfilled,
@@ -505,9 +519,14 @@ export const selectNotesMatchCurrentContext = (state: {
 export const selectIsLoadingForCurrentContext = (state: {
     notes: NotesState;
 }) => {
+    const { collectionStatus, notesContext, currentContext } = state.notes;
+
+    // Show loading only when we're actually loading AND either:
+    // 1. We haven't loaded any context yet (notesContext is null), OR
+    // 2. We're loading a different context than what we currently have
     return (
-        state.notes.collectionStatus === "loading" ||
-        !selectNotesMatchCurrentContext(state)
+        collectionStatus === "loading" &&
+        (notesContext === null || notesContext !== currentContext)
     );
 };
 

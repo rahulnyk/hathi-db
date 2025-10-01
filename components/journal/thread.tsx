@@ -15,8 +15,13 @@ import {
 export function Thread() {
     // const user = useContext(UserContext);
     const dispatch = useAppDispatch();
-    const { notes, collectionStatus, collectionError, currentContext } =
-        useAppSelector((state) => state.notes);
+    const {
+        notes,
+        collectionStatus,
+        collectionError,
+        currentContext,
+        notesContext,
+    } = useAppSelector((state) => state.notes);
     const { isNavigatingToContext } = useAppSelector((state) => state.ui);
     const isLoadingForCurrentContext = useAppSelector(
         selectIsLoadingForCurrentContext
@@ -24,10 +29,13 @@ export function Thread() {
     const threadContainerRef = useRef<HTMLDivElement>(null);
     const prevNotesLengthRef = useRef(notes.length);
 
-    // Fetch notes on component mount
+    // Fetch notes only when needed (context changed and we don't have notes for it)
     useEffect(() => {
-        dispatch(fetchNotes({ contexts: [currentContext] }));
-    }, [dispatch, currentContext]);
+        // Only fetch if we don't already have notes for the current context
+        if (notesContext !== currentContext) {
+            dispatch(fetchNotes({ contexts: [currentContext] }));
+        }
+    }, [dispatch, currentContext, notesContext]);
 
     useEffect(() => {
         if (
