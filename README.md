@@ -253,6 +253,11 @@ This ensures you always run the latest version and database schema after pulling
 -   `yarn db:sqlite:seed` - Seed SQLite with sample data
 -   `yarn db:sqlite:test` - Test SQLite connection
 -   `yarn db:sqlite:fresh` - Truncate and reseed SQLite database
+-   `yarn db:sqlite:tables` - List all SQLite tables
+-   `yarn db:sqlite:schema` - Show SQLite database schema
+-   `yarn db:sqlite:indexes` - List all SQLite indexes
+-   `yarn db:sqlite:data <table>` - View data from a specific SQLite table
+-   `yarn db:sqlite:overview` - Show SQLite database overview
 
 #### Environment Switching
 

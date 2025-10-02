@@ -133,11 +133,22 @@ get_database_type() {
 # Function to check if migrations need to be run
 needs_migration() {
     local db_type=$(get_database_type)
+    
+    # Ensure .next directory exists for tracking files
+    if [ ! -d ".next" ]; then
+        print_status "Creating tracking directory for migration detection"
+        mkdir -p ".next" || {
+            print_warning "Could not create .next directory, assuming migrations needed"
+            return 0
+        }
+    fi
+    
     local migration_timestamp_file=".next/migration-timestamp-${db_type}"
     local migration_files_hash_file=".next/migration-files-hash-${db_type}"
     
     # Check if migration timestamp file exists
     if [ ! -f "$migration_timestamp_file" ]; then
+        print_status "No migration tracking file found - migrations needed"
         return 0  # Needs migration
     fi
     
@@ -171,7 +182,7 @@ needs_migration() {
         print_status "Detected changes in migration files"
         return 0  # Needs migration
     fi
-    
+
     # Check if any migration files are newer than the timestamp
     if find "$migration_dir" -name "*.sql" -newer "$migration_timestamp_file" 2>/dev/null | grep -q .; then
         print_status "Detected newer migration files"
@@ -179,9 +190,20 @@ needs_migration() {
     fi
     
     # Check if database file exists (for SQLite)
-    if [ "$db_type" = "sqlite" ] && [ ! -f "data/hathi.db" ]; then
-        print_status "SQLite database file not found"
-        return 0  # Needs migration
+    if [ "$db_type" = "sqlite" ]; then
+        # Ensure data directory exists
+        if [ ! -d "data" ]; then
+            print_status "Creating data directory for SQLite"
+            mkdir -p "data" || {
+                print_warning "Could not create data directory"
+                return 0  # Needs migration to handle this
+            }
+        fi
+        
+        if [ ! -f "data/hathi.db" ]; then
+            print_status "SQLite database file not found"
+            return 0  # Needs migration
+        fi
     fi
     
     return 1  # No migration needed
@@ -190,11 +212,24 @@ needs_migration() {
 # Function to record migration information
 record_migration_info() {
     local db_type=$(get_database_type)
+    
+    # Ensure .next directory exists, create if needed
+    if [ ! -d ".next" ]; then
+        print_status "Creating tracking directory for migration records"
+        mkdir -p ".next" || {
+            print_warning "Could not create .next directory for tracking"
+            return 1
+        }
+    fi
+    
     local migration_timestamp_file=".next/migration-timestamp-${db_type}"
     local migration_files_hash_file=".next/migration-files-hash-${db_type}"
     
     # Create timestamp file
-    touch "$migration_timestamp_file"
+    touch "$migration_timestamp_file" || {
+        print_warning "Could not create migration timestamp file"
+        return 1
+    }
     
     # Calculate and store hash of migration files
     local migration_dir
@@ -205,8 +240,12 @@ record_migration_info() {
     fi
     
     if [ -d "$migration_dir" ]; then
-        local current_hash=$(find "$migration_dir" -name "*.sql" -type f -exec cat {} \; | shasum -a 256 | cut -d' ' -f1)
-        echo "$current_hash" > "$migration_files_hash_file"
+        local current_hash=$(find "$migration_dir" -name "*.sql" -type f -exec cat {} \; 2>/dev/null | shasum -a 256 2>/dev/null | cut -d' ' -f1 2>/dev/null)
+        if [ -n "$current_hash" ]; then
+            echo "$current_hash" > "$migration_files_hash_file" || {
+                print_warning "Could not save migration files hash"
+            }
+        fi
     fi
 }
 
@@ -236,6 +275,49 @@ setup_database() {
     record_migration_info
     
     print_success "Database migration completed"
+    
+    # Show database overview after migration
+    show_database_info
+}
+
+# Function to show database information
+show_database_info() {
+    local db_type=$(get_database_type)
+    
+    print_status "Database Overview ($db_type)"
+    echo ""
+    
+    if [ "$db_type" = "sqlite" ]; then
+        # Show SQLite database overview
+        if command_exists yarn; then
+            print_status "📋 Database Tables:"
+            yarn --silent db:sqlite:tables 2>/dev/null || {
+                print_warning "Could not display database tables"
+            }
+            echo ""
+            
+            print_status "📊 Database Overview:"
+            yarn --silent db:sqlite:overview 2>/dev/null || {
+                print_warning "Could not display database overview"
+            }
+        fi
+    else
+        # Show PostgreSQL database overview  
+        if command_exists yarn; then
+            print_status "📋 Database Tables:"
+            yarn --silent db:tables 2>/dev/null || {
+                print_warning "Could not display database tables"
+            }
+            echo ""
+            
+            print_status "📊 Database Overview:"
+            yarn --silent db:overview 2>/dev/null || {
+                print_warning "Could not display database overview"
+            }
+        fi
+    fi
+    
+    echo ""
 }
 
 # Function to setup and download HuggingFace embedding model
@@ -515,6 +597,7 @@ main() {
             fi
             record_migration_info
             print_success "Database migration completed"
+            show_database_info
         elif needs_migration; then
             print_status "Migration required due to database changes. Running migrations..."
             local db_type=$(get_database_type)
@@ -525,8 +608,11 @@ main() {
             fi
             record_migration_info
             print_success "Database migration completed"
+            show_database_info
         else
             print_status "No migration needed."
+            # Show database info even when no migration was needed
+            show_database_info
         fi
         
         # Check if rebuild is needed or forced

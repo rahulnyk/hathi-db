@@ -34,6 +34,11 @@
         "db:sqlite:truncate": "tsx db/sqlite/migrate-runner.ts truncate",
         "db:sqlite:seed": "tsx db/sqlite/seed/seed-notes.ts",
         "db:sqlite:fresh": "yarn db:sqlite:truncate && yarn db:sqlite:seed",
+        "db:sqlite:tables": "tsx db/sqlite/inspect.ts tables",
+        "db:sqlite:schema": "tsx db/sqlite/inspect.ts schema",
+        "db:sqlite:indexes": "tsx db/sqlite/inspect.ts indexes",
+        "db:sqlite:data": "tsx db/sqlite/inspect.ts data",
+        "db:sqlite:overview": "tsx db/sqlite/inspect.ts overview",
         "model:download": "node scripts/download-model.js"
     },
     "dependencies": {

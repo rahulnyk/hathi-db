@@ -515,6 +515,54 @@ async function showOverview() {
 }
 
 /**
+ * Show available tables for user reference
+ */
+async function showAvailableTables() {
+    const client = createClient();
+
+    try {
+        await client.connect();
+
+        const result = await client.query(`
+            SELECT 
+                tablename,
+                schemaname
+            FROM pg_tables 
+            WHERE schemaname = 'public'
+            ORDER BY tablename;
+        `);
+
+        if (result.rows.length === 0) {
+            console.log("   No tables found in the public schema.");
+            return;
+        }
+
+        console.log("\n📋 Available tables:");
+
+        for (const row of result.rows) {
+            try {
+                const countResult = await client.query(
+                    `SELECT COUNT(*) as count FROM ${row.tablename}`
+                );
+                const rowCount = countResult.rows[0].count;
+                console.log(`  • ${row.tablename} (${rowCount} rows)`);
+            } catch (error) {
+                console.log(`  • ${row.tablename} (count unavailable)`);
+                console.error(`     Error:`, error);
+            }
+        }
+
+        console.log(`\nExample usage:`);
+        console.log(`  yarn db:data ${result.rows[0].tablename}`);
+        console.log(`  yarn db:data ${result.rows[0].tablename} 20`);
+    } catch (error) {
+        console.error("❌ Error listing available tables:", error);
+    } finally {
+        await client.end();
+    }
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -547,9 +595,8 @@ async function main() {
             case "data":
                 if (!target) {
                     console.error("❌ Table name required for data command");
-                    console.log(
-                        "Usage: tsx db/inspect.ts data <table_name> [limit]"
-                    );
+                    console.log("Usage: yarn db:data <table_name> [limit]");
+                    await showAvailableTables();
                     process.exit(1);
                 }
                 const limit = process.argv[4] ? parseInt(process.argv[4]) : 10;
@@ -573,13 +620,13 @@ Commands:
   overview            Show complete database overview
 
 Examples:
-  tsx db/inspect.ts tables
-  tsx db/inspect.ts schema notes
-  tsx db/inspect.ts functions
-  tsx db/inspect.ts indexes notes
-  tsx db/inspect.ts data notes
-  tsx db/inspect.ts data notes 20
-  tsx db/inspect.ts overview
+  yarn db:tables
+  yarn db:schema notes
+  yarn db:functions
+  yarn db:indexes notes
+  yarn db:data notes
+  yarn db:data notes 20
+  yarn db:overview
 
 Environment variables:
   POSTGRES_HOST      Database host (default: localhost)
