@@ -115,19 +115,209 @@ install_dependencies() {
     fi
 }
 
+# Function to get database type from environment
+get_database_type() {
+    if [ -f ".env.local" ]; then
+        # Source the environment file to get database type
+        set -a
+        source .env.local 2>/dev/null || true
+        set +a
+        
+        # Default to sqlite if not specified
+        echo "${USE_DB:-sqlite}"
+    else
+        echo "sqlite"
+    fi
+}
+
+# Function to check if migrations need to be run
+needs_migration() {
+    local db_type=$(get_database_type)
+    
+    # Ensure .next directory exists for tracking files
+    if [ ! -d ".next" ]; then
+        print_status "Creating tracking directory for migration detection"
+        mkdir -p ".next" || {
+            print_warning "Could not create .next directory, assuming migrations needed"
+            return 0
+        }
+    fi
+    
+    local migration_timestamp_file=".next/migration-timestamp-${db_type}"
+    local migration_files_hash_file=".next/migration-files-hash-${db_type}"
+    
+    # Check if migration timestamp file exists
+    if [ ! -f "$migration_timestamp_file" ]; then
+        print_status "No migration tracking file found - migrations needed"
+        return 0  # Needs migration
+    fi
+    
+    # Get migration directory based on database type
+    local migration_dir
+    if [ "$db_type" = "sqlite" ]; then
+        migration_dir="db/sqlite/migrate"
+    else
+        migration_dir="db/postgres/migrate"
+    fi
+    
+    # Check if migration directory exists
+    if [ ! -d "$migration_dir" ]; then
+        return 1  # No migrations to run
+    fi
+    
+    # Calculate hash of all migration files
+    local current_hash=""
+    if [ -d "$migration_dir" ]; then
+        current_hash=$(find "$migration_dir" -name "*.sql" -type f -exec cat {} \; | shasum -a 256 | cut -d' ' -f1)
+    fi
+    
+    # Get stored hash
+    local stored_hash=""
+    if [ -f "$migration_files_hash_file" ]; then
+        stored_hash=$(cat "$migration_files_hash_file")
+    fi
+    
+    # Compare hashes
+    if [ "$current_hash" != "$stored_hash" ]; then
+        print_status "Detected changes in migration files"
+        return 0  # Needs migration
+    fi
+
+    # Check if any migration files are newer than the timestamp
+    if find "$migration_dir" -name "*.sql" -newer "$migration_timestamp_file" 2>/dev/null | grep -q .; then
+        print_status "Detected newer migration files"
+        return 0  # Needs migration
+    fi
+    
+    # Check if database file exists (for SQLite)
+    if [ "$db_type" = "sqlite" ]; then
+        # Ensure data directory exists
+        if [ ! -d "data" ]; then
+            print_status "Creating data directory for SQLite"
+            mkdir -p "data" || {
+                print_warning "Could not create data directory"
+                return 0  # Needs migration to handle this
+            }
+        fi
+        
+        if [ ! -f "data/hathi.db" ]; then
+            print_status "SQLite database file not found"
+            return 0  # Needs migration
+        fi
+    fi
+    
+    return 1  # No migration needed
+}
+
+# Function to record migration information
+record_migration_info() {
+    local db_type=$(get_database_type)
+    
+    # Ensure .next directory exists, create if needed
+    if [ ! -d ".next" ]; then
+        print_status "Creating tracking directory for migration records"
+        mkdir -p ".next" || {
+            print_warning "Could not create .next directory for tracking"
+            return 1
+        }
+    fi
+    
+    local migration_timestamp_file=".next/migration-timestamp-${db_type}"
+    local migration_files_hash_file=".next/migration-files-hash-${db_type}"
+    
+    # Create timestamp file
+    touch "$migration_timestamp_file" || {
+        print_warning "Could not create migration timestamp file"
+        return 1
+    }
+    
+    # Calculate and store hash of migration files
+    local migration_dir
+    if [ "$db_type" = "sqlite" ]; then
+        migration_dir="db/sqlite/migrate"
+    else
+        migration_dir="db/postgres/migrate"
+    fi
+    
+    if [ -d "$migration_dir" ]; then
+        local current_hash=$(find "$migration_dir" -name "*.sql" -type f -exec cat {} \; 2>/dev/null | shasum -a 256 2>/dev/null | cut -d' ' -f1 2>/dev/null)
+        if [ -n "$current_hash" ]; then
+            echo "$current_hash" > "$migration_files_hash_file" || {
+                print_warning "Could not save migration files hash"
+            }
+        fi
+    fi
+}
+
 # Function to setup database
 setup_database() {
-    print_status "Setting up SQLite database..."
+    local db_type=$(get_database_type)
     
-    # Run database migration
+    print_status "Setting up $db_type database..."
+    
+    # Run database migration based on type
     print_status "Running database migration..."
-    yarn db:sqlite:migrate
+    if [ "$db_type" = "sqlite" ]; then
+        yarn db:sqlite:migrate
+        
+        # Test database connection
+        print_status "Testing database connection..."
+        yarn db:sqlite:test
+    else
+        yarn db:migrate
+        
+        # Test database connection
+        print_status "Testing database connection..."
+        yarn db:test
+    fi
+    
+    # Record migration information for future checks
+    record_migration_info
+    
     print_success "Database migration completed"
     
-    # Test database connection
-    print_status "Testing database connection..."
-    yarn db:sqlite:test
-    print_success "Database test completed"
+    # Show database overview after migration
+    show_database_info
+}
+
+# Function to show database information
+show_database_info() {
+    local db_type=$(get_database_type)
+    
+    print_status "Database Overview ($db_type)"
+    echo ""
+    
+    if [ "$db_type" = "sqlite" ]; then
+        # Show SQLite database overview
+        if command_exists yarn; then
+            print_status "📋 Database Tables:"
+            yarn --silent db:sqlite:tables 2>/dev/null || {
+                print_warning "Could not display database tables"
+            }
+            echo ""
+            
+            print_status "📊 Database Overview:"
+            yarn --silent db:sqlite:overview 2>/dev/null || {
+                print_warning "Could not display database overview"
+            }
+        fi
+    else
+        # Show PostgreSQL database overview  
+        if command_exists yarn; then
+            print_status "📋 Database Tables:"
+            yarn --silent db:tables 2>/dev/null || {
+                print_warning "Could not display database tables"
+            }
+            echo ""
+            
+            print_status "📊 Database Overview:"
+            yarn --silent db:overview 2>/dev/null || {
+                print_warning "Could not display database overview"
+            }
+        fi
+    fi
+    
+    echo ""
 }
 
 # Function to setup and download HuggingFace embedding model
@@ -172,7 +362,142 @@ setup_embedding_model() {
 build_app() {
     print_status "Building the application..."
     yarn build
+    
+    # Record build information for future rebuild checks
+    record_build_info
+    
     print_success "Application built successfully"
+}
+
+# Function to check if rebuild is needed
+needs_rebuild() {
+    # Check if build directory exists
+    if [ ! -d ".next" ]; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check if there's a build timestamp file
+    local build_timestamp_file=".next/build-timestamp"
+    
+    # If no timestamp file exists, we need to rebuild
+    if [ ! -f "$build_timestamp_file" ]; then
+        return 0  # Needs rebuild
+    fi
+    
+    local build_time=$(cat "$build_timestamp_file" 2>/dev/null || echo "0")
+    
+    # Check if any source files are newer than the build timestamp
+    # Look for TypeScript, JavaScript, CSS, and config files
+    # Use multiple find commands for different extensions since brace expansion doesn't work with -name
+    
+    # Check TypeScript/JavaScript files in directories
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./app/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./components/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./lib/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./hooks/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./store/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check CSS files
+    if find . \( -name "*.css" -o -name "*.scss" -o -name "*.sass" \) \
+        \( -path "./app/*" -o -path "./components/*" \) \
+        -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check root level files with specific patterns
+    if find . -maxdepth 1 \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.json" \) \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check config files with regex patterns
+    if find . -maxdepth 1 -regex ".*tailwind\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . -maxdepth 1 -regex ".*next\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . -maxdepth 1 -regex ".*postcss\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check package files
+    if find . -maxdepth 1 \( -name "package.json" -o -name "yarn.lock" \) \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # If git is available, check for uncommitted changes or new commits
+    if command_exists git && [ -d ".git" ]; then
+        # Check if there are any uncommitted changes to source files
+        if ! git diff --quiet HEAD -- app/ components/ lib/ hooks/ store/ ":(glob)*.ts" ":(glob)*.tsx" ":(glob)*.js" ":(glob)*.jsx" ":(glob)*.json" ":(glob)tailwind.config.*" ":(glob)next.config.*" ":(glob)postcss.config.*" package.json yarn.lock 2>/dev/null; then
+            print_status "Detected uncommitted changes in source files"
+            return 0  # Needs rebuild
+        fi
+        
+        # Check if there are untracked source files
+        if git ls-files --others --exclude-standard | grep -E '\.(ts|tsx|js|jsx|css|scss|sass|json)$|package\.json$|yarn\.lock$|config\.(ts|js|mjs)$' | grep -q .; then
+            print_status "Detected untracked source files"
+            return 0  # Needs rebuild
+        fi
+        
+        # Check if HEAD has changed since last build (new pulls/commits)
+        local current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+        local build_head_file=".next/build-head"
+        local last_build_head=$(cat "$build_head_file" 2>/dev/null || echo "unknown")
+        
+        if [ "$current_head" != "$last_build_head" ]; then
+            print_status "Detected new commits since last build"
+            return 0  # Needs rebuild
+        fi
+    fi
+    
+    return 1  # No rebuild needed
+}
+
+# Function to record build information
+record_build_info() {
+    local build_timestamp_file=".next/build-timestamp"
+    local build_head_file=".next/build-head"
+    
+    # Create timestamp file
+    touch "$build_timestamp_file"
+    
+    # Record git HEAD if git is available
+    if command_exists git && [ -d ".git" ]; then
+        local current_head=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+        echo "$current_head" > "$build_head_file"
+    fi
 }
 
 # Function to check if initial setup is needed
@@ -216,6 +541,56 @@ start_app() {
 
 # Main execution
 main() {
+    local force_rebuild=false
+    local force_migration=false
+    
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --force-rebuild|-f)
+                force_rebuild=true
+                shift
+                ;;
+            --force-migration|-m)
+                force_migration=true
+                shift
+                ;;
+            --force-all|-a)
+                force_rebuild=true
+                force_migration=true
+                shift
+                ;;
+            --help|-h)
+                echo "Usage: $0 [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  -f, --force-rebuild    Force rebuild even if no changes detected"
+                echo "  -m, --force-migration  Force migration even if no changes detected"
+                echo "  -a, --force-all        Force both rebuild and migration"
+                echo "  -h, --help            Show this help message"
+                echo ""
+                echo "This script automatically detects when a rebuild or migration is needed based on:"
+                echo ""
+                echo "Rebuild detection:"
+                echo "  - Source file modifications"
+                echo "  - Git commits/pulls (new HEAD)"
+                echo "  - Uncommitted changes"
+                echo "  - Untracked source files"
+                echo ""
+                echo "Migration detection:"
+                echo "  - Changes in migration files"
+                echo "  - New migration files"
+                echo "  - Missing database files (SQLite)"
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                print_error "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+    
     print_status "Hathi DB Setup and Start Script"
     print_status "==============================="
     
@@ -257,7 +632,47 @@ main() {
         read -p "Press Enter to continue and start the application, or Ctrl+C to exit..."
         
     else
-        print_status "Setup already completed. Starting application..."
+        print_status "Setup already completed."
+        
+        # Check if migrations need to be run or forced
+        if [ "$force_migration" = true ]; then
+            print_status "Force migration requested. Running migrations..."
+            local db_type=$(get_database_type)
+            if [ "$db_type" = "sqlite" ]; then
+                yarn db:sqlite:migrate
+            else
+                yarn db:migrate
+            fi
+            record_migration_info
+            print_success "Database migration completed"
+            show_database_info
+        elif needs_migration; then
+            print_status "Migration required due to database changes. Running migrations..."
+            local db_type=$(get_database_type)
+            if [ "$db_type" = "sqlite" ]; then
+                yarn db:sqlite:migrate
+            else
+                yarn db:migrate
+            fi
+            record_migration_info
+            print_success "Database migration completed"
+            show_database_info
+        else
+            print_status "No migration needed."
+            # Show database info even when no migration was needed
+            show_database_info
+        fi
+        
+        # Check if rebuild is needed or forced
+        if [ "$force_rebuild" = true ]; then
+            print_status "Force rebuild requested. Building application..."
+            build_app
+        elif needs_rebuild; then
+            print_status "Rebuild required due to source code changes. Building application..."
+            build_app
+        else
+            print_status "No rebuild needed. Starting application..."
+        fi
     fi
     
     # Step 7: Start the application
