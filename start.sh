@@ -388,37 +388,85 @@ needs_rebuild() {
     
     # Check if any source files are newer than the build timestamp
     # Look for TypeScript, JavaScript, CSS, and config files
-    local source_patterns=(
-        "app/**/*.{ts,tsx,js,jsx,css,scss,sass}"
-        "components/**/*.{ts,tsx,js,jsx,css,scss,sass}"
-        "lib/**/*.{ts,tsx,js,jsx}"
-        "hooks/**/*.{ts,tsx,js,jsx}"
-        "store/**/*.{ts,tsx,js,jsx}"
-        "*.{ts,tsx,js,jsx,json,config.js,config.ts}"
-        "tailwind.config.*"
-        "next.config.*"
-        "postcss.config.*"
-        "package.json"
-        "yarn.lock"
-    )
+    # Use multiple find commands for different extensions since brace expansion doesn't work with -name
     
-    for pattern in "${source_patterns[@]}"; do
-        # Find files matching the pattern that are newer than build timestamp
-        if find . -name "$pattern" -not -path "./node_modules/*" -not -path "./.next/*" -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
-            return 0  # Needs rebuild - found newer files
-        fi
-    done
+    # Check TypeScript/JavaScript files in directories
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./app/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./components/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./lib/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./hooks/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        -path "./store/*" -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check CSS files
+    if find . \( -name "*.css" -o -name "*.scss" -o -name "*.sass" \) \
+        \( -path "./app/*" -o -path "./components/*" \) \
+        -not -path "./node_modules/*" -not -path "./.next/*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check root level files with specific patterns
+    if find . -maxdepth 1 \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.json" \) \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check config files with regex patterns
+    if find . -maxdepth 1 -regex ".*tailwind\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . -maxdepth 1 -regex ".*next\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    if find . -maxdepth 1 -regex ".*postcss\.config\..*" \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
+    
+    # Check package files
+    if find . -maxdepth 1 \( -name "package.json" -o -name "yarn.lock" \) \
+        -newer "$build_timestamp_file" 2>/dev/null | grep -q .; then
+        return 0  # Needs rebuild
+    fi
     
     # If git is available, check for uncommitted changes or new commits
     if command_exists git && [ -d ".git" ]; then
         # Check if there are any uncommitted changes to source files
-        if ! git diff --quiet HEAD -- app/ components/ lib/ hooks/ store/ "*.ts" "*.tsx" "*.js" "*.jsx" "*.json" "tailwind.config.*" "next.config.*" "postcss.config.*" package.json yarn.lock 2>/dev/null; then
+        if ! git diff --quiet HEAD -- app/ components/ lib/ hooks/ store/ ":(glob)*.ts" ":(glob)*.tsx" ":(glob)*.js" ":(glob)*.jsx" ":(glob)*.json" ":(glob)tailwind.config.*" ":(glob)next.config.*" ":(glob)postcss.config.*" package.json yarn.lock 2>/dev/null; then
             print_status "Detected uncommitted changes in source files"
             return 0  # Needs rebuild
         fi
         
         # Check if there are untracked source files
-        if git ls-files --others --exclude-standard | grep -E '\.(ts|tsx|js|jsx|css|scss|sass|json)$|package\.json|yarn\.lock|\.config\.' | grep -q .; then
+        if git ls-files --others --exclude-standard | grep -E '\.(ts|tsx|js|jsx|css|scss|sass|json)$|package\.json$|yarn\.lock$|config\.(ts|js|mjs)$' | grep -q .; then
             print_status "Detected untracked source files"
             return 0  # Needs rebuild
         fi

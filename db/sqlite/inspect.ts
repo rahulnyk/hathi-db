@@ -24,7 +24,68 @@ function getDatabasePath(): string {
 }
 
 /**
+ * Load sqlite-vec extension for inspection
+ */
+function loadSqliteVecExtension(db: Database.Database): void {
+    try {
+        // Manual extension loading approach for better compatibility
+        const platform = process.platform;
+        const arch = process.arch;
+
+        let platformPkg: string;
+        if (platform === "darwin" && arch === "arm64") {
+            platformPkg = "sqlite-vec-darwin-arm64";
+        } else if (platform === "darwin" && arch === "x64") {
+            platformPkg = "sqlite-vec-darwin-x64";
+        } else if (platform === "linux" && arch === "arm64") {
+            platformPkg = "sqlite-vec-linux-arm64";
+        } else if (platform === "linux" && arch === "x64") {
+            platformPkg = "sqlite-vec-linux-x64";
+        } else if (platform === "win32" && arch === "x64") {
+            platformPkg = "sqlite-vec-windows-x64";
+        } else {
+            throw new Error(`Unsupported platform: ${platform}-${arch}`);
+        }
+
+        const libFile =
+            platform === "win32"
+                ? "vec0.dll"
+                : platform === "darwin"
+                ? "vec0.dylib"
+                : "vec0.so";
+
+        const extensionPath = path.join(
+            process.cwd(),
+            "node_modules",
+            platformPkg,
+            libFile
+        );
+
+        // Verify the extension file exists
+        if (!fs.existsSync(extensionPath)) {
+            throw new Error(
+                `sqlite-vec extension file not found at: ${extensionPath}`
+            );
+        }
+
+        // Load the extension using better-sqlite3's loadExtension method
+        db.loadExtension(extensionPath);
+
+        console.log("✅ sqlite-vec extension loaded successfully");
+    } catch (error) {
+        console.error("❌ Failed to load sqlite-vec extension:", error);
+        console.error(
+            "💡 Make sure platform-specific sqlite-vec package is installed (e.g., sqlite-vec-darwin-arm64)"
+        );
+        throw new Error(
+            "sqlite-vec extension is required for vector operations"
+        );
+    }
+}
+
+/**
  * Create a fresh SQLite database connection for inspection
+ * Loads SQLite-Vec extension for proper functionality testing
  */
 function createInspectionConnection(): Database.Database {
     const dbPath = getDatabasePath();
@@ -34,6 +95,11 @@ function createInspectionConnection(): Database.Database {
     db.pragma("journal_mode = WAL");
     db.pragma("synchronous = NORMAL");
     db.pragma("foreign_keys = ON");
+
+    // Load sqlite-vec extension
+    loadSqliteVecExtension(db);
+
+    console.log(`✓ SQLite database connected at: ${dbPath}`);
 
     return db;
 }
