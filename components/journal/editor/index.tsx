@@ -22,10 +22,14 @@ import { useSharedChatContext } from "@/lib/chat-context";
 import { processEditorCommands, CommandManagerContext } from "./editorCommands";
 import { processKeyboardEvent, PluginContext } from "./editorPlugins";
 import { ContextSuggestionBox } from "./context-suggestion-box";
+import { DatePickerBox } from "./date-picker-box";
 import {
     detectContextBrackets,
     replaceContextInBrackets,
     ContextBracketInfo,
+    detectDateTrigger,
+    replaceDateTrigger,
+    DateTriggerInfo,
 } from "./helpers";
 
 interface NotesEditorProps {
@@ -55,6 +59,13 @@ export function NotesEditor({ note }: NotesEditorProps) {
             startPosition: -1,
             endPosition: -1,
         });
+
+    // Date picker state
+    const [dateTriggerInfo, setDateTriggerInfo] = useState<DateTriggerInfo>({
+        isTriggerFound: false,
+        triggerPosition: -1,
+        triggerChar: "",
+    });
 
     const { chat } = useSharedChatContext();
     const chatHook = useChat({ chat });
@@ -187,6 +198,87 @@ export function NotesEditor({ note }: NotesEditorProps) {
         });
     };
 
+    // Handle date selection from date picker
+    const handleDateSelect = (selectedDate: Date) => {
+        if (!dateTriggerInfo.isTriggerFound) return;
+
+        const result = replaceDateTrigger(
+            content,
+            dateTriggerInfo.triggerPosition,
+            selectedDate
+        );
+
+        setContent(result.newContent);
+
+        // Save draft for new notes
+        if (!isEditMode) {
+            dispatch(updateDraftContent(result.newContent));
+        }
+
+        // Update cursor position and close date picker
+        requestAnimationFrame(() => {
+            if (textareaRef.current) {
+                textareaRef.current.setSelectionRange(
+                    result.newCursorPosition,
+                    result.newCursorPosition
+                );
+                setActiveSelection({
+                    start: result.newCursorPosition,
+                    end: result.newCursorPosition,
+                });
+            }
+        });
+
+        // Close date picker
+        setDateTriggerInfo({
+            isTriggerFound: false,
+            triggerPosition: -1,
+            triggerChar: "",
+        });
+    };
+
+    // Handle closing the date picker
+    const handleCloseDatePicker = () => {
+        // Remove the trigger character when closing
+        if (dateTriggerInfo.isTriggerFound) {
+            const textBefore = content.substring(
+                0,
+                dateTriggerInfo.triggerPosition
+            );
+            const textAfter = content.substring(
+                dateTriggerInfo.triggerPosition + 1
+            );
+            const newContent = textBefore + textAfter;
+
+            setContent(newContent);
+
+            // Save draft for new notes
+            if (!isEditMode) {
+                dispatch(updateDraftContent(newContent));
+            }
+
+            // Update cursor position
+            requestAnimationFrame(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.setSelectionRange(
+                        dateTriggerInfo.triggerPosition,
+                        dateTriggerInfo.triggerPosition
+                    );
+                    setActiveSelection({
+                        start: dateTriggerInfo.triggerPosition,
+                        end: dateTriggerInfo.triggerPosition,
+                    });
+                }
+            });
+        }
+
+        setDateTriggerInfo({
+            isTriggerFound: false,
+            triggerPosition: -1,
+            triggerChar: "",
+        });
+    };
+
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
@@ -223,6 +315,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
         // Check for context brackets on content change
         checkContextBrackets(newFullValue, newSelectionStart);
 
+        // Check for date trigger on content change (only if not in chat mode)
+        if (!chatMode) {
+            const dateInfo = detectDateTrigger(newFullValue, newSelectionStart);
+            setDateTriggerInfo(dateInfo);
+        }
+
         // Reset the flag after a short delay
         setTimeout(() => {
             isUserInteracting.current = false;
@@ -248,6 +346,9 @@ export function NotesEditor({ note }: NotesEditorProps) {
             handleCreateNote,
             contextBracketInfo,
             handleCloseSuggestionBox,
+            dateTriggerInfo,
+            handleDateSelect,
+            handleCloseDatePicker,
         };
 
         await processKeyboardEvent(event, pluginContext);
@@ -333,13 +434,22 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     return (
         <div className="p-0 relative">
+            {/* Date Picker Box - positioned above textarea */}
+            <DatePickerBox
+                isVisible={!chatMode && dateTriggerInfo.isTriggerFound}
+                onDateSelect={handleDateSelect}
+                onClose={handleCloseDatePicker}
+                className="mb-2"
+            />
+
             {/* Context Suggestion Box - positioned above textarea */}
             <ContextSuggestionBox
                 searchTerm={contextBracketInfo.searchTerm}
                 isVisible={
                     !chatMode &&
                     contextBracketInfo.isInsideBrackets &&
-                    contextBracketInfo.searchTerm.length >= 2
+                    contextBracketInfo.searchTerm.length >= 2 &&
+                    !dateTriggerInfo.isTriggerFound
                 }
                 onContextSelect={handleContextSelect}
                 onClose={handleCloseSuggestionBox}

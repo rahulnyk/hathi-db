@@ -11,6 +11,7 @@ import {
     handleAutoDeleteBracketPair,
     BRACKET_PAIRS,
     ContextBracketInfo,
+    DateTriggerInfo,
 } from "./helpers";
 import { useChat } from "@ai-sdk/react";
 
@@ -31,6 +32,10 @@ export interface PluginContext {
     // Context suggestion state
     contextBracketInfo?: ContextBracketInfo;
     handleCloseSuggestionBox?: () => void;
+    // Date picker state
+    dateTriggerInfo?: DateTriggerInfo;
+    handleDateSelect?: (date: Date) => void;
+    handleCloseDatePicker?: () => void;
 }
 
 // Keyboard plugin interface
@@ -136,11 +141,55 @@ const leftCurlyBracePlugin = createBracketPlugin("{");
 const leftAngleBracketPlugin = createBracketPlugin("<");
 
 /**
- * Escape key handler plugin for context suggestions
+ * Date picker trigger plugin for pipe character (|)
+ */
+const dateTriggerPipePlugin: KeyboardPlugin = {
+    key: "|",
+    stopPropagation: true,
+    handler: (event, context) => {
+        // Don't trigger date picker in chat mode
+        if (context.chatMode) {
+            return;
+        }
+
+        // Allow the character to be inserted first
+        // The date picker will be triggered in the content change handler
+    },
+};
+
+/**
+ * Date picker trigger plugin for backslash character (\)
+ */
+const dateTriggerBackslashPlugin: KeyboardPlugin = {
+    key: "\\",
+    stopPropagation: true,
+    handler: (event, context) => {
+        // Don't trigger date picker in chat mode
+        if (context.chatMode) {
+            return;
+        }
+
+        // Allow the character to be inserted first
+        // The date picker will be triggered in the content change handler
+    },
+};
+
+/**
+ * Escape key handler plugin for context suggestions and date picker
  */
 const escapeKeyPlugin: KeyboardPlugin = {
     key: "Escape",
     handler: (event, context) => {
+        // If date picker is open, close it first
+        if (
+            context.dateTriggerInfo?.isTriggerFound &&
+            context.handleCloseDatePicker
+        ) {
+            event.preventDefault();
+            context.handleCloseDatePicker();
+            return;
+        }
+
         // If context suggestion box is open, close it
         if (
             context.contextBracketInfo?.isInsideBrackets &&
@@ -206,6 +255,8 @@ const pluginRegistry: KeyboardPlugin[] = [
     leftParenPlugin,
     leftCurlyBracePlugin,
     leftAngleBracketPlugin,
+    dateTriggerPipePlugin,
+    dateTriggerBackslashPlugin,
     escapeKeyPlugin,
     backspaceKeyPlugin,
     // Future plugins can be added here
