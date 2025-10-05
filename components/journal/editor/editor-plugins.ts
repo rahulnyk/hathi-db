@@ -4,62 +4,42 @@
  */
 
 import React from "react";
-import { AppDispatch } from "@/store";
-import { updateDraftContent } from "@/store/draftSlice";
 import {
     handleBracketInsertion,
     handleAutoDeleteBracketPair,
     BRACKET_PAIRS,
-    ContextBracketInfo,
-    DateTriggerInfo,
 } from "./helpers";
-import { useChat } from "@ai-sdk/react";
+import type { EditorContext } from "@/hooks/editor-context";
 
-// Plugin context interface
-export interface PluginContext {
-    content: string;
-    setContent: (content: string) => void;
-    activeSelection: { start: number; end: number };
-    setActiveSelection: (selection: { start: number; end: number }) => void;
-    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-    dispatch: AppDispatch;
-    isEditMode: boolean;
-    isSubmitting: boolean;
-    chatMode: boolean;
-    chatHook?: ReturnType<typeof useChat>;
-    handleSaveEdit: () => void;
-    handleCreateNote: () => Promise<void>;
-    // Context suggestion state
-    contextBracketInfo?: ContextBracketInfo;
-    handleCloseSuggestionBox?: () => void;
-    // Date picker state
-    dateTriggerInfo?: DateTriggerInfo;
-    handleDateSelect?: (date: Date) => void;
-    handleCloseDatePicker?: () => void;
-}
-
-// Keyboard plugin interface
+/**
+ * Keyboard plugin interface
+ *
+ * Defines the structure for keyboard event handlers in the editor plugin system.
+ */
 export interface KeyboardPlugin {
-    // Key pattern to match
+    /** Key pattern to match */
     key: string;
-    // Optional modifier requirements
+    /** Optional modifier requirements */
     modifiers?: {
         shift?: boolean;
         ctrl?: boolean;
         alt?: boolean;
         meta?: boolean;
     };
-    // Handler function
+    /** Handler function */
     handler: (
         event: React.KeyboardEvent<HTMLTextAreaElement>,
-        context: PluginContext
+        context: EditorContext
     ) => Promise<void> | void;
-    // Whether this plugin should prevent further processing
+    /** Whether this plugin should prevent further processing */
     stopPropagation?: boolean;
 }
 
 /**
  * Enter key handler plugin
+ *
+ * Handles Enter key presses for form submission, respecting context suggestions
+ * and chat mode behavior.
  */
 const enterKeyPlugin: KeyboardPlugin = {
     key: "Enter",
@@ -68,18 +48,22 @@ const enterKeyPlugin: KeyboardPlugin = {
     handler: async (event, context) => {
         // If context suggestion box is open, let it handle the enter key
         if (
-            context.contextBracketInfo?.isInsideBrackets &&
-            context.contextBracketInfo.searchTerm.length >= 2
+            context.state.contextBracketInfo?.isInsideBrackets &&
+            context.state.contextBracketInfo.searchTerm.length >= 2
         ) {
             // Don't prevent default here - let the suggestion box handle it
             return;
         }
 
         event.preventDefault();
-        if (!context.content.trim() || context.isSubmitting) return;
+        if (!context.state.content.trim() || context.state.isSubmitting) return;
 
         // If in chat mode and chatHook is provided, use chat instead of creating notes
-        if (context.chatMode && context.chatHook && !context.isEditMode) {
+        if (
+            context.state.chatMode &&
+            context.chatHook &&
+            !context.state.isEditMode
+        ) {
             event.preventDefault();
             const form = event.currentTarget.form;
             if (form) {
@@ -88,16 +72,19 @@ const enterKeyPlugin: KeyboardPlugin = {
             return;
         }
 
-        if (context.isEditMode) {
-            context.handleSaveEdit();
+        if (context.state.isEditMode) {
+            context.operations.saveEdit();
         } else {
-            await context.handleCreateNote();
+            await context.operations.createNote();
         }
     },
 };
 
 /**
  * Bracket key handler plugins - one for each bracket type
+ *
+ * Factory function that creates plugins for handling bracket insertion
+ * with auto-pairing and cursor positioning.
  */
 const createBracketPlugin = (bracketKey: string): KeyboardPlugin => ({
     key: bracketKey,
@@ -105,32 +92,41 @@ const createBracketPlugin = (bracketKey: string): KeyboardPlugin => ({
     handler: (event, context) => {
         event.preventDefault();
 
+        // Get current selection directly from the event target
+        const currentSelection = {
+            start: event.currentTarget.selectionStart,
+            end: event.currentTarget.selectionEnd,
+        };
+
         const result = handleBracketInsertion(
             bracketKey,
-            context.content,
-            context.activeSelection,
+            context.state.content,
+            currentSelection,
             BRACKET_PAIRS
         );
 
-        context.setContent(result.newValue);
+        // Update the textarea value directly first
+        if (context.textareaRef.current) {
+            context.textareaRef.current.value = result.newValue;
 
-        // Update draft for new notes
-        if (!context.isEditMode) {
-            context.dispatch(updateDraftContent(result.newValue));
+            // Set the selection immediately
+            context.textareaRef.current.setSelectionRange(
+                result.newSelectionStart,
+                result.newSelectionEnd
+            );
         }
 
-        requestAnimationFrame(() => {
-            if (context.textareaRef.current) {
-                context.textareaRef.current.setSelectionRange(
-                    result.newSelectionStart,
-                    result.newSelectionEnd
-                );
-                context.setActiveSelection({
-                    start: result.newSelectionStart,
-                    end: result.newSelectionEnd,
-                });
-            }
+        // Then update the React state
+        context.actions.setContent(result.newValue);
+        context.actions.setActiveSelection({
+            start: result.newSelectionStart,
+            end: result.newSelectionEnd,
         });
+
+        // Update draft for new notes
+        if (!context.state.isEditMode) {
+            context.actions.updateDraftContent(result.newValue);
+        }
     },
 });
 
@@ -142,13 +138,15 @@ const leftAngleBracketPlugin = createBracketPlugin("<");
 
 /**
  * Date picker trigger plugin for pipe character (|)
+ *
+ * Handles pipe character insertion that triggers the date picker.
  */
 const dateTriggerPipePlugin: KeyboardPlugin = {
     key: "|",
     stopPropagation: true,
     handler: (event, context) => {
         // Don't trigger date picker in chat mode
-        if (context.chatMode) {
+        if (context.state.chatMode) {
             return;
         }
 
@@ -159,13 +157,15 @@ const dateTriggerPipePlugin: KeyboardPlugin = {
 
 /**
  * Date picker trigger plugin for backslash character (\)
+ *
+ * Handles backslash character insertion that triggers the date picker.
  */
 const dateTriggerBackslashPlugin: KeyboardPlugin = {
     key: "\\",
     stopPropagation: true,
     handler: (event, context) => {
         // Don't trigger date picker in chat mode
-        if (context.chatMode) {
+        if (context.state.chatMode) {
             return;
         }
 
@@ -176,27 +176,23 @@ const dateTriggerBackslashPlugin: KeyboardPlugin = {
 
 /**
  * Escape key handler plugin for context suggestions and date picker
+ *
+ * Handles Escape key to close open UI elements like date picker and context suggestions.
  */
 const escapeKeyPlugin: KeyboardPlugin = {
     key: "Escape",
     handler: (event, context) => {
         // If date picker is open, close it first
-        if (
-            context.dateTriggerInfo?.isTriggerFound &&
-            context.handleCloseDatePicker
-        ) {
+        if (context.state.dateTriggerInfo?.isTriggerFound) {
             event.preventDefault();
-            context.handleCloseDatePicker();
+            context.actions.closeDatePicker();
             return;
         }
 
         // If context suggestion box is open, close it
-        if (
-            context.contextBracketInfo?.isInsideBrackets &&
-            context.handleCloseSuggestionBox
-        ) {
+        if (context.state.contextBracketInfo?.isInsideBrackets) {
             event.preventDefault();
-            context.handleCloseSuggestionBox();
+            context.actions.closeContextSuggestions();
             return;
         }
     },
@@ -204,11 +200,13 @@ const escapeKeyPlugin: KeyboardPlugin = {
 
 /**
  * Backspace key handler plugin
+ *
+ * Handles backspace key for auto-deleting bracket pairs.
  */
 const backspaceKeyPlugin: KeyboardPlugin = {
     key: "Backspace",
     handler: (event, context) => {
-        const currentValue = context.content;
+        const currentValue = context.state.content;
         const cursorPosition = event.currentTarget.selectionStart;
 
         if (cursorPosition === 0) {
@@ -229,11 +227,11 @@ const backspaceKeyPlugin: KeyboardPlugin = {
 
         if (deleteResult) {
             event.preventDefault();
-            context.setContent(deleteResult.newValue);
+            context.actions.setContent(deleteResult.newValue);
 
             // Update draft for new notes
-            if (!context.isEditMode) {
-                context.dispatch(updateDraftContent(deleteResult.newValue));
+            if (!context.state.isEditMode) {
+                context.actions.updateDraftContent(deleteResult.newValue);
             }
 
             requestAnimationFrame(() => {
@@ -281,12 +279,15 @@ function modifiersMatch(
 
 /**
  * Process keyboard events through registered plugins
- * @param event - The keyboard event
- * @param context - Plugin execution context
+ *
+ * Iterates through all registered plugins and executes matching handlers.
+ *
+ * @param event - The keyboard event to process
+ * @param context - Editor context containing state and actions
  */
 export async function processKeyboardEvent(
     event: React.KeyboardEvent<HTMLTextAreaElement>,
-    context: PluginContext
+    context: EditorContext
 ): Promise<void> {
     const pressedKey = event.key;
 

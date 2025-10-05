@@ -3,48 +3,56 @@
  * Extensible system for handling editor commands in a plugin-like manner
  */
 
-import { AppDispatch } from "@/store";
-import { setChatMode } from "@/store/uiSlice";
-import { clearDraft } from "@/store/draftSlice";
+import type { EditorContext } from "@/hooks/editor-context";
 
-// Command interface for extensibility
+// Q&A and Notes command constants
+export const QA_COMMAND = "/q or qq";
+export const NOTES_COMMAND = "/n or nn";
+
+/**
+ * Command interface for extensibility
+ *
+ * Defines the structure for editor commands that can be processed
+ * when users type specific patterns.
+ */
 export interface EditorCommand {
-    // Command patterns to match
+    /** Command patterns to match */
     patterns: string[];
-    // Maximum length for command recognition
+    /** Maximum length for command recognition */
     maxLength: number;
-    // Handler function
-    handler: (
-        dispatch: AppDispatch,
-        setContent: (content: string) => void
-    ) => boolean;
+    /** Handler function that receives editor context */
+    handler: (context: EditorContext) => boolean;
 }
 
 /**
  * Switch to assistant/chat mode command
+ *
+ * Activates chat mode and clears current content.
  */
 const chatModeCommand: EditorCommand = {
     patterns: ["/q", "qq"],
     maxLength: 3,
-    handler: (dispatch, setContent) => {
-        dispatch(setChatMode(true));
-        setContent("");
-        dispatch(clearDraft());
+    handler: (context) => {
+        context.actions.setChatMode(true);
+        context.actions.setContent("");
+        context.actions.clearDraft();
         return true;
     },
 };
 
 /**
  * Switch to notes mode command
+ *
+ * Deactivates chat mode and clears current content.
  */
 const notesModeCommand: EditorCommand = {
     patterns: ["/n", "nn"],
     maxLength: 3,
-    handler: (dispatch, setContent) => {
+    handler: (context) => {
         setTimeout(() => {
-            dispatch(setChatMode(false));
-            setContent("");
-            dispatch(clearDraft());
+            context.actions.setChatMode(false);
+            context.actions.setContent("");
+            context.actions.clearDraft();
         }, 100);
         return true;
     },
@@ -58,22 +66,18 @@ const commandRegistry: EditorCommand[] = [
 ];
 
 /**
- * Command manager interface
- */
-export interface CommandManagerContext {
-    dispatch: AppDispatch;
-    setContent: (content: string) => void;
-}
-
-/**
  * Processes editor commands based on user input
- * @param input - The current input value
- * @param context - Command execution context
+ *
+ * Checks if the input matches any registered command patterns and executes
+ * the corresponding handler if found.
+ *
+ * @param input - The current input value to check for commands
+ * @param context - Editor context for command execution
  * @returns true if a command was processed, false otherwise
  */
 export function processEditorCommands(
     input: string,
-    context: CommandManagerContext
+    context: EditorContext
 ): boolean {
     const trimmedContent = input.trim().toLowerCase();
 
@@ -87,7 +91,7 @@ export function processEditorCommands(
         const withinLength = input.length <= command.maxLength;
 
         if (matchesPattern && withinLength) {
-            return command.handler(context.dispatch, context.setContent);
+            return command.handler(context);
         }
     }
 
@@ -96,7 +100,8 @@ export function processEditorCommands(
 
 /**
  * Add a new command to the registry (for future extensibility)
- * @param command - The command to add
+ *
+ * @param command - The command to add to the registry
  */
 export function registerCommand(command: EditorCommand): void {
     commandRegistry.push(command);
@@ -104,7 +109,8 @@ export function registerCommand(command: EditorCommand): void {
 
 /**
  * Remove a command from the registry
- * @param patterns - Command patterns to remove
+ *
+ * @param patterns - Command patterns to remove from the registry
  */
 export function unregisterCommand(patterns: string[]): void {
     const index = commandRegistry.findIndex((cmd) =>
