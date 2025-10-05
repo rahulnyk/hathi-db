@@ -37,6 +37,18 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [content, setContent] = useState(note ? note.content : "");
 
+    // Initialize editor context without the circular dependency
+    const editorContext = createEditorContext({
+        note,
+        setContent,
+        content,
+        setContexts,
+        contexts,
+        setIsSubmitting,
+        isSubmitting,
+        textareaRef,
+    });
+
     // Custom keyboard and content handlers that integrate with editor context
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
@@ -69,21 +81,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
             isUserInteracting.current = false;
         }, 10);
     };
-
-    // Initialize editor context with all necessary parameters
-    const editorContext = createEditorContext({
-        note,
-        setContent,
-        content,
-        setContexts,
-        contexts,
-        setIsSubmitting,
-        isSubmitting,
-        textareaRef,
-        operationHandlers: {
-            handleContentChange,
-        },
-    });
 
     const handleKeyDown = async (
         event: React.KeyboardEvent<HTMLTextAreaElement>
@@ -276,7 +273,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                 <Textarea
                     ref={textareaRef}
                     value={content}
-                    onChange={editorContext.operations.handleContentChange}
+                    onChange={handleContentChange}
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
                     placeholder={

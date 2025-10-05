@@ -107,24 +107,12 @@ export interface EditorActions {
  * Editor operations interface - high-level editor operations
  */
 export interface EditorOperations {
-    /** Create a new note */
-    createNote: () => Promise<void>;
     /** Save current note edits */
     saveEdit: () => void;
     /** Cancel current note edits */
     cancelEdit: () => void;
     /** Submit form (handles both chat and notes) */
     handleSubmit: (e: React.FormEvent) => Promise<void>;
-    /** Handle content changes */
-    handleContentChange: (
-        event: React.ChangeEvent<HTMLTextAreaElement>
-    ) => void;
-    /** Handle key down events */
-    handleKeyDown: (
-        event: React.KeyboardEvent<HTMLTextAreaElement>
-    ) => Promise<void>;
-    /** Handle selection changes */
-    handleSelect: (event: React.SyntheticEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -167,41 +155,22 @@ export interface CreateEditorContextParams {
     isSubmitting: boolean;
     /** Reference to textarea element */
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-    /** Operation handlers (like handleContentChange) */
-    operationHandlers?: {
-        handleContentChange?: (
-            event: React.ChangeEvent<HTMLTextAreaElement>
-        ) => void;
-        handleKeyDown?: (
-            event: React.KeyboardEvent<HTMLTextAreaElement>
-        ) => Promise<void>;
-        handleSelect?: (
-            event: React.SyntheticEvent<HTMLTextAreaElement>
-        ) => void;
-    };
 }
 
 /**
  * Factory function that creates editor context for plugins and commands
  *
+ * This factory function centralizes all editor state management and provides a clean interface
+ * for plugins, commands, and the main editor to interact with editor state.
+ *
  * This creates a shared state instance rather than per-component state,
  * which is why it's named createEditorContext instead of useEditorContext.
  *
  * @param params Configuration parameters for the editor context
- * @returns EditorContext object with state, actions, and operations
+ * @returns Complete editor context
  */
 export function createEditorContext(
     params: CreateEditorContextParams
-
-    /**
-     * Custom hook that provides comprehensive editor context for plugins and commands
-     *
-     * This factory function centralizes all editor state management and provides a clean interface
-     * for plugins, commands, and the main editor to interact with editor state.
-     *
-     * @param params - Factory function configuration parameters
-     * @returns Complete editor context
-     */
 ): EditorContext {
     const {
         note,
@@ -212,7 +181,6 @@ export function createEditorContext(
         setIsSubmitting,
         isSubmitting,
         textareaRef,
-        operationHandlers = {},
     } = params;
 
     const dispatch = useAppDispatch();
@@ -324,55 +292,6 @@ export function createEditorContext(
         }
     };
 
-    /**
-     * Default content change handler
-     */
-    const defaultHandleContentChange = (
-        event: React.ChangeEvent<HTMLTextAreaElement>
-    ): void => {
-        isUserInteracting.current = true;
-        const newContent = event.target.value;
-        setContent(newContent);
-
-        if (!isEditMode) {
-            dispatch(updateDraftContent(newContent));
-        }
-
-        // Update active selection
-        editorActions.setActiveSelection({
-            start: event.target.selectionStart,
-            end: event.target.selectionEnd,
-        });
-
-        // Reset interaction flag
-        setTimeout(() => {
-            isUserInteracting.current = false;
-        }, 10);
-    };
-
-    /**
-     * Default selection handler
-     */
-    const defaultHandleSelect = (
-        event: React.SyntheticEvent<HTMLTextAreaElement>
-    ): void => {
-        const newSelection = {
-            start: event.currentTarget.selectionStart,
-            end: event.currentTarget.selectionEnd,
-        };
-        editorActions.setActiveSelection(newSelection);
-    };
-
-    /**
-     * Default key down handler (placeholder - should be provided by parent)
-     */
-    const defaultHandleKeyDown = async (
-        event: React.KeyboardEvent<HTMLTextAreaElement>
-    ): Promise<void> => {
-        // This is a placeholder - actual implementation should be provided by parent
-        // or handled by plugins
-    };
-
     // Build the complete editor state
     const state: EditorState = {
         content,
@@ -417,14 +336,9 @@ export function createEditorContext(
 
     // Build editor operations
     const operations: EditorOperations = {
-        createNote,
         saveEdit,
         cancelEdit,
         handleSubmit,
-        handleContentChange:
-            operationHandlers.handleContentChange || defaultHandleContentChange,
-        handleKeyDown: operationHandlers.handleKeyDown || defaultHandleKeyDown,
-        handleSelect: operationHandlers.handleSelect || defaultHandleSelect,
     };
 
     return {
@@ -435,31 +349,5 @@ export function createEditorContext(
         textareaRef,
         chatHook,
         dispatch,
-    };
-}
-
-/**
- * Utility function to create a minimal editor context for commands
- *
- * This is useful when you only need basic editor state for command processing
- * without the full editor context overhead.
- *
- * @returns Minimal editor context for commands
- */
-export function useMinimalEditorContext() {
-    const dispatch = useAppDispatch();
-    const chatMode = useAppSelector(selectChatMode);
-    const draftContent = useAppSelector((state) => state.draft.content);
-
-    return {
-        dispatch,
-        chatMode,
-        draftContent,
-        actions: {
-            setChatMode: (enabled: boolean) => dispatch(setChatMode(enabled)),
-            clearDraft: () => dispatch(clearDraft()),
-            updateDraftContent: (content: string) =>
-                dispatch(updateDraftContent(content)),
-        },
     };
 }
