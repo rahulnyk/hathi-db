@@ -69,9 +69,8 @@ export function NotesPanelHeader() {
                             "bg-gray-200 dark:bg-gray-700",
                             "border border-gray-300 dark:border-gray-600",
                             "hover:bg-gray-300 dark:hover:bg-gray-600",
-                            "text-gray-700 dark:text-gray-300",
                             "transition-all duration-200",
-                            "text-xs font-medium accent-font"
+                            "button-font-secondary"
                         )}
                         title="Go to Today's Journal"
                     >
@@ -82,14 +81,14 @@ export function NotesPanelHeader() {
 
                 {/* Toggle switch between Notes and Assistant */}
                 <div
-                    className="relative inline-flex bg-gray-200 dark:bg-gray-700 rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
+                    className="relative inline-flex bg-gray-200 dark:bg-gray-800 rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
                     onClick={handleToggleChatMode}
                 >
                     {/* Sliding background indicator */}
                     <div
                         className={cn(
                             "absolute top-1 w-16 h-6 rounded-full shadow-md transition-all duration-300 ease-in-out",
-                            "bg-blue-700 dark:bg-blue-600",
+                            "bg-slate-600 dark:bg-slate-600",
                             chatMode ? "translate-x-16" : "translate-x-0"
                         )}
                     />
@@ -97,10 +96,8 @@ export function NotesPanelHeader() {
                     {/* Note Option */}
                     <div
                         className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300 text-xs font-medium",
-                            chatMode
-                                ? "text-gray-600 dark:text-gray-400"
-                                : "text-white"
+                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
+                            chatMode ? "button-font" : "button-font-active"
                         )}
                     >
                         {isNavigatingToContext && !chatMode ? (
@@ -108,16 +105,14 @@ export function NotesPanelHeader() {
                         ) : (
                             <NotebookPen size={10} />
                         )}
-                        <span>NOTE</span>
+                        <span>Note</span>
                     </div>
 
                     {/* Ask Option */}
                     <div
                         className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300 text-xs font-medium",
-                            chatMode
-                                ? "text-white"
-                                : "text-gray-600 dark:text-gray-400"
+                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
+                            chatMode ? "button-font-active" : "button-font"
                         )}
                     >
                         {isNavigatingToContext && chatMode ? (
@@ -125,7 +120,7 @@ export function NotesPanelHeader() {
                         ) : (
                             <LucideMessageCircleQuestion size={10} />
                         )}
-                        <span>ASK</span>
+                        <span>Ask</span>
                     </div>
                 </div>
             </div>

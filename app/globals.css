@@ -58,6 +58,31 @@
     @apply font-outfit text-sm text-neutral-200;
 }
 
+/* Button font styles for consistent button typography */
+.button-font {
+    @apply font-outfit text-xs font-normal tracking-wider text-zinc-400;
+}
+
+.dark .button-font {
+    @apply font-outfit text-xs font-normal tracking-wider text-zinc-500;
+}
+
+.button-font-active {
+    @apply font-outfit text-xs font-normal tracking-wider text-white;
+}
+
+.dark .button-font-active {
+    @apply font-outfit text-xs font-normal tracking-wider text-white;
+}
+
+.button-font-secondary {
+    @apply font-outfit text-xs font-normal tracking-wider text-gray-700;
+}
+
+.dark .button-font-secondary {
+    @apply font-outfit text-xs font-normal tracking-wider text-gray-300;
+}
+
 .context-pill-inline {
     @apply inline-block bg-blue-700/10 dark:bg-blue-400/10 text-blue-900 dark:text-blue-200 rounded-sm px-1 py-0 mx-0 tracking-wide;
 }
