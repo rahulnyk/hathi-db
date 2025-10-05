@@ -61,7 +61,7 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
             size={isExpanded ? "default" : "icon"}
             onClick={toggleTheme}
             className={cn(
-                "text-base hover:bg-muted", // Common classes
+                "hover:bg-muted", // Common classes
                 isExpanded
                     ? "flex items-center justify-center gap-2 py-2" // Expanded: full width, justify start, specific padding
                     : "h-12 w-12 justify-center" // Collapsed: fixed size, justify center
@@ -69,7 +69,7 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
             aria-label={`Switch to ${targetThemeText.toLowerCase()}`}
         >
             <TargetIcon className={cn("h-5 w-5", isExpanded && "mr-0")} />
-            {isExpanded && <span>{targetThemeText}</span>}
+            {isExpanded && <span className="menu-font">{targetThemeText}</span>}
         </Button>
     );
 }

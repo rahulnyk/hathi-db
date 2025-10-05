@@ -26,19 +26,19 @@
 }
 /* Custom accent font styles */
 .accent-font {
-    @apply font-outfit font-black tracking-wider text-zinc-400; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-zinc-400;
 }
 
 .dark .accent-font {
-    @apply font-outfit font-black tracking-wider text-zinc-500; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-zinc-500;
 }
 
 .accent-font-active {
-    @apply font-outfit font-black tracking-wider text-neutral-600; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-neutral-600;
 }
 
 .dark .accent-font-active {
-    @apply font-outfit font-black tracking-wider text-neutral-300; /* Added font-montserrat */
+    @apply font-outfit font-black tracking-wider text-neutral-300;
 }
 
 /* Menu font styles for navigation and suggestion items */
