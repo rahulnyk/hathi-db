@@ -8,7 +8,7 @@ The Editor Context and Plugin System provides a unified, modular approach to man
 
 ### Core Components
 
-1.  **`createEditorContext` Function** (`/hooks/editor-context.ts`)
+1.  **`useEditorContext` Hook** (`/hooks/editor-context.ts`)
 
     -   Creates a shared editor context instance.
     -   Provides a unified interface for plugins and commands.
@@ -27,14 +27,14 @@ The Editor Context and Plugin System provides a unified, modular approach to man
     -   Integrated with `EditorContext`.
 
 4.  **Main Editor Component** (`/components/journal/editor/index.tsx`)
-    -   Uses the `createEditorContext` function for all state management.
+    -   Uses the `useEditorContext` hook for all state management.
     -   Maintains a clean separation between UI and business logic.
 
 ## Naming Convention
 
-**Why `createEditorContext` instead of `useEditorContext`?**
+**Why `useEditorContext` follows React Hook conventions**
 
-Unlike typical React hooks that share stateful logic but give each component its own state instance, `createEditorContext` creates a **single shared state instance** that is meant to be passed between the editor and its plugins. This follows the factory function pattern rather than the hook pattern.
+The function is now properly named as `useEditorContext` to follow React Hook naming conventions. Since it uses hooks internally (`useAppDispatch`, `useAppSelector`, etc.), it must be named with the 'use' prefix and follow the Rules of Hooks. This provides better developer experience with React DevTools and ESLint.
 
 ## State Management with Redux
 

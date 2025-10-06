@@ -36,10 +36,9 @@ export const DatePickerBox = ({
                 case "Enter":
                     event.preventDefault();
                     event.stopPropagation();
-                    if (selectedDate) {
-                        onDateSelect(selectedDate);
-                        onClose();
-                    }
+                    // If no date is selected, default to today's date
+                    const dateToSelect = selectedDate || new Date();
+                    onDateSelect(dateToSelect);
                     break;
             }
         },

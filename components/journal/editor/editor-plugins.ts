@@ -26,11 +26,11 @@ export interface KeyboardPlugin {
         alt?: boolean;
         meta?: boolean;
     };
-    /** Handler function */
+    /** Handler function - can return false to allow event propagation */
     handler: (
         event: React.KeyboardEvent<HTMLTextAreaElement>,
         context: EditorContext
-    ) => Promise<void> | void;
+    ) => Promise<void | boolean> | void | boolean;
     /** Whether this plugin should prevent further processing */
     stopPropagation?: boolean;
 }
@@ -46,11 +46,10 @@ const enterKeyPlugin: KeyboardPlugin = {
     modifiers: { shift: false },
     stopPropagation: true,
     handler: async (event, context) => {
-        // If date picker is open, close it first
+        // If date picker is open, don't prevent default and allow event to bubble
         if (context.state.dateTriggerInfo?.isTriggerFound) {
-            event.preventDefault();
-            context.actions.closeDatePicker();
-            return;
+            // Don't prevent default - let DatePickerBox handle the Enter key
+            return false; // Signal that propagation should NOT be stopped
         }
 
         // If context suggestion box is open, let it handle the enter key
@@ -303,7 +302,12 @@ export async function processKeyboardEvent(
             plugin.key === pressedKey &&
             modifiersMatch(event, plugin.modifiers)
         ) {
-            await plugin.handler(event, context);
+            const result = await plugin.handler(event, context);
+
+            // If handler returns false, allow propagation regardless of plugin.stopPropagation
+            if (result === false) {
+                continue;
+            }
 
             if (plugin.stopPropagation) {
                 return;

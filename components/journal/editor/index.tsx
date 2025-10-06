@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { ContextContainer } from "../note_card/context-container";
-import { createEditorContext } from "@/hooks/editor-context";
+import { useEditorContext } from "@/hooks/editor-context";
 import {
     processEditorCommands,
     QA_COMMAND,
@@ -38,7 +38,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const [content, setContent] = useState(note ? note.content : "");
 
     // Initialize editor context without the circular dependency
-    const editorContext = createEditorContext({
+    const editorContext = useEditorContext({
         note,
         setContent,
         content,

@@ -5,7 +5,7 @@
  * across the entire editor ecosystem, including plugins, commands, and the main editor.
  */
 
-import { useRef } from "react";
+// import { useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateDraftContent, clearDraft } from "@/store/draftSlice";
 import { setChatMode, setEditingNoteId } from "@/store/uiSlice";
@@ -140,7 +140,7 @@ export interface EditorContext {
 /**
  * Hook parameters interface
  */
-export interface CreateEditorContextParams {
+export interface UseEditorContextParams {
     /** Note being edited (optional) */
     note?: Note;
     /** Content setter function */
@@ -160,17 +160,16 @@ export interface CreateEditorContextParams {
 }
 
 /**
- * Factory function that creates editor context for plugins and commands
+ * Hook that creates editor context for plugins and commands
  *
- * This factory function centralizes all editor state management and provides a clean interface
+ * This hook centralizes all editor state management and provides a clean interface
  * for plugins, commands, and the main editor to interact with editor state.
  *
- * Creates a shared editor context instance (not per-component state), hence the factory function naming convention rather than hook naming.
  * @param params Configuration parameters for the editor context
  * @returns Complete editor context
  */
-export function createEditorContext(
-    params: CreateEditorContextParams
+export function useEditorContext(
+    params: UseEditorContextParams
 ): EditorContext {
     const {
         note,
