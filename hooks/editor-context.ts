@@ -113,6 +113,8 @@ export interface EditorOperations {
     cancelEdit: () => void;
     /** Submit form (handles both chat and notes) */
     handleSubmit: (e: React.FormEvent) => Promise<void>;
+    /** Create a new note from current content */
+    createNote: () => Promise<void>;
 }
 
 /**
@@ -339,6 +341,7 @@ export function createEditorContext(
         saveEdit,
         cancelEdit,
         handleSubmit,
+        createNote,
     };
 
     return {
