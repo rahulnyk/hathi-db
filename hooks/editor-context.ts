@@ -165,8 +165,8 @@ export interface CreateEditorContextParams {
  * This factory function centralizes all editor state management and provides a clean interface
  * for plugins, commands, and the main editor to interact with editor state.
  *
- * This creates a shared state instance rather than per-component state,
- * which is why it's named createEditorContext instead of useEditorContext.
+ * Creates a shared editor context instance (not per-component state), hence the factory function naming convention rather than hook naming.
+ *
  *
  * @param params Configuration parameters for the editor context
  * @returns Complete editor context
