@@ -108,7 +108,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }
     }, [editorContext.state.draftContent, editorContext.state.isEditMode]);
 
-    // Update content when note changes
     useEffect(() => {
         if (note?.id) {
             setContent(note.content);

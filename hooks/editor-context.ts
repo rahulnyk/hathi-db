@@ -166,8 +166,6 @@ export interface CreateEditorContextParams {
  * for plugins, commands, and the main editor to interact with editor state.
  *
  * Creates a shared editor context instance (not per-component state), hence the factory function naming convention rather than hook naming.
- *
- *
  * @param params Configuration parameters for the editor context
  * @returns Complete editor context
  */
@@ -206,9 +204,6 @@ export function createEditorContext(
     // Chat context
     const { chat } = useSharedChatContext();
     const chatHook = useChat({ chat });
-
-    // User interaction tracking
-    const isUserInteracting = useRef(false);
 
     // Derived state
     const isEditMode = !!note;

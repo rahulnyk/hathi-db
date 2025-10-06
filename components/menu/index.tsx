@@ -1,10 +1,6 @@
 "use client";
 
 import { useRef, useEffect } from "react"; // Import useRef and useEffect
-// useState and useEffect removed as isDatePickerOpen state is removed
-// Button import removed as child components (ThemeSwitcher, LogoutButton) import it themselves.
-// CalendarIcon import removed
-// import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
 import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
 import { clearDatePickerSelection } from "@/store/uiSlice";
@@ -12,7 +8,6 @@ import { ThemeSwitcher } from "../theme-switcher";
 import { DateContextPicker } from "../journal/date_context_picker";
 import { ContextList } from "./context-list"; // Import ContextList component
 import { ContextSearchBox } from "../ui/context-search-box";
-// Unused imports related to dispatch and dateToSlug are now fully removed.
 import { cn } from "@/lib/utils";
 import { HathiIcon } from "../icon";
 import { useContextNavigation } from "@/lib/context-navigation";
