@@ -1,17 +1,13 @@
 "use client";
 
 import { useRef, useEffect } from "react"; // Import useRef and useEffect
-// useState and useEffect removed as isDatePickerOpen state is removed
-// Button import removed as child components (ThemeSwitcher, LogoutButton) import it themselves.
-// CalendarIcon import removed
-// import { Button } from "@/components/ui/button"; // Import Button
 import { PanelLeftClose } from "lucide-react"; // Import XIcon
-import { useAppSelector } from "@/store"; // Import useAppSelector and useAppDispatch
+import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
+import { clearDatePickerSelection } from "@/store/uiSlice";
 import { ThemeSwitcher } from "../theme-switcher";
 import { DateContextPicker } from "../journal/date_context_picker";
 import { ContextList } from "./context-list"; // Import ContextList component
 import { ContextSearchBox } from "../ui/context-search-box";
-// Unused imports related to dispatch and dateToSlug are now fully removed.
 import { cn } from "@/lib/utils";
 import { HathiIcon } from "../icon";
 import { useContextNavigation } from "@/lib/context-navigation";
@@ -22,6 +18,7 @@ interface RetractableMenuProps {
 }
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
+    const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
     const deviceType = useAppSelector((state) => state.ui.deviceType); // Get deviceType from Redux store
     const menuRef = useRef<HTMLDivElement>(null); // Create menuRef
@@ -106,6 +103,10 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             placeholder="Search contexts..."
                             className="[&_input]:shadow-none"
                             onContextSelect={(context) => {
+                                // Clear the date picker selection when selecting a context via search
+                                // This ensures mutual exclusivity between date and context selection
+                                dispatch(clearDatePickerSelection());
+
                                 // Use context navigation hook to properly exit chat mode and preserve chat history
                                 navigateToContext(context);
                                 if (deviceType === "mobile") {

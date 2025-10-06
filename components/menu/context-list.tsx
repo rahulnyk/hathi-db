@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
 // import { setCurrentContext } from "@/store/notesSlice";
-import { DeviceType } from "@/store/uiSlice";
+import { DeviceType, clearDatePickerSelection } from "@/store/uiSlice";
 import { ContextStats } from "@/db/types";
-import { cn, slugToSentenceCase } from "@/lib/utils";
+import { cn, slugToSentenceCase, isValidDateSlug } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
@@ -24,6 +24,13 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     );
     const { currentContext } = useAppSelector((state) => state.notes);
 
+    // Filter out date contexts (contexts that match the date slug pattern)
+    const filteredContexts = useMemo(() => {
+        return contexts.filter(
+            (contextStat) => !isValidDateSlug(contextStat.context)
+        );
+    }, [contexts]);
+
     // Check if we're refreshing (have contexts but status is loading)
     const isRefreshing = status === "loading" && contexts.length > 0;
 
@@ -38,10 +45,13 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         if (deviceType === "mobile") {
             onCloseMenu();
         }
+        // Clear the date picker selection when selecting a non-date context
+        // This ensures mutual exclusivity between date and context selection
+        dispatch(clearDatePickerSelection());
+
         // Use the context navigation hook to properly exit chat mode and preserve chat history
         navigateToContext(contextSlug);
     };
-
     const handleLoadMore = useCallback(() => {
         if (hasMore && !isLoadingMore) {
             dispatch(fetchContextsPaginated());
@@ -50,7 +60,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
 
     // Only show loading when we have no contexts AND we're in a loading state on initial load
     // This prevents flickering when contexts are being refreshed
-    if (status === "loading" && contexts.length === 0) {
+    if (status === "loading" && filteredContexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-neutral-500">
                 Loading contexts...
@@ -59,7 +69,7 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     }
 
     // Only show error state if we have no contexts and the request failed
-    if (status === "failed" && contexts.length === 0) {
+    if (status === "failed" && filteredContexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-red-500">
                 Failed to load contexts.
@@ -78,15 +88,15 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
             )}
 
             {/* Context List */}
-            {contexts.map((contextStat: ContextStats) => (
+            {filteredContexts.map((contextStat: ContextStats) => (
                 <div
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}
                     className={cn(
-                        "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-colors duration-150",
+                        "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-all duration-200",
                         currentContext === contextStat.context
-                            ? "bg-blue-700/10 dark:bg-blue-400/10"
-                            : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50"
+                            ? "bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100"
+                            : "hover:bg-gray-300/70 dark:hover:bg-gray-700"
                     )}
                 >
                     <span
@@ -102,10 +112,10 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     </span>
                     <span
                         className={cn(
-                            "ml-2 rounded-full px-2 py-0.5",
+                            "ml-2 rounded-full px-2 py-0.5 text-xs",
                             currentContext === contextStat.context
-                                ? "menu-font-active bg-blue-500/20 dark:bg-blue-500/20 text-xs"
-                                : "menu-font bg-neutral-200 dark:bg-neutral-700 text-xs"
+                                ? "button-font-secondary bg-gray-400/50 dark:bg-gray-500/50"
+                                : "button-font-secondary bg-gray-200 dark:bg-gray-600"
                         )}
                     >
                         {contextStat.count}

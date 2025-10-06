@@ -10,7 +10,7 @@ interface OriginalNoteState {
 
 interface UIState {
     deviceType: DeviceType;
-    datePickerSelectedDate: string; // Store as ISO string to ensure serialization
+    datePickerSelectedDate: string | null; // ISO string for serialization, null when no date selected
     activeNoteId: string | null;
     editingNoteId: string | null; // Added for tracking the note being edited
     originalNoteStates: Record<string, OriginalNoteState>; // Store original states by note ID
@@ -42,6 +42,9 @@ const uiSlice = createSlice({
         },
         resetDatePickerToToday: (state) => {
             state.datePickerSelectedDate = new Date().toISOString();
+        },
+        clearDatePickerSelection: (state) => {
+            state.datePickerSelectedDate = null;
         },
         setActiveNoteId: (state, action: PayloadAction<string | null>) => {
             if (action.payload === state.editingNoteId) {
@@ -93,6 +96,7 @@ export const {
     setDeviceType,
     setDatePickerSelectedDate,
     resetDatePickerToToday,
+    clearDatePickerSelection,
     setActiveNoteId,
     setEditingNoteId, // Export the new action
     storeOriginalNoteState,

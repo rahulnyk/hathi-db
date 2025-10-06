@@ -190,3 +190,84 @@ export function handleAutoDeleteBracketPair(
     }
     return null;
 }
+
+/**
+ * Date picker trigger information
+ */
+export interface DateTriggerInfo {
+    isTriggerFound: boolean;
+    triggerPosition: number;
+    triggerChar: string;
+}
+
+/**
+ * Detects if a date trigger character (| or \) was just typed
+ * @param content - The full content of the editor
+ * @param cursorPosition - Current cursor position
+ * @returns Object with trigger detection info
+ */
+export function detectDateTrigger(
+    content: string,
+    cursorPosition: number
+): DateTriggerInfo {
+    // Check if cursor is at a position where we can check the previous character
+    if (cursorPosition === 0) {
+        return {
+            isTriggerFound: false,
+            triggerPosition: -1,
+            triggerChar: "",
+        };
+    }
+
+    const charBeforeCursor = content[cursorPosition - 1];
+
+    // Check for trigger characters
+    if (charBeforeCursor === "|" || charBeforeCursor === "\\") {
+        return {
+            isTriggerFound: true,
+            triggerPosition: cursorPosition - 1,
+            triggerChar: charBeforeCursor,
+        };
+    }
+
+    return {
+        isTriggerFound: false,
+        triggerPosition: -1,
+        triggerChar: "",
+    };
+}
+
+/**
+ * Replaces the date trigger character with formatted date context
+ * @param content - The full content of the editor
+ * @param triggerPosition - Position of the trigger character
+ * @param selectedDate - The selected date
+ * @returns Object with new content and cursor position
+ */
+export function replaceDateTrigger(
+    content: string,
+    triggerPosition: number,
+    selectedDate: Date
+): { newContent: string; newCursorPosition: number } {
+    // Format date as "DD Month YYYY" for display in context
+    const day = selectedDate.getDate();
+    const month = selectedDate.toLocaleString("en-US", { month: "long" });
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day} ${month} ${year}`;
+
+    // Create the context string
+    const contextString = `[[${formattedDate}]]`;
+
+    // Replace the trigger character with the context
+    const textBefore = content.substring(0, triggerPosition);
+    const textAfter = content.substring(triggerPosition + 1);
+    const newContent = textBefore + contextString + textAfter;
+
+    // Set cursor position after the inserted context
+    const newCursorPosition = triggerPosition + contextString.length;
+
+    return {
+        newContent,
+        newCursorPosition,
+    };
+}

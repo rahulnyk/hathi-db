@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react"; // Keep useEffect and useState for mounted check
 
@@ -23,26 +23,34 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
         // Render a placeholder or null until mounted
         if (isExpanded) {
             return (
-                <Button
-                    variant="ghost"
-                    size="default"
+                <button
                     disabled
-                    className="flex items-center justify-center gap-2 text-base py-2 hover:bg-muted w-full"
+                    className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                        "bg-gray-200 dark:bg-gray-700",
+                        "border border-gray-300 dark:border-gray-600",
+                        "button-font-secondary",
+                        "opacity-50 cursor-not-allowed"
+                    )}
                 >
-                    <Sun className="h-5 w-5 mr-0" />
-                    <span>Loading Theme...</span>
-                </Button>
+                    <Sun size={14} />
+                    <span className="hidden sm:inline">Loading...</span>
+                </button>
             );
         }
         return (
-            <Button
-                variant="ghost"
-                size="icon"
+            <button
                 disabled
-                className="h-12 w-12 justify-center"
+                className={cn(
+                    "flex items-center px-1.5 py-1.5 rounded-full",
+                    "bg-gray-200 dark:bg-gray-700",
+                    "border border-gray-300 dark:border-gray-600",
+                    "button-font-secondary",
+                    "opacity-50 cursor-not-allowed"
+                )}
             >
-                <Sun className="h-5 w-5" />
-            </Button>
+                <Sun size={14} />
+            </button>
         );
     }
 
@@ -56,21 +64,24 @@ export function ThemeSwitcher({ isExpanded = true }: ThemeSwitcherProps) {
     const TargetIcon = isCurrentlyDark ? Sun : Moon;
 
     return (
-        <Button
-            variant="ghost"
-            size={isExpanded ? "default" : "icon"}
+        <button
             onClick={toggleTheme}
             className={cn(
-                "text-base hover:bg-muted", // Common classes
-                isExpanded
-                    ? "flex items-center justify-center gap-2 py-2" // Expanded: full width, justify start, specific padding
-                    : "h-12 w-12 justify-center" // Collapsed: fixed size, justify center
+                "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                "bg-gray-200 dark:bg-gray-700",
+                "border border-gray-300 dark:border-gray-600",
+                "hover:bg-gray-300 dark:hover:bg-gray-600",
+                "transition-all duration-200",
+                "button-font-secondary",
+                !isExpanded && "px-1.5" // Adjust padding for icon-only mode
             )}
             aria-label={`Switch to ${targetThemeText.toLowerCase()}`}
         >
-            <TargetIcon className={cn("h-5 w-5", isExpanded && "mr-0")} />
-            {isExpanded && <span>{targetThemeText}</span>}
-        </Button>
+            <TargetIcon size={14} />
+            {isExpanded && (
+                <span className="hidden sm:inline">{targetThemeText}</span>
+            )}
+        </button>
     );
 }
 

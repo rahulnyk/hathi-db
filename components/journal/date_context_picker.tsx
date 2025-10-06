@@ -35,7 +35,9 @@ export function DateContextPicker({
     const datesStatus = useAppSelector(selectDatesWithNotesStatus);
     // const isLoading = useAppSelector(selectDatesWithNotesLoading);
 
-    const selectedDate = new Date(selectedDateString); // Convert string back to Date
+    const selectedDate = selectedDateString
+        ? new Date(selectedDateString)
+        : undefined; // Convert string back to Date, or undefined if null
     const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
 

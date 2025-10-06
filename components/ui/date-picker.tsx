@@ -105,7 +105,7 @@ export function DatePicker({
     return (
         <div
             className={cn(
-                "flex flex-col w-full min-w-[280px] max-w-md mx-auto accent-font-active",
+                "flex flex-col w-full min-w-[280px] max-w-md mx-auto button-font-secondary",
                 className
             )}
         >
@@ -165,20 +165,22 @@ export function DatePicker({
                         const hasNote = datesWithNotesSet.has(dateToSlug(date));
 
                         return (
-                            <Button
+                            <button
                                 key={index}
-                                variant="ghost"
-                                size="sm"
                                 className={cn(
-                                    "h-9 w-9 p-0 font-normal relative", // Added relative for positioning the dot
-                                    "hover:bg-accent hover:text-accent-foreground",
+                                    "h-9 w-9 p-0 relative rounded-md transition-all duration-200 button-font-secondary",
+                                    // Hover state - more visible in light theme
+                                    "hover:bg-gray-300/70 dark:hover:bg-gray-700",
+                                    // Non-current month dates
                                     !isCurrentMonthDay &&
                                         "text-muted-foreground opacity-50",
+                                    // Selected date - subtle but distinct background
                                     isSelected &&
-                                        "bg-primary text-primary-foreground",
+                                        "bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100",
+                                    // Today's date - blue ring when not selected
                                     isTodayDate &&
                                         !isSelected &&
-                                        "border border-blue-500"
+                                        "ring-2 ring-blue-500 ring-inset"
                                 )}
                                 onClick={() => handleDateClick(date)}
                             >
@@ -186,7 +188,7 @@ export function DatePicker({
                                 {hasNote && !isSelected && (
                                     <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-4 rounded-full bg-blue-500 shadow-sm"></span>
                                 )}
-                            </Button>
+                            </button>
                         );
                     })}
                 </div>
