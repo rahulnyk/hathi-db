@@ -46,6 +46,13 @@ const enterKeyPlugin: KeyboardPlugin = {
     modifiers: { shift: false },
     stopPropagation: true,
     handler: async (event, context) => {
+        // If date picker is open, close it first
+        if (context.state.dateTriggerInfo?.isTriggerFound) {
+            event.preventDefault();
+            context.actions.closeDatePicker();
+            return;
+        }
+
         // If context suggestion box is open, let it handle the enter key
         if (
             context.state.contextBracketInfo?.isInsideBrackets &&

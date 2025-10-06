@@ -38,6 +38,7 @@ export const DatePickerBox = ({
                     event.stopPropagation();
                     if (selectedDate) {
                         onDateSelect(selectedDate);
+                        onClose();
                     }
                     break;
             }
