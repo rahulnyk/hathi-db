@@ -10,7 +10,7 @@ interface OriginalNoteState {
 
 interface UIState {
     deviceType: DeviceType;
-    datePickerSelectedDate: string | null; // Store as ISO string to ensure serialization, null means no date selected
+    datePickerSelectedDate: string | null; // ISO string for serialization, null when no date selected
     activeNoteId: string | null;
     editingNoteId: string | null; // Added for tracking the note being edited
     originalNoteStates: Record<string, OriginalNoteState>; // Store original states by note ID
