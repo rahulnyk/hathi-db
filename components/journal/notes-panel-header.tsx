@@ -81,14 +81,19 @@ export function NotesPanelHeader() {
 
                 {/* Toggle switch between Notes and Assistant */}
                 <div
-                    className="relative inline-flex bg-gray-200 dark:bg-gray-800 rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
+                    className={cn(
+                        "relative inline-flex rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
+                        // "bg-gray-200 dark:bg-gray-800"
+                    )}
                     onClick={handleToggleChatMode}
                 >
                     {/* Sliding background indicator */}
                     <div
                         className={cn(
-                            "absolute top-1 w-16 h-6 rounded-full shadow-md transition-all duration-300 ease-in-out",
-                            "bg-slate-600 dark:bg-slate-600",
+                            "absolute top-1 w-16 h-6 rounded-full transition-all duration-300 ease-in-out",
+                            "bg-gray-200 dark:bg-gray-700",
+                            "border border-gray-300 dark:border-gray-600",
+                            "hover:bg-gray-300 dark:hover:bg-gray-600",
                             chatMode ? "translate-x-16" : "translate-x-0"
                         )}
                     />
@@ -97,7 +102,7 @@ export function NotesPanelHeader() {
                     <div
                         className={cn(
                             "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font" : "button-font-active"
+                            chatMode ? "button-font" : "button-font-secondary"
                         )}
                     >
                         {isNavigatingToContext && !chatMode ? (
@@ -112,7 +117,7 @@ export function NotesPanelHeader() {
                     <div
                         className={cn(
                             "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font-active" : "button-font"
+                            chatMode ? "button-font-secondary" : "button-font"
                         )}
                     >
                         {isNavigatingToContext && chatMode ? (

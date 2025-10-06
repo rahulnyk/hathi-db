@@ -83,10 +83,10 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     key={contextStat.context}
                     onClick={() => handleContextClick(contextStat.context)}
                     className={cn(
-                        "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-colors duration-150",
+                        "flex items-center justify-between px-2 py-1 rounded-md cursor-pointer transition-all duration-200",
                         currentContext === contextStat.context
-                            ? "bg-blue-700/10 dark:bg-blue-400/10"
-                            : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50"
+                            ? "bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100"
+                            : "hover:bg-gray-300/70 dark:hover:bg-gray-700"
                     )}
                 >
                     <span
@@ -102,10 +102,10 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                     </span>
                     <span
                         className={cn(
-                            "ml-2 rounded-full px-2 py-0.5",
+                            "ml-2 rounded-full px-2 py-0.5 text-xs",
                             currentContext === contextStat.context
-                                ? "menu-font-active bg-blue-500/20 dark:bg-blue-500/20 text-xs"
-                                : "menu-font bg-neutral-200 dark:bg-neutral-700 text-xs"
+                                ? "button-font-secondary bg-gray-400/50 dark:bg-gray-500/50"
+                                : "button-font-secondary bg-gray-200 dark:bg-gray-600"
                         )}
                     >
                         {contextStat.count}
