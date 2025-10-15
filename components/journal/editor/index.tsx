@@ -2,112 +2,187 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Note } from "@/store/notesSlice";
-import { cn, slugToSentenceCase } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { ContextContainer } from "../note_card/context-container";
-import { useEditorContext } from "@/hooks/editor-context";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { updateDraftContent, clearDraft } from "@/store/draftSlice";
+import { setEditingNoteId } from "@/store/uiSlice";
 import {
-    processEditorCommands,
-    QA_COMMAND,
-    NOTES_COMMAND,
-} from "./editor-commands";
-import { processKeyboardEvent } from "./editor-plugins";
-import { ContextSuggestionBox } from "./context-suggestion-box";
-import { DatePickerBox } from "./date-picker-box";
-import {
-    detectContextBrackets,
-    replaceContextInBrackets,
-    detectDateTrigger,
-    replaceDateTrigger,
-} from "./helpers";
+    updateNoteOptimistically,
+    createNoteOptimistically,
+} from "@/store/notesSlice";
+import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
+import { determineNoteType } from "@/lib/note-type-utils";
+import { useChat } from "@ai-sdk/react";
+import { useSharedChatContext } from "@/lib/chat-context";
 
 interface NotesEditorProps {
     note?: Note;
 }
 
+/**
+ * NotesEditor Component
+ *
+ * A simplified notes editor that provides basic text editing functionality with:
+ * - Content persistence through draft storage
+ * - Note creation and editing
+ * - Chat mode for AI interactions
+ * - Auto-save of unsaved drafts
+ *
+ * @param note - Optional note to edit. If provided, enters edit mode.
+ */
 export function NotesEditor({ note }: NotesEditorProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const isUserInteracting = useRef(false);
+    const dispatch = useAppDispatch();
 
-    // Local state management
+    // Redux state
+    const chatMode = useAppSelector((state) => state.ui.chatMode);
+    const currentKeyContext = useAppSelector(
+        (state) => state.notes.currentContext
+    );
+    const draftContent = useAppSelector((state) => state.draft.content);
+    const originalNoteState = useAppSelector((state) =>
+        note?.id ? state.ui.originalNoteStates[note.id] : null
+    );
+
+    // Local state
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [content, setContent] = useState(note ? note.content : "");
 
-    // Initialize editor context without the circular dependency
-    const editorContext = useEditorContext({
-        note,
-        setContent,
-        content,
-        setContexts,
-        contexts,
-        setIsSubmitting,
-        isSubmitting,
-        textareaRef,
-    });
+    // Chat functionality
+    const { chat } = useSharedChatContext();
+    const chatHook = useChat({ chat });
 
-    // Custom keyboard and content handlers that integrate with editor context
+    // Derived state
+    const isEditMode = !!note;
+
+    /**
+     * Handles content changes in the textarea
+     * Updates local state and persists draft for new notes
+     */
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
     ) => {
-        isUserInteracting.current = true;
-        const newFullValue = event.target.value;
-        const newSelectionStart = event.target.selectionStart;
+        const newContent = event.target.value;
+        setContent(newContent);
 
-        setContent(newFullValue);
-
-        // Handle mode switching commands using command manager
-        if (!note) {
-            // Only for new notes
-            if (processEditorCommands(newFullValue, editorContext)) {
-                return; // Exit early if command was processed
-            }
+        // Auto-save draft for new notes (not in edit mode)
+        if (!isEditMode) {
+            dispatch(updateDraftContent(newContent));
         }
-
-        // Check for context brackets on content change
-        checkContextBrackets(newFullValue, newSelectionStart);
-
-        // Check for date trigger on content change (only if not in chat mode)
-        if (!editorContext.state.chatMode) {
-            const dateInfo = detectDateTrigger(newFullValue, newSelectionStart);
-            editorContext.actions.setDateTriggerInfo(dateInfo);
-        }
-
-        // Reset the flag after a short delay
-        setTimeout(() => {
-            isUserInteracting.current = false;
-        }, 10);
     };
 
+    /**
+     * Handles Enter key press for form submission
+     * Shift+Enter allows multi-line input
+     */
     const handleKeyDown = async (
         event: React.KeyboardEvent<HTMLTextAreaElement>
     ) => {
-        await processKeyboardEvent(event, editorContext);
-    };
-
-    const handleSelect = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
-        const newSelection = {
-            start: event.currentTarget.selectionStart,
-            end: event.currentTarget.selectionEnd,
-        };
-
-        // Update the active selection in editor context
-        editorContext.actions.setActiveSelection(newSelection);
-
-        // Check for context brackets when selection changes
-        checkContextBrackets(event.currentTarget.value, newSelection.start);
-    };
-
-    // Update content when draft changes (only for new notes)
-    useEffect(() => {
-        if (!editorContext.state.isEditMode) {
-            setContent(editorContext.state.draftContent);
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            if (content.trim() && !isSubmitting) {
+                await handleSubmit(event);
+            }
         }
-    }, [editorContext.state.draftContent, editorContext.state.isEditMode]);
+    };
 
+    /**
+     * Creates a new note from current content
+     */
+    const createNote = async (): Promise<void> => {
+        setIsSubmitting(true);
+
+        const { contexts: extractedContexts, tags } = extractMetadata(content);
+        const mergedContexts = [
+            ...new Set([...contexts, ...extractedContexts]),
+        ];
+        const noteType = determineNoteType(content);
+
+        const optimisticNote = createOptimisticNote(
+            content,
+            currentKeyContext,
+            noteType,
+            mergedContexts,
+            tags
+        );
+
+        dispatch(
+            createNoteOptimistically({
+                note: optimisticNote,
+                autoSave: true,
+            })
+        );
+
+        setContent("");
+        setContexts([]);
+        dispatch(clearDraft());
+        setIsSubmitting(false);
+    };
+
+    /**
+     * Saves edits to existing note
+     */
+    const saveEdit = (): void => {
+        if (!note) return;
+
+        dispatch(
+            updateNoteOptimistically({
+                noteId: note.id,
+                patches: { content },
+            })
+        );
+
+        dispatch(setEditingNoteId(null));
+    };
+
+    /**
+     * Cancels note editing and restores original content
+     */
+    const cancelEdit = (): void => {
+        if (!note || !originalNoteState) return;
+
+        setContent(originalNoteState.content);
+        dispatch(setEditingNoteId(null));
+    };
+
+    /**
+     * Handles form submission
+     * Routes to chat or note creation/editing based on mode
+     */
+    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+        e.preventDefault();
+        if (!content.trim() || isSubmitting) return;
+
+        // Chat mode: send message to AI
+        if (chatMode && chatHook && !isEditMode) {
+            chatHook.sendMessage({ text: content.trim() });
+            setContent("");
+            dispatch(clearDraft());
+            return;
+        }
+
+        // Note mode: create or update note
+        if (isEditMode) {
+            saveEdit();
+        } else {
+            await createNote();
+        }
+    };
+
+    /**
+     * Handles context changes from ContextContainer
+     */
+    const handleContextsChange = (newContexts: string[]) => {
+        setContexts(newContexts);
+    };
+
+    // Sync content when editing a note
     useEffect(() => {
         if (note?.id) {
             setContent(note.content);
@@ -115,177 +190,41 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }
     }, [note]);
 
-    // Focus textarea and set cursor to end when entering edit mode
+    // Load draft content for new notes
     useEffect(() => {
-        if (
-            editorContext.state.isEditMode &&
-            textareaRef.current &&
-            !isUserInteracting.current
-        ) {
+        if (!isEditMode) {
+            setContent(draftContent);
+        }
+    }, [draftContent, isEditMode]);
+
+    // Focus textarea when entering edit mode
+    useEffect(() => {
+        if (isEditMode && textareaRef.current) {
             textareaRef.current.focus();
             const length = textareaRef.current.value.length;
             textareaRef.current.setSelectionRange(length, length);
         }
-    }, [editorContext.state.isEditMode]);
-
-    // Function to check and update context bracket detection
-    const checkContextBrackets = (content: string, cursorPosition: number) => {
-        if (editorContext.state.chatMode) {
-            return;
-        }
-
-        const bracketInfo = detectContextBrackets(content, cursorPosition);
-        editorContext.actions.setContextBracketInfo(bracketInfo);
-    };
-
-    // Handle context selection from suggestion box
-    const handleContextSelect = (selectedContext: string) => {
-        if (!editorContext.state.contextBracketInfo.isInsideBrackets) return;
-
-        const sentenceCaseContext = slugToSentenceCase(selectedContext);
-        const result = replaceContextInBrackets(
-            content,
-            editorContext.state.contextBracketInfo,
-            sentenceCaseContext
-        );
-
-        setContent(result.newContent);
-
-        if (!editorContext.state.isEditMode) {
-            editorContext.actions.updateDraftContent(result.newContent);
-        }
-
-        requestAnimationFrame(() => {
-            if (textareaRef.current) {
-                textareaRef.current.setSelectionRange(
-                    result.newCursorPosition,
-                    result.newCursorPosition
-                );
-                editorContext.actions.setActiveSelection({
-                    start: result.newCursorPosition,
-                    end: result.newCursorPosition,
-                });
-            }
-        });
-
-        editorContext.actions.closeContextSuggestions();
-    };
-
-    const handleCloseSuggestionBox = () => {
-        editorContext.actions.closeContextSuggestions();
-    };
-
-    // Handle date selection from date picker
-    const handleDateSelect = (selectedDate: Date) => {
-        if (!editorContext.state.dateTriggerInfo.isTriggerFound) return;
-
-        const result = replaceDateTrigger(
-            content,
-            editorContext.state.dateTriggerInfo.triggerPosition,
-            selectedDate
-        );
-
-        setContent(result.newContent);
-
-        if (!editorContext.state.isEditMode) {
-            editorContext.actions.updateDraftContent(result.newContent);
-        }
-
-        requestAnimationFrame(() => {
-            if (textareaRef.current) {
-                textareaRef.current.setSelectionRange(
-                    result.newCursorPosition,
-                    result.newCursorPosition
-                );
-                editorContext.actions.setActiveSelection({
-                    start: result.newCursorPosition,
-                    end: result.newCursorPosition,
-                });
-            }
-        });
-
-        editorContext.actions.closeDatePicker();
-    };
-
-    // Handle closing the date picker
-    const handleCloseDatePicker = () => {
-        if (editorContext.state.dateTriggerInfo.isTriggerFound) {
-            const textBefore = content.substring(
-                0,
-                editorContext.state.dateTriggerInfo.triggerPosition
-            );
-            const textAfter = content.substring(
-                editorContext.state.dateTriggerInfo.triggerPosition + 1
-            );
-            const newContent = textBefore + textAfter;
-
-            setContent(newContent);
-
-            if (!editorContext.state.isEditMode) {
-                editorContext.actions.updateDraftContent(newContent);
-            }
-
-            requestAnimationFrame(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.setSelectionRange(
-                        editorContext.state.dateTriggerInfo.triggerPosition,
-                        editorContext.state.dateTriggerInfo.triggerPosition
-                    );
-                    editorContext.actions.setActiveSelection({
-                        start: editorContext.state.dateTriggerInfo
-                            .triggerPosition,
-                        end: editorContext.state.dateTriggerInfo
-                            .triggerPosition,
-                    });
-                }
-            });
-        }
-
-        editorContext.actions.closeDatePicker();
-    };
-
-    const handleContextsChange = (newContexts: string[]) => {
-        setContexts(newContexts);
-    };
+    }, [isEditMode]);
 
     return (
         <div className="p-0 relative">
-            {/* Date Picker Box - positioned above textarea */}
-            <DatePickerBox
-                isVisible={editorContext.uiState.shouldShowDatePicker}
-                onDateSelect={handleDateSelect}
-                onClose={handleCloseDatePicker}
-                className="mb-2"
-            />
-
-            {/* Context Suggestion Box - positioned above textarea */}
-            <ContextSuggestionBox
-                searchTerm={editorContext.state.contextBracketInfo.searchTerm}
-                isVisible={editorContext.uiState.shouldShowContextSuggestions}
-                onContextSelect={handleContextSelect}
-                onClose={handleCloseSuggestionBox}
-                maxSuggestions={5}
-                className="mb-2"
-            />
-
-            <form onSubmit={editorContext.operations.handleSubmit}>
+            <form onSubmit={handleSubmit}>
                 <Textarea
                     ref={textareaRef}
                     value={content}
                     onChange={handleContentChange}
                     onKeyDown={handleKeyDown}
-                    onSelect={handleSelect}
                     placeholder={
-                        editorContext.state.isEditMode
+                        isEditMode
                             ? "Edit your note..."
-                            : editorContext.state.chatMode
-                            ? `Ask me to find your notes... Start with ${NOTES_COMMAND} to return to your notes!`
-                            : `Use Markdown to format your notes. Start with ${QA_COMMAND} to ask questions about your notes!`
+                            : chatMode
+                            ? "Ask me to find your notes..."
+                            : "Use Markdown to format your notes..."
                     }
                 />
 
                 <div className="flex justify-between items-end m-0 mb-1 gap-2">
-                    {editorContext.state.isEditMode && note && (
+                    {isEditMode && note && (
                         <>
                             <ContextContainer
                                 contexts={note.contexts || []}
@@ -302,9 +241,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    onClick={
-                                        editorContext.operations.cancelEdit
-                                    }
+                                    onClick={cancelEdit}
                                     className="flex items-center gap-2 rounded-xl"
                                     size="icon"
                                 >
@@ -312,15 +249,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={editorContext.operations.saveEdit}
-                                    disabled={
-                                        editorContext.state.isSubmitting ||
-                                        !content.trim()
-                                    }
+                                    onClick={saveEdit}
+                                    disabled={isSubmitting || !content.trim()}
                                     className="flex items-center gap-2 rounded-xl"
                                     size="icon"
                                 >
-                                    {editorContext.state.isSubmitting ? (
+                                    {isSubmitting ? (
                                         <HashLoader size={14} />
                                     ) : (
                                         <Check strokeWidth={3} size={14} />
@@ -329,24 +263,21 @@ export function NotesEditor({ note }: NotesEditorProps) {
                             </div>
                         </>
                     )}
-                    {!editorContext.state.isEditMode && (
+                    {!isEditMode && (
                         <div className="flex justify-end w-full">
                             <Button
                                 type="submit"
-                                disabled={
-                                    editorContext.state.isSubmitting ||
-                                    !content.trim()
-                                }
+                                disabled={isSubmitting || !content.trim()}
                                 className={cn(
                                     "flex items-center gap-2 rounded-xl"
                                 )}
                                 size="icon"
                             >
-                                {editorContext.state.isSubmitting ? (
+                                {isSubmitting ? (
                                     <HashLoader size={16} />
                                 ) : (
                                     <>
-                                        {editorContext.state.chatMode ? (
+                                        {chatMode ? (
                                             <LucideMessageCircleQuestion
                                                 strokeWidth={3}
                                                 size={16}
