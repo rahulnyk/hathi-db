@@ -19,6 +19,7 @@ import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
 import { useChat } from "@ai-sdk/react";
 import { useSharedChatContext } from "@/lib/chat-context";
+import { useEditorPlugins, defaultEditorPluginChain } from "./plugins";
 
 interface NotesEditorProps {
     note?: Note;
@@ -61,6 +62,17 @@ export function NotesEditor({ note }: NotesEditorProps) {
     // Derived state
     const isEditMode = !!note;
 
+    // Plugin system integration
+    const { handleKeyDown } = useEditorPlugins({
+        content,
+        textareaRef,
+        isEditMode,
+        chatMode,
+        isSubmitting,
+        pluginChain: defaultEditorPluginChain,
+        onContentChange: setContent,
+    });
+
     /**
      * Handles content changes in the textarea
      * Updates local state and persists draft for new notes
@@ -74,21 +86,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         // Auto-save draft for new notes (not in edit mode)
         if (!isEditMode) {
             dispatch(updateDraftContent(newContent));
-        }
-    };
-
-    /**
-     * Handles Enter key press for form submission
-     * Shift+Enter allows multi-line input
-     */
-    const handleKeyDown = async (
-        event: React.KeyboardEvent<HTMLTextAreaElement>
-    ) => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            if (content.trim() && !isSubmitting) {
-                await handleSubmit(event);
-            }
         }
     };
 

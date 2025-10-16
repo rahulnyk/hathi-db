@@ -1,0 +1,133 @@
+import { useCallback } from "react";
+import { useAppDispatch } from "@/store";
+import { EditorPlugin, EditorPluginContext } from "../types";
+
+interface UseEditorPluginsProps {
+    /** Current content of the textarea */
+    content: string;
+    /** Reference to the textarea element */
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+    /** Whether editor is in edit mode (editing existing note) */
+    isEditMode: boolean;
+    /** Whether chat mode is active */
+    chatMode: boolean;
+    /** Whether submission is in progress */
+    isSubmitting: boolean;
+    /** Composed plugin chain to execute on key down */
+    pluginChain: EditorPlugin;
+    /** Callback to update content */
+    onContentChange: (content: string) => void;
+}
+
+/**
+ * Hook to integrate plugin system with the notes editor
+ *
+ * Provides a handleKeyDown function that:
+ * 1. Builds the plugin context from current editor state
+ * 2. Executes the plugin chain
+ * 3. Applies the results (preventDefault, content updates, cursor positioning)
+ *
+ * The hook maintains referential stability through useCallback, ensuring
+ * it only updates when dependencies change.
+ *
+ * @param props - Configuration for the plugin system
+ * @returns Object containing the handleKeyDown function
+ *
+ * @example
+ * ```typescript
+ * const { handleKeyDown } = useEditorPlugins({
+ *   content,
+ *   textareaRef,
+ *   isEditMode,
+ *   chatMode,
+ *   isSubmitting,
+ *   pluginChain: defaultEditorPluginChain,
+ *   onContentChange: setContent,
+ * });
+ *
+ * <Textarea onKeyDown={handleKeyDown} />
+ * ```
+ */
+export function useEditorPlugins({
+    content,
+    textareaRef,
+    isEditMode,
+    chatMode,
+    isSubmitting,
+    pluginChain,
+    onContentChange,
+}: UseEditorPluginsProps) {
+    const dispatch = useAppDispatch();
+
+    /**
+     * Handles keyboard events in the textarea
+     *
+     * Executes the plugin chain and applies results:
+     * - Prevents default behavior if any plugin requests it
+     * - Updates content if plugins modify it
+     * - Updates cursor position if plugins specify it
+     *
+     * @param event - React keyboard event from textarea
+     */
+    const handleKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            // Build plugin context with current editor state
+            const context: EditorPluginContext = {
+                content,
+                cursorPosition: textarea.selectionStart,
+                selectionStart: textarea.selectionStart,
+                selectionEnd: textarea.selectionEnd,
+                textareaRef,
+                dispatch,
+                isEditMode,
+                chatMode,
+                isSubmitting,
+            };
+
+            // Execute plugin chain with initial result
+            const result = pluginChain(event, context, { continue: true });
+
+            // Apply preventDefault if any plugin requested it
+            if (result.preventDefault) {
+                event.preventDefault();
+            }
+
+            // Apply content changes if plugins modified it
+            if (result.updatedContent !== undefined) {
+                onContentChange(result.updatedContent);
+
+                // Update cursor position if specified
+                if (result.updatedCursorPosition !== undefined) {
+                    // Wait for React to update the textarea value
+                    setTimeout(() => {
+                        if (textareaRef.current) {
+                            if (
+                                typeof result.updatedCursorPosition === "number"
+                            ) {
+                                textareaRef.current.setSelectionRange(
+                                    result.updatedCursorPosition,
+                                    result.updatedCursorPosition
+                                );
+                            }
+                        }
+                    }, 0);
+                }
+            }
+        },
+        [
+            content,
+            textareaRef,
+            dispatch,
+            isEditMode,
+            chatMode,
+            isSubmitting,
+            pluginChain,
+            onContentChange,
+        ]
+    );
+
+    return { handleKeyDown };
+}
