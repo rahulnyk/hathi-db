@@ -1,7 +1,7 @@
 "use client";
 
 import { Thread } from "./thread";
-import { InputPanel } from "./input_panel";
+import { InputPanel } from "./input-panel";
 import { AssistantPanel } from "./assistant-panel";
 import { NotesPanelHeader } from "./notes-panel-header";
 import { useAppSelector } from "@/store";
