@@ -1,6 +1,15 @@
-import { useCallback } from "react";
-import { useAppDispatch } from "@/store";
-import { EditorPlugin, EditorPluginContext } from "../types";
+import { useCallback, useMemo } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import {
+    EditorPlugin,
+    EditorPluginContext,
+    SuggestionBoxState,
+} from "../types";
+import {
+    selectIsSuggestionBoxOpen,
+    selectSelectedSuggestion,
+    selectEditorSuggestionState,
+} from "@/store/contextSuggestionSlice";
 
 interface UseEditorPluginsProps {
     /** Current content of the textarea */
@@ -59,6 +68,30 @@ export function useEditorPlugins({
 }: UseEditorPluginsProps) {
     const dispatch = useAppDispatch();
 
+    // Get the editor ID (consistent with how it's calculated in the plugin)
+    const editorId = isEditMode ? "edit" : "new";
+
+    // Select suggestion box state from Redux
+    const editorSuggestionState = useAppSelector((state) =>
+        selectEditorSuggestionState(state, editorId)
+    );
+    const isOpen = useAppSelector((state) =>
+        selectIsSuggestionBoxOpen(state, editorId)
+    );
+    const selectedSuggestion = useAppSelector((state) =>
+        selectSelectedSuggestion(state, editorId)
+    );
+
+    // Build suggestion box state for context - memoized to prevent re-renders
+    const suggestionBoxState: SuggestionBoxState = useMemo(
+        () => ({
+            isOpen,
+            selectedSuggestion,
+            suggestions: editorSuggestionState?.suggestions || [],
+        }),
+        [isOpen, selectedSuggestion, editorSuggestionState?.suggestions]
+    );
+
     /**
      * Handles keyboard events in the textarea
      *
@@ -85,6 +118,7 @@ export function useEditorPlugins({
                 isEditMode,
                 chatMode,
                 isSubmitting,
+                suggestionBoxState,
             };
 
             // Execute plugin chain with initial result
@@ -126,6 +160,7 @@ export function useEditorPlugins({
             isSubmitting,
             pluginChain,
             onContentChange,
+            suggestionBoxState,
         ]
     );
 

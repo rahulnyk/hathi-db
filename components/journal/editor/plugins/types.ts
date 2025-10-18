@@ -1,4 +1,5 @@
 import { Dispatch } from "@reduxjs/toolkit";
+import { ContextSuggestionItem } from "@/store/contextSuggestionSlice";
 
 /**
  * Bracket pairs configuration
@@ -12,6 +13,18 @@ export const BRACKET_PAIRS: Record<string, string> = {
     "'": "'",
     "`": "`",
 };
+
+/**
+ * Suggestion box state for the current editor
+ */
+export interface SuggestionBoxState {
+    /** Whether the suggestion box is currently open */
+    isOpen: boolean;
+    /** Currently selected suggestion (null if none selected) */
+    selectedSuggestion: ContextSuggestionItem | null;
+    /** Array of suggested contexts */
+    suggestions: ContextSuggestionItem[];
+}
 
 /**
  * Context passed to each plugin containing editor state and utilities
@@ -35,6 +48,8 @@ export interface EditorPluginContext {
     chatMode: boolean;
     /** Whether submission is in progress */
     isSubmitting: boolean;
+    /** Suggestion box state for context suggestions */
+    suggestionBoxState: SuggestionBoxState;
 }
 
 /**

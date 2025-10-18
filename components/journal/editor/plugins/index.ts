@@ -69,6 +69,8 @@ export { bracketCompletionPlugin } from "./bracket-completion";
 export { bracketDeletionPlugin } from "./bracket-deletion";
 export { enterHandlerPlugin } from "./enter-handler";
 export { commandTriggerPlugin } from "./command-trigger";
+export { contextDetectionPlugin } from "./context-detection";
+export { contextSuggestionKeyboardPlugin } from "./context-suggestion-keyboard";
 
 // Export hook
 export { useEditorPlugins } from "./hooks/use-editor-plugins";
@@ -76,6 +78,8 @@ export { useEditorPlugins } from "./hooks/use-editor-plugins";
 // Import plugins for composition
 import { composePlugins } from "./compose";
 import { commandTriggerPlugin } from "./command-trigger";
+import { contextDetectionPlugin } from "./context-detection";
+import { contextSuggestionKeyboardPlugin } from "./context-suggestion-keyboard";
 import { bracketCompletionPlugin } from "./bracket-completion";
 import { bracketDeletionPlugin } from "./bracket-deletion";
 import { enterHandlerPlugin } from "./enter-handler";
@@ -85,15 +89,19 @@ import { enterHandlerPlugin } from "./enter-handler";
  *
  * Plugins are executed in the following order:
  * 1. **commandTriggerPlugin** - Activates chat mode when '/' is typed at start
- * 2. **bracketCompletionPlugin** - Auto-completes brackets, quotes, and parentheses
- * 3. **bracketDeletionPlugin** - Deletes matching closing bracket when opening is deleted
- * 4. **enterHandlerPlugin** - Handles Enter key for form submission (stops chain)
+ * 2. **contextDetectionPlugin** - Detects when user is typing between [[ ]]
+ * 3. **contextSuggestionKeyboardPlugin** - Handles keyboard when suggestions are active
+ * 4. **bracketCompletionPlugin** - Auto-completes brackets, quotes, and parentheses
+ * 5. **bracketDeletionPlugin** - Deletes matching closing bracket when opening is deleted
+ * 6. **enterHandlerPlugin** - Handles Enter key for form submission (stops chain)
  *
  * This order ensures that:
  * - Command triggers are detected first
+ * - Context detection happens early to open/close suggestion box
+ * - Context keyboard handling intercepts keys before other handlers
  * - Bracket completion happens before deletion (for new brackets)
  * - Bracket deletion happens before submission
- * - Enter handling is last (as it stops the chain)
+ * - Enter handling is last (as it may stop the chain)
  *
  * @example
  * ```typescript
@@ -110,6 +118,8 @@ import { enterHandlerPlugin } from "./enter-handler";
  */
 export const defaultEditorPluginChain = composePlugins(
     commandTriggerPlugin,
+    contextDetectionPlugin,
+    contextSuggestionKeyboardPlugin,
     bracketCompletionPlugin,
     bracketDeletionPlugin,
     enterHandlerPlugin

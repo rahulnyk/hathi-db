@@ -4,43 +4,72 @@ import { setChatMode } from "@/store/uiSlice";
 /**
  * Command Trigger Plugin
  *
- * Triggers chat mode when the user types '/' at the beginning of an empty
- * text field. This plugin only activates in create mode (when not editing an
- * existing note).
+ * Handles command shortcuts to toggle between chat mode and note-making mode.
+ * This plugin only activates in create mode (when not editing an existing note).
  *
- * Chat mode allows users to interact with AI by typing queries prefixed with
- * a forward slash.
+ * Supported commands:
+ * - `qq`: Enter chat mode (for AI interactions)
+ * - `nn`: Exit chat mode (return to note-making mode)
  *
- * Conditions for triggering:
+ * Commands are triggered when:
  * 1. Not in edit mode (only works when creating new notes)
- * 2. User types '/' character
- * 3. Cursor is at position 0
- * 4. Content is empty
+ * 2. User types the second character of a command sequence
+ * 3. The previous character matches the first character of the command
+ * 4. Content only contains the command characters
  *
  * @param event - The keyboard event
  * @param context - Current editor context
- * @returns Plugin result indicating chat mode was triggered
+ * @returns Plugin result indicating whether a command was triggered
  *
  * @example
- * User types: / (at start of empty field)
- * Result: Chat mode is activated via Redux dispatch
+ * User types: qq (in empty field)
+ * Result: Chat mode is activated, content is cleared
+ *
+ * @example
+ * User types: nn (in chat mode)
+ * Result: Note-making mode is activated, content is cleared
  */
 export const commandTriggerPlugin: EditorPlugin = (event, context) => {
-    const { content, cursorPosition, dispatch, isEditMode } = context;
+    const { content, cursorPosition, dispatch, isEditMode, chatMode } = context;
 
     // Only trigger in create mode (not when editing existing notes)
     if (isEditMode) {
         return { continue: true };
     }
 
-    // Check if user typed '/' at the beginning of empty content
-    if (event.key === "/" && cursorPosition === 0 && content === "") {
-        // Dispatch Redux action to enable chat mode
+    // Check for 'qq' command to enter chat mode
+    if (
+        event.key === "q" &&
+        content === "q" &&
+        cursorPosition === 1 &&
+        !chatMode
+    ) {
+        // Enable chat mode
         dispatch(setChatMode(true));
 
         return {
             continue: true,
-            preventDefault: false,
+            preventDefault: true,
+            updatedContent: "",
+            updatedCursorPosition: 0,
+        };
+    }
+
+    // Check for 'nn' command to exit chat mode and return to note-making
+    if (
+        event.key === "n" &&
+        content === "n" &&
+        cursorPosition === 1 &&
+        chatMode
+    ) {
+        // Disable chat mode
+        dispatch(setChatMode(false));
+
+        return {
+            continue: true,
+            preventDefault: true,
+            updatedContent: "",
+            updatedCursorPosition: 0,
         };
     }
 

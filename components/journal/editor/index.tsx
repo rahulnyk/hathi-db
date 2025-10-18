@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Note } from "@/store/notesSlice";
 import { cn } from "@/lib/utils";
+import { insertContextInBrackets } from "@/lib/bracketMatchUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
@@ -20,6 +21,11 @@ import { determineNoteType } from "@/lib/note-type-utils";
 import { useChat } from "@ai-sdk/react";
 import { useSharedChatContext } from "@/lib/chat-context";
 import { useEditorPlugins, defaultEditorPluginChain } from "./plugins";
+import { ContextSuggestionBox } from "@/components/ui/context-suggestion-box";
+import {
+    selectIsSuggestionBoxOpen,
+    closeSuggestionBox,
+} from "@/store/contextSuggestionSlice";
 
 interface NotesEditorProps {
     note?: Note;
@@ -61,6 +67,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     // Derived state
     const isEditMode = !!note;
+    const editorId = isEditMode ? "edit" : "new";
+
+    // Check if suggestion box is open for this editor
+    const isSuggestionBoxOpen = useAppSelector((state) =>
+        selectIsSuggestionBoxOpen(state, editorId)
+    );
 
     // Plugin system integration
     const { handleKeyDown } = useEditorPlugins({
@@ -179,6 +191,51 @@ export function NotesEditor({ note }: NotesEditorProps) {
         setContexts(newContexts);
     };
 
+    /**
+     * Handles context selection from the suggestion box
+     * Inserts the selected context between [[ ]] at the cursor position
+     */
+    const handleContextSelect = (selectedContext: string) => {
+        if (!textareaRef.current) return;
+
+        const cursorPos = textareaRef.current.selectionStart;
+
+        // Use the utility function to insert the context
+        const result = insertContextInBrackets(
+            content,
+            cursorPos,
+            selectedContext
+        );
+
+        if (!result) {
+            // Not in context brackets, close the suggestion box
+            dispatch(closeSuggestionBox(editorId));
+            return;
+        }
+
+        // Update the content
+        setContent(result.newContent);
+
+        // Update draft for new notes
+        if (!isEditMode) {
+            dispatch(updateDraftContent(result.newContent));
+        }
+
+        // Close suggestion box
+        dispatch(closeSuggestionBox(editorId));
+
+        // Move cursor after the inserted context
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                textareaRef.current.setSelectionRange(
+                    result.newCursorPosition,
+                    result.newCursorPosition
+                );
+            }
+        }, 0);
+    };
+
     // Sync content when editing a note
     useEffect(() => {
         if (note?.id) {
@@ -206,19 +263,29 @@ export function NotesEditor({ note }: NotesEditorProps) {
     return (
         <div className="p-0 relative">
             <form onSubmit={handleSubmit}>
-                <Textarea
-                    ref={textareaRef}
-                    value={content}
-                    onChange={handleContentChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                        isEditMode
-                            ? "Edit your note..."
-                            : chatMode
-                            ? "Ask me to find your notes..."
-                            : "Use Markdown to format your notes..."
-                    }
-                />
+                <div className="relative">
+                    {/* Context Suggestion Box */}
+                    {isSuggestionBoxOpen && (
+                        <ContextSuggestionBox
+                            editorId={editorId}
+                            onContextSelect={handleContextSelect}
+                        />
+                    )}
+
+                    <Textarea
+                        ref={textareaRef}
+                        value={content}
+                        onChange={handleContentChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder={
+                            isEditMode
+                                ? "Edit your note..."
+                                : chatMode
+                                ? "Ask me to find your notes..."
+                                : "Use Markdown to format your notes..."
+                        }
+                    />
+                </div>
 
                 <div className="flex justify-between items-end m-0 mb-1 gap-2">
                     {isEditMode && note && (
