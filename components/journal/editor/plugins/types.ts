@@ -62,6 +62,10 @@ export interface PluginResult {
     updatedContent?: string;
     /** Optional cursor position update */
     updatedCursorPosition?: number;
+    /** Optional selection start position update */
+    updatedSelectionStart?: number;
+    /** Optional selection end position update */
+    updatedSelectionEnd?: number;
     /** Whether the default event behavior should be prevented */
     preventDefault?: boolean;
 }

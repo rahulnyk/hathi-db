@@ -21,8 +21,12 @@ components/journal/editor/plugins/
 ├── compose.ts                   # Plugin composition utility
 ├── index.ts                     # Plugin registration and exports
 ├── bracket-completion.ts        # Auto-complete brackets plugin
+├── bracket-wrap.ts              # Wrap selected text with brackets plugin
+├── bracket-deletion.ts          # Delete matching bracket pairs plugin
 ├── enter-handler.ts             # Enter key submission plugin
 ├── command-trigger.ts           # Chat mode trigger plugin
+├── context-detection.ts         # Context suggestion detection plugin
+├── context-suggestion-keyboard.ts # Context suggestion keyboard handler
 └── hooks/
     └── use-editor-plugins.ts    # React hook for integration
 ```
@@ -91,7 +95,31 @@ Auto-completes brackets, quotes, and parentheses:
 
 Supports: `()`, `[]`, `{}`, `""`, `''`, `` ` ` ``
 
-### 3. Bracket Deletion Plugin
+### 3. Bracket Wrap Plugin
+
+**File**: `bracket-wrap.ts`
+
+Automatically wraps selected text with bracket pairs when an opening bracket is typed:
+
+```typescript
+// Content: "hello |world|" (text "world" is selected)
+// User types: (
+// Result: "hello (|world|)" (text "world" still selected)
+
+// User types [ again:
+// Result: "hello ([|world|])" (text "world" still selected)
+```
+
+This provides an intuitive way to wrap existing text in brackets, quotes, or parentheses. The plugin:
+
+-   Detects when text is selected
+-   Wraps the selection with the appropriate bracket pair
+-   Maintains the selection around the wrapped text (excluding the new brackets)
+-   Allows multiple wrapping operations in sequence
+
+Supports: `()`, `[]`, `{}`, `""`, `''`, `` ` ` ``
+
+### 4. Bracket Deletion Plugin
 
 **File**: `bracket-deletion.ts`
 
@@ -107,7 +135,7 @@ This only works when there are no characters between the opening and closing bra
 
 Supports: `()`, `[]`, `{}`, `""`, `''`, `` ` ` ``
 
-### 4. Enter Handler Plugin
+### 5. Enter Handler Plugin
 
 **File**: `enter-handler.ts`
 
@@ -218,7 +246,9 @@ import { myCustomPlugin } from "./my-plugin";
 export const defaultEditorPluginChain = composePlugins(
     commandTriggerPlugin,
     myCustomPlugin, // Add here
+    bracketWrapPlugin,
     bracketCompletionPlugin,
+    bracketDeletionPlugin,
     enterHandlerPlugin
 );
 ```

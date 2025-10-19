@@ -133,9 +133,25 @@ export function useEditorPlugins({
             if (result.updatedContent !== undefined) {
                 onContentChange(result.updatedContent);
 
-                // Update cursor position if specified
-                if (result.updatedCursorPosition !== undefined) {
-                    // Wait for React to update the textarea value
+                // Update cursor position or selection range if specified
+                if (
+                    result.updatedSelectionStart !== undefined &&
+                    result.updatedSelectionEnd !== undefined
+                ) {
+                    const selectionStart = result.updatedSelectionStart;
+                    const selectionEnd = result.updatedSelectionEnd;
+
+                    // Update selection range (for wrapping operations)
+                    setTimeout(() => {
+                        if (textareaRef.current) {
+                            textareaRef.current.setSelectionRange(
+                                selectionStart,
+                                selectionEnd
+                            );
+                        }
+                    }, 0);
+                } else if (result.updatedCursorPosition !== undefined) {
+                    // Update cursor position only (for completion operations)
                     setTimeout(() => {
                         if (textareaRef.current) {
                             if (
