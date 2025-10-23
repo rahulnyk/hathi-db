@@ -5,16 +5,7 @@ import {
     setQuery,
 } from "@/store/contextSuggestionSlice";
 import { findContextBrackets } from "@/lib/bracketMatchUtils";
-/**
- * Gets a consistent editor ID for the current editor context
- * @param context - The editor plugin context
- * @returns A unique editor ID
- */
-function getEditorId(context: EditorPluginContext): string {
-    // For now, use a simple strategy based on cursor position and edit mode
-    // In the future, this could be enhanced to use actual note IDs
-    return context.isEditMode ? "edit" : "new";
-}
+import { getEditorId } from "./helpers";
 
 /**
  * Context Detection Plugin

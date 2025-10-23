@@ -8,15 +8,7 @@ import {
     findContextBrackets,
     insertContextInBrackets,
 } from "@/lib/bracketMatchUtils";
-
-/**
- * Gets a consistent editor ID for the current editor context
- * @param context - The editor plugin context
- * @returns A unique editor ID
- */
-function getEditorId(context: EditorPluginContext): string {
-    return context.isEditMode ? "edit" : "new";
-}
+import { getEditorId } from "./helpers";
 
 /**
  * Context Suggestion Keyboard Handler Plugin
