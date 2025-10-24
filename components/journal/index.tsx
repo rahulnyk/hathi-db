@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { NotesPanel } from "@/components/journal/notes_panel";
+import { NotesPanel } from "@/components/journal/notes-panel";
 import { useParams } from "next/navigation";
 import { useAppDispatch } from "@/store";
 import { setCurrentContext } from "@/store/notesSlice";

@@ -52,3 +52,4 @@ data/
 
 # Huggingface
 .cache
+temp

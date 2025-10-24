@@ -7,6 +7,10 @@ export type {
 export { ContextSearchBox } from "./context-search-box";
 export type { ContextSearchBoxProps } from "./context-search-box";
 
+export { ContextSuggestionBox } from "./context-suggestion-box";
+
+export { CompactDatePicker } from "./compact-date-picker";
+
 export { Popover, PopoverTrigger, PopoverContent } from "./popover";
 
 export { ToastProvider, useToast, toast } from "./toast";

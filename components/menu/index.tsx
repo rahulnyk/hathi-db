@@ -5,7 +5,7 @@ import { PanelLeftClose } from "lucide-react"; // Import XIcon
 import { useAppSelector, useAppDispatch } from "@/store"; // Import useAppSelector and useAppDispatch
 import { clearDatePickerSelection } from "@/store/uiSlice";
 import { ThemeSwitcher } from "../theme-switcher";
-import { DateContextPicker } from "../journal/date_context_picker";
+import { DateContextPicker } from "../journal/date-context-picker";
 import { ContextList } from "./context-list"; // Import ContextList component
 import { ContextSearchBox } from "../ui/context-search-box";
 import { cn } from "@/lib/utils";
