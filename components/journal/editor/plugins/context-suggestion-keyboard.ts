@@ -1,4 +1,7 @@
-import { EditorPlugin, EditorPluginContext } from "./types";
+import {
+    EditorPlugin,
+    // EditorPluginContext
+} from "./types";
 import {
     selectNext,
     selectPrevious,
