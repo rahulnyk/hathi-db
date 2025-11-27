@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
+import { cn, slugToSentenceCase } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
 import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
 import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
 import { Target, Calendar, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
@@ -10,10 +10,10 @@ export function NotesPanelHeader() {
     const dispatch = useAppDispatch(); // Initialize dispatch
     const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
-    const { chatMode, isNavigatingToContext } = useAppSelector(
+    const { chatMode, isNavigatingToContext, todayContext } = useAppSelector(
         (state) => state.ui
     );
-    const todaysDateSlug = dateToSlug(new Date());
+    const todaysDateSlug = todayContext;
 
     const showHomeButton = currentContext !== todaysDateSlug;
 

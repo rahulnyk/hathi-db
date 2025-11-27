@@ -31,15 +31,20 @@ notesMiddleware.startListening({
         const state = listenerApi.getState() as RootState;
 
         // Find the note to get current data
-        const note = state.notes.notes.find((n) => n.id === noteId);
+        // Find the note to get current data
+        const note =
+            state.notes.contextNotes.find((n) => n.id === noteId) ||
+            state.notes.searchResultNotes.find((n) => n.id === noteId);
         if (!note) return;
 
         try {
             // Get the latest state to ensure we have the most recent data
             const currentState = listenerApi.getState() as RootState;
-            const currentNote = currentState.notes.notes.find(
-                (n) => n.id === noteId
-            );
+            const currentNote =
+                currentState.notes.contextNotes.find((n) => n.id === noteId) ||
+                currentState.notes.searchResultNotes.find(
+                    (n) => n.id === noteId
+                );
 
             if (!currentNote) return;
 
@@ -167,7 +172,12 @@ notesMiddleware.startListening({
 
         if (editingNoteId !== null) {
             // Entering edit mode - store original state
-            const note = state.notes.notes.find((n) => n.id === editingNoteId);
+            // Entering edit mode - store original state
+            const note =
+                state.notes.contextNotes.find((n) => n.id === editingNoteId) ||
+                state.notes.searchResultNotes.find(
+                    (n) => n.id === editingNoteId
+                );
 
             if (note) {
                 listenerApi.dispatch(
@@ -189,9 +199,14 @@ notesMiddleware.startListening({
             if (!previousEditingNoteId) return;
 
             // Find the note that was being edited
-            const note = state.notes.notes.find(
-                (n) => n.id === previousEditingNoteId
-            );
+            // Find the note that was being edited
+            const note =
+                state.notes.contextNotes.find(
+                    (n) => n.id === previousEditingNoteId
+                ) ||
+                state.notes.searchResultNotes.find(
+                    (n) => n.id === previousEditingNoteId
+                );
             if (!note) return;
 
             // Get the original state from UI state

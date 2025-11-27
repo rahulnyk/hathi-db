@@ -20,7 +20,10 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
     );
 
     // Get notes currently loaded in Redux state
-    const notesInState = useAppSelector((state) => state.notes.notes);
+    const notesInState = useAppSelector((state) => [
+        ...state.notes.contextNotes,
+        ...state.notes.searchResultNotes,
+    ]);
 
     // State to hold source notes (including fetched ones)
     const [sourceNotes, setSourceNotes] = useState<Note[]>([]);
@@ -124,9 +127,8 @@ export function SourceNotesList({ aiNoteId, className }: SourceNotesListProps) {
                 </h4>
                 <div className="text-xs text-muted-foreground mt-1">
                     {isLoading && sourceNotes.length < sourceNoteIds.length
-                        ? `Loading ${
-                              sourceNoteIds.length - sourceNotes.length
-                          } more source notes...`
+                        ? `Loading ${sourceNoteIds.length - sourceNotes.length
+                        } more source notes...`
                         : "Notes used to generate this answer"}
                 </div>
             </div>

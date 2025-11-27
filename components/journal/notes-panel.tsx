@@ -8,8 +8,13 @@ import { useAppSelector } from "@/store";
 import { cn } from "@/lib/utils";
 import { ToastProvider, ErrorBoundary } from "@/components/ui";
 
+import { useTodayTracker } from "@/hooks/use-today-tracker";
+
 export function NotesPanel() {
     const chatMode = useAppSelector((state) => state.ui.chatMode);
+
+    // Track today's date and redirect if it changes
+    useTodayTracker();
 
     return (
         <ToastProvider>
