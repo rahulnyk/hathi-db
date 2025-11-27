@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+import { cn, slugToSentenceCase, dateToSlug } from "@/lib/utils";
+
 export type DeviceType = "mobile" | "tablet" | "desktop";
 
 interface OriginalNoteState {
@@ -17,6 +19,7 @@ interface UIState {
     chatMode: boolean; // Track if the editor is in chat mode
     isMenuOpen: boolean; // Track if the menu is open
     isNavigatingToContext: boolean; // Track if currently navigating to a context
+    todayContext: string; // Track the current date's context slug
 }
 
 const initialState: UIState = {
@@ -28,6 +31,7 @@ const initialState: UIState = {
     chatMode: false, // Initialize chat mode to false
     isMenuOpen: false, // Initialize menu as closed
     isNavigatingToContext: false, // Initialize context navigation state
+    todayContext: dateToSlug(new Date()), // Initialize with current date
 };
 
 const uiSlice = createSlice({
@@ -89,6 +93,9 @@ const uiSlice = createSlice({
         setIsNavigatingToContext: (state, action: PayloadAction<boolean>) => {
             state.isNavigatingToContext = action.payload;
         },
+        setTodayContext: (state, action: PayloadAction<string>) => {
+            state.todayContext = action.payload;
+        },
     },
 });
 
@@ -105,5 +112,6 @@ export const {
     setIsMenuOpen,
     toggleMenu,
     setIsNavigatingToContext,
+    setTodayContext,
 } = uiSlice.actions;
 export default uiSlice.reducer;
