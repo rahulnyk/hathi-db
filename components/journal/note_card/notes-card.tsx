@@ -41,9 +41,13 @@ export function NoteCard({
 
     // Check if there's a version of this note in the Redux store
     // If so, use that version to ensure edits are reflected in the UI
-    const storeNote = useAppSelector((state) =>
-        state.notes.notes.find((n) => n.id === note.id)
-    );
+    // Check if there's a version of this note in the Redux store
+    // If so, use that version to ensure edits are reflected in the UI
+    const storeNote = useAppSelector((state) => {
+        const inContext = state.notes.contextNotes.find((n) => n.id === note.id);
+        if (inContext) return inContext;
+        return state.notes.searchResultNotes.find((n) => n.id === note.id);
+    });
     const currentNote = storeNote || note;
 
     const aiStructurizedState = useAppSelector(
@@ -64,7 +68,7 @@ export function NoteCard({
 
     const displayContent =
         aiStructurizedState?.status === "succeeded" &&
-        aiStructurizedState.structuredContent
+            aiStructurizedState.structuredContent
             ? aiStructurizedState.structuredContent
             : currentNote.content;
 
@@ -149,7 +153,7 @@ export function NoteCard({
                 "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
                 // isNoteEditing && "ring-1 ring-zinc-300/50 dark:ring-zinc-600/50 my-0"
                 isNoteEditing &&
-                    "border-l-2 border-dashed border-blue-500 rounded-none"
+                "border-l-2 border-dashed border-blue-500 rounded-none"
             )}
         >
             {showCardHeader && <CardHeader note={currentNote} />}

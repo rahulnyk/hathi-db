@@ -16,7 +16,7 @@ export function Thread() {
     // const user = useContext(UserContext);
     const dispatch = useAppDispatch();
     const {
-        notes,
+        contextNotes: notes,
         collectionStatus,
         collectionError,
         currentContext,
@@ -196,9 +196,8 @@ export function Thread() {
             ) : (
                 <div className="flex flex-col gap-4">
                     {reversedNotes.map((note) => {
-                        const cardKey = `${note.id}-${
-                            note.isSearchResult || "default"
-                        }`;
+                        const cardKey = `${note.id}-${note.isSearchResult || "default"
+                            }`;
                         if (note.note_type === "ai-note") {
                             return <AiNoteCard key={cardKey} note={note} />;
                         } else if (note.note_type === "todo") {

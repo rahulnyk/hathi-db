@@ -35,9 +35,15 @@ export function TodoNoteCard({
     const dispatch = useAppDispatch();
 
     // Ensure we are working with the latest version of the note from the store
-    const storeNote = useAppSelector((state) =>
-        state.notes.notes.find((n) => n.id === initialNote.id)
-    );
+    const storeNote = useAppSelector((state) => {
+        const inContext = state.notes.contextNotes.find(
+            (n) => n.id === initialNote.id
+        );
+        if (inContext) return inContext;
+        return state.notes.searchResultNotes.find(
+            (n) => n.id === initialNote.id
+        );
+    });
     const note = useMemo(
         () => storeNote || initialNote,
         [storeNote, initialNote]
@@ -180,7 +186,7 @@ export function TodoNoteCard({
                 getCardStyle(currentStatus),
                 currentStatus === TodoStatus.DONE && "opacity-75",
                 isNoteEditing &&
-                    "border-l-2 border-dashed border-blue-500 rounded-none"
+                "border-l-2 border-dashed border-blue-500 rounded-none"
             )}
         >
             {!disableCardHeader && !isNoteEditing && (
@@ -216,7 +222,7 @@ export function TodoNoteCard({
                                 className={cn(
                                     "prose prose-sm dark:prose-invert max-w-none cursor-pointer",
                                     currentStatus === TodoStatus.DONE &&
-                                        "line-through opacity-60"
+                                    "line-through opacity-60"
                                 )}
                                 title="Double-click to edit"
                             >
@@ -245,15 +251,15 @@ export function TodoNoteCard({
                                             className={cn(
                                                 "text-xs h-7 gap-1.5",
                                                 currentDeadline &&
-                                                    "text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-700"
+                                                "text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-700"
                                             )}
                                         >
                                             <CalendarIcon className="h-3 w-3" />
                                             {currentDeadline
                                                 ? format(
-                                                      currentDeadline,
-                                                      "MMM dd"
-                                                  )
+                                                    currentDeadline,
+                                                    "MMM dd"
+                                                )
                                                 : "Add deadline"}
                                         </Button>
                                     </PopoverTrigger>

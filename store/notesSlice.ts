@@ -26,7 +26,8 @@ export type Note = DbNote & {
 };
 
 interface NotesState {
-    notes: Note[];
+    contextNotes: Note[];
+    searchResultNotes: Note[];
     collectionStatus: "idle" | "loading" | "succeeded" | "failed";
     collectionError: string | null;
     currentContext: string;
@@ -34,7 +35,8 @@ interface NotesState {
 }
 
 const initialState: NotesState = {
-    notes: [],
+    contextNotes: [],
+    searchResultNotes: [],
     collectionStatus: "idle",
     collectionError: null,
     currentContext: dateToSlug(new Date()),
@@ -228,10 +230,10 @@ const notesSlice = createSlice({
     initialState,
     reducers: {
         clearNotes: (state) => {
-            state.notes = [];
+            state.contextNotes = [];
         },
         addNoteOptimistically: (state, action: PayloadAction<Note>) => {
-            state.notes.unshift(action.payload);
+            state.contextNotes.unshift(action.payload);
         },
         updateNotePersistenceStatus: (
             state,
@@ -242,23 +244,40 @@ const notesSlice = createSlice({
             }>
         ) => {
             const { id, status, errorMessage } = action.payload;
-            const noteIndex = state.notes.findIndex((note) => note.id === id);
-            if (noteIndex !== -1) {
-                state.notes[noteIndex].persistenceStatus = status;
+            // Update in contextNotes
+            const contextNoteIndex = state.contextNotes.findIndex((note) => note.id === id);
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex].persistenceStatus = status;
                 if (errorMessage) {
-                    state.notes[noteIndex].errorMessage = errorMessage;
+                    state.contextNotes[contextNoteIndex].errorMessage = errorMessage;
                 } else {
-                    delete state.notes[noteIndex].errorMessage;
+                    delete state.contextNotes[contextNoteIndex].errorMessage;
+                }
+            }
+            // Update in searchResultNotes
+            const searchNoteIndex = state.searchResultNotes.findIndex((note) => note.id === id);
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex].persistenceStatus = status;
+                if (errorMessage) {
+                    state.searchResultNotes[searchNoteIndex].errorMessage = errorMessage;
+                } else {
+                    delete state.searchResultNotes[searchNoteIndex].errorMessage;
                 }
             }
         },
         markNoteAsDeleting: (state, action: PayloadAction<string>) => {
             const noteId = action.payload;
-            const noteIndex = state.notes.findIndex(
+            const contextNoteIndex = state.contextNotes.findIndex(
                 (note) => note.id === noteId
             );
-            if (noteIndex !== -1) {
-                state.notes[noteIndex].persistenceStatus = "deleting";
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex].persistenceStatus = "deleting";
+            }
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex].persistenceStatus = "deleting";
             }
         },
         setCurrentContext: (state, action: PayloadAction<string>) => {
@@ -275,11 +294,17 @@ const notesSlice = createSlice({
             action: PayloadAction<{ noteId: string; suggestions: string[] }>
         ) => {
             const { noteId, suggestions } = action.payload;
-            const noteIndex = state.notes.findIndex(
+            const contextNoteIndex = state.contextNotes.findIndex(
                 (note) => note.id === noteId
             );
-            if (noteIndex !== -1) {
-                state.notes[noteIndex].suggested_contexts = suggestions;
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex].suggested_contexts = suggestions;
+            }
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex].suggested_contexts = suggestions;
             }
         },
         updateNoteContent: (
@@ -287,11 +312,17 @@ const notesSlice = createSlice({
             action: PayloadAction<{ noteId: string; content: string }>
         ) => {
             const { noteId, content } = action.payload;
-            const noteIndex = state.notes.findIndex(
+            const contextNoteIndex = state.contextNotes.findIndex(
                 (note) => note.id === noteId
             );
-            if (noteIndex !== -1) {
-                state.notes[noteIndex].content = content;
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex].content = content;
+            }
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex].content = content;
             }
         },
         // New action for optimistic note editing
@@ -308,12 +339,22 @@ const notesSlice = createSlice({
             }>
         ) => {
             const { noteId, patches } = action.payload;
-            const noteIndex = state.notes.findIndex(
+            const contextNoteIndex = state.contextNotes.findIndex(
                 (note) => note.id === noteId
             );
-            if (noteIndex !== -1) {
-                state.notes[noteIndex] = {
-                    ...state.notes[noteIndex],
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex] = {
+                    ...state.contextNotes[contextNoteIndex],
+                    ...patches,
+                    persistenceStatus: "pending",
+                };
+            }
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex] = {
+                    ...state.searchResultNotes[searchNoteIndex],
                     ...patches,
                     persistenceStatus: "pending",
                 };
@@ -328,7 +369,7 @@ const notesSlice = createSlice({
             }>
         ) => {
             const { note } = action.payload;
-            state.notes.unshift(note);
+            state.contextNotes.unshift(note);
         },
         // Add search result notes to the store
         addSearchResultNotes: (state, action: PayloadAction<Note[]>) => {
@@ -338,11 +379,8 @@ const notesSlice = createSlice({
                 persistenceStatus: "persisted" as PersistenceStatus,
             }));
 
-            // Remove any existing search result notes first
-            state.notes = state.notes.filter((note) => !note.isSearchResult);
-
-            // Add new search result notes to the beginning
-            state.notes.unshift(...searchResultNotes);
+            // Replace existing search result notes
+            state.searchResultNotes = searchResultNotes;
         },
         // Remove search result notes (useful when leaving chat)
         clearSearchResultNotes: (
@@ -351,16 +389,12 @@ const notesSlice = createSlice({
         ) => {
             if (action.payload) {
                 // Remove specific search result notes by ID
-                state.notes = state.notes.filter(
-                    (note) =>
-                        !note.isSearchResult ||
-                        !action.payload!.includes(note.id)
+                state.searchResultNotes = state.searchResultNotes.filter(
+                    (note) => !action.payload!.includes(note.id)
                 );
             } else {
                 // Remove all search result notes
-                state.notes = state.notes.filter(
-                    (note) => !note.isSearchResult
-                );
+                state.searchResultNotes = [];
             }
         },
     },
@@ -371,7 +405,7 @@ const notesSlice = createSlice({
                 // Only clear notesContext if we're fetching for a different context
                 const requestedContext =
                     action.meta?.arg?.contexts &&
-                    action.meta.arg.contexts.length > 0
+                        action.meta.arg.contexts.length > 0
                         ? action.meta.arg.contexts[0]
                         : null;
                 if (
@@ -394,7 +428,7 @@ const notesSlice = createSlice({
                     state.notesContext = action.payload.primaryContext;
                     // Set persistenceStatus to "persisted" for all fetched notes since they exist in the database
                     // Only set it if it's not already defined (to handle cases where server might return it)
-                    state.notes = action.payload.notes.map((note) => ({
+                    state.contextNotes = action.payload.notes.map((note) => ({
                         ...note,
                         persistenceStatus:
                             note.persistenceStatus ||
@@ -412,12 +446,12 @@ const notesSlice = createSlice({
             .addCase(addNote.fulfilled, (state, action) => {
                 const newNote = action.payload;
                 // Since we're using actual UUIDs, the note should already exist from createNoteOptimistically
-                const noteIndex = state.notes.findIndex(
+                const noteIndex = state.contextNotes.findIndex(
                     (n) => n.id === newNote.id
                 );
                 if (noteIndex !== -1) {
                     // Replace optimistic note with the real one from server
-                    state.notes[noteIndex] = {
+                    state.contextNotes[noteIndex] = {
                         ...newNote,
                         persistenceStatus: "persisted",
                     };
@@ -429,7 +463,7 @@ const notesSlice = createSlice({
                         "This indicates a bug in the note creation flow."
                     );
                     // As a fallback, add the note to prevent data loss
-                    state.notes.unshift({
+                    state.contextNotes.unshift({
                         ...newNote,
                         persistenceStatus: "persisted",
                     });
@@ -438,12 +472,12 @@ const notesSlice = createSlice({
             .addCase(addNote.rejected, (state, action: any) => {
                 const { noteId, error } = action.payload;
                 // Find and update the specific note that failed
-                const noteIndex = state.notes.findIndex(
+                const noteIndex = state.contextNotes.findIndex(
                     (note) => note.id === noteId
                 );
                 if (noteIndex !== -1) {
-                    state.notes[noteIndex].persistenceStatus = "failed";
-                    state.notes[noteIndex].errorMessage = error;
+                    state.contextNotes[noteIndex].persistenceStatus = "failed";
+                    state.contextNotes[noteIndex].errorMessage = error;
                 } else {
                     // Fallback: just log if note not found
                     console.error("Failed to add note:", error);
@@ -454,29 +488,48 @@ const notesSlice = createSlice({
             })
             .addCase(deleteNote.fulfilled, (state, action) => {
                 const { noteId } = action.payload; // payload is { noteId: string }
-                state.notes = state.notes.filter((note) => note.id !== noteId);
+                state.contextNotes = state.contextNotes.filter((note) => note.id !== noteId);
+                state.searchResultNotes = state.searchResultNotes.filter((note) => note.id !== noteId);
             })
             .addCase(deleteNote.rejected, (state, action: any) => {
                 const { noteId, error } = action.payload;
-                const noteIndex = state.notes.findIndex(
+                const contextNoteIndex = state.contextNotes.findIndex(
                     (note) => note.id === noteId
                 );
-                if (noteIndex !== -1) {
+                if (contextNoteIndex !== -1) {
                     // Revert status from "deleting" to "persisted" or "failed"
                     // Assuming "persisted" is the state before deletion was attempted
-                    state.notes[noteIndex].persistenceStatus = "persisted";
-                    state.notes[noteIndex].errorMessage = error;
+                    state.contextNotes[contextNoteIndex].persistenceStatus = "persisted";
+                    state.contextNotes[contextNoteIndex].errorMessage = error;
+                }
+                const searchNoteIndex = state.searchResultNotes.findIndex(
+                    (note) => note.id === noteId
+                );
+                if (searchNoteIndex !== -1) {
+                    state.searchResultNotes[searchNoteIndex].persistenceStatus = "persisted";
+                    state.searchResultNotes[searchNoteIndex].errorMessage = error;
                 }
             })
             .addCase(patchNote.fulfilled, (state, action) => {
                 const updatedNote = action.payload;
-                const noteIndex = state.notes.findIndex(
+                const contextNoteIndex = state.contextNotes.findIndex(
                     (note) => note.id === updatedNote.id
                 );
-                if (noteIndex !== -1) {
+                if (contextNoteIndex !== -1) {
                     // Update the note with the new data from server
-                    state.notes[noteIndex] = {
-                        ...state.notes[noteIndex],
+                    state.contextNotes[contextNoteIndex] = {
+                        ...state.contextNotes[contextNoteIndex],
+                        ...updatedNote,
+                        persistenceStatus: "persisted",
+                    };
+                }
+                const searchNoteIndex = state.searchResultNotes.findIndex(
+                    (note) => note.id === updatedNote.id
+                );
+                if (searchNoteIndex !== -1) {
+                    // Update the note with the new data from server
+                    state.searchResultNotes[searchNoteIndex] = {
+                        ...state.searchResultNotes[searchNoteIndex],
                         ...updatedNote,
                         persistenceStatus: "persisted",
                     };
@@ -484,12 +537,19 @@ const notesSlice = createSlice({
             })
             .addCase(patchNote.rejected, (state, action: any) => {
                 const { noteId, error } = action.payload;
-                const noteIndex = state.notes.findIndex(
+                const contextNoteIndex = state.contextNotes.findIndex(
                     (note) => note.id === noteId
                 );
-                if (noteIndex !== -1) {
-                    state.notes[noteIndex].persistenceStatus = "failed";
-                    state.notes[noteIndex].errorMessage = error;
+                if (contextNoteIndex !== -1) {
+                    state.contextNotes[contextNoteIndex].persistenceStatus = "failed";
+                    state.contextNotes[contextNoteIndex].errorMessage = error;
+                }
+                const searchNoteIndex = state.searchResultNotes.findIndex(
+                    (note) => note.id === noteId
+                );
+                if (searchNoteIndex !== -1) {
+                    state.searchResultNotes[searchNoteIndex].persistenceStatus = "failed";
+                    state.searchResultNotes[searchNoteIndex].errorMessage = error;
                 }
             });
     },
@@ -510,6 +570,12 @@ export const {
 } = notesSlice.actions;
 
 // Selectors
+export const selectContextNotes = (state: { notes: NotesState }) =>
+    state.notes.contextNotes;
+
+export const selectSearchResultNotes = (state: { notes: NotesState }) =>
+    state.notes.searchResultNotes;
+
 export const selectNotesMatchCurrentContext = (state: {
     notes: NotesState;
 }) => {
