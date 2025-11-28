@@ -31,7 +31,6 @@ notesMiddleware.startListening({
         const state = listenerApi.getState() as RootState;
 
         // Find the note to get current data
-        // Find the note to get current data
         const note =
             state.notes.contextNotes.find((n) => n.id === noteId) ||
             state.notes.searchResultNotes.find((n) => n.id === noteId);
