@@ -61,3 +61,36 @@ export async function searchContexts(
         }
     });
 }
+
+/**
+ * Renames a context and updates all note references.
+ *
+ * @param oldName - The current name of the context
+ * @param newName - The new name for the context
+ * @returns A promise that resolves when the rename is complete
+ */
+export async function renameContext(
+    oldName: string,
+    newName: string
+): Promise<void> {
+    return measureExecutionTime("renameContext", async () => {
+        if (!oldName.trim() || !newName.trim()) {
+            throw new Error("Context names cannot be empty");
+        }
+
+        if (oldName === newName) {
+            throw new Error("New name must be different from old name");
+        }
+
+        try {
+            await databaseAdapter.renameContext(oldName, newName);
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Could not rename context.";
+            console.error("Error in renameContext:", errorMessage);
+            throw new Error(errorMessage);
+        }
+    });
+}

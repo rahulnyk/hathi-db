@@ -21,6 +21,7 @@ import {
 } from "./schema";
 import { v4 as uuidv4 } from "uuid";
 import { measureExecutionTime } from "../../lib/performance";
+import { slugToSentenceCase } from "../../lib/utils";
 import {
     eq,
     desc,
@@ -254,9 +255,8 @@ export class SqliteAdapter implements DatabaseAdapter {
             // For SQLite, we need to check JSON content for tags
             const tagConditions = filters.hashtags.map(
                 (tag) =>
-                    sql`json_extract(${notes.tags}, '$') LIKE ${
-                        '%"' + tag + '"%'
-                    }`
+                    sql`json_extract(${notes.tags}, '$') LIKE ${'%"' + tag + '"%'
+                        }`
             );
             conditions.push(or(...tagConditions)!);
         }
@@ -601,14 +601,14 @@ export class SqliteAdapter implements DatabaseAdapter {
                 const result =
                     whereConditions.length > 0
                         ? await db
-                              .select()
-                              .from(notes)
-                              .where(and(...whereConditions))
-                              .orderBy(desc(notes.created_at))
+                            .select()
+                            .from(notes)
+                            .where(and(...whereConditions))
+                            .orderBy(desc(notes.created_at))
                         : await db
-                              .select()
-                              .from(notes)
-                              .orderBy(desc(notes.created_at));
+                            .select()
+                            .from(notes)
+                            .orderBy(desc(notes.created_at));
 
                 // Convert notes and fetch their contexts
                 const notesWithContexts = await Promise.all(
@@ -694,12 +694,12 @@ export class SqliteAdapter implements DatabaseAdapter {
                     }),
                     ...(filters.contexts &&
                         filters.contexts.length > 0 && {
-                            contexts: filters.contexts,
-                        }),
+                        contexts: filters.contexts,
+                    }),
                     ...(filters.hashtags &&
                         filters.hashtags.length > 0 && {
-                            hashtags: filters.hashtags,
-                        }),
+                        hashtags: filters.hashtags,
+                    }),
                     ...(filters.noteType && { noteType: filters.noteType }),
                     ...(filters.deadlineAfter && {
                         deadlineAfter: filters.deadlineAfter,
@@ -1018,11 +1018,11 @@ export class SqliteAdapter implements DatabaseAdapter {
                 const results = rawDb
                     .prepare(query)
                     .all(limit, offset) as Array<{
-                    context: string;
-                    count: number;
-                    lastUsed: number;
-                    total_count: number;
-                }>;
+                        context: string;
+                        count: number;
+                        lastUsed: number;
+                        total_count: number;
+                    }>;
 
                 const contexts: ContextStats[] = results.map((row) => ({
                     context: row.context,
@@ -1136,6 +1136,103 @@ export class SqliteAdapter implements DatabaseAdapter {
                         ? `Failed to upsert embedding: ${error.message}`
                         : "Failed to upsert embedding"
                 );
+            }
+        });
+    }
+
+    /**
+     * Renames a context and updates all note references
+     */
+    async renameContext(oldName: string, newName: string): Promise<void> {
+        return measureExecutionTime("renameContext", async () => {
+            const db = createSqliteDb();
+            const rawDb = getRawSqliteConnection();
+
+            try {
+                // Start transaction
+                rawDb.prepare("BEGIN").run();
+
+                try {
+                    // 1. Update the context name in the contexts table
+                    const contextResult = await db
+                        .update(contexts)
+                        .set({ name: newName })
+                        .where(eq(contexts.name, oldName))
+                        .returning();
+
+                    if (!contextResult || contextResult.length === 0) {
+                        throw new Error(`Context "${oldName}" not found`);
+                    }
+
+                    const contextId = contextResult[0].id;
+
+                    // 2. Fetch all notes linked to this context
+                    const linkedNotes = await db
+                        .select({ noteId: notesContexts.note_id })
+                        .from(notesContexts)
+                        .where(eq(notesContexts.context_id, contextId));
+
+                    if (linkedNotes.length > 0) {
+                        const noteIds = linkedNotes.map((n) => n.noteId);
+
+                        // 3. Fetch the actual notes to update their content
+                        const notesToUpdate = await db
+                            .select()
+                            .from(notes)
+                            .where(inArray(notes.id, noteIds));
+
+                        // 4. Update each note's content and key_context
+                        for (const note of notesToUpdate) {
+                            // Convert slugs to sentence case for pattern matching
+                            const oldNameSentenceCase = slugToSentenceCase(oldName);
+                            const newNameSentenceCase = slugToSentenceCase(newName);
+
+                            // Create regex to match [[Old Name]] in sentence case (case-insensitive)
+                            const regex = new RegExp(
+                                `\\[\\[${oldNameSentenceCase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]\\]`,
+                                "gi"
+                            );
+                            const updatedContent = note.content.replace(
+                                regex,
+                                `[[${newNameSentenceCase}]]`
+                            );
+
+                            // Update key_context if it matches
+                            const updatedKeyContext =
+                                note.key_context === oldName
+                                    ? newName
+                                    : note.key_context;
+
+                            // Only update if something changed
+                            if (
+                                updatedContent !== note.content ||
+                                updatedKeyContext !== note.key_context
+                            ) {
+                                await db
+                                    .update(notes)
+                                    .set({
+                                        content: updatedContent,
+                                        key_context: updatedKeyContext,
+                                    })
+                                    .where(eq(notes.id, note.id));
+                            }
+                        }
+                    }
+
+                    // Commit transaction
+                    rawDb.prepare("COMMIT").run();
+                } catch (error) {
+                    // Rollback on error
+                    rawDb.prepare("ROLLBACK").run();
+                    throw error;
+                }
+            } catch (error: unknown) {
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error occurred";
+                console.error("Error renaming context:", errorMessage);
+                throw new Error(`Failed to rename context: ${errorMessage}`);
             }
         });
     }
