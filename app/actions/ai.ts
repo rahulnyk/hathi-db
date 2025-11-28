@@ -2,6 +2,7 @@
 
 import { getAiService, getEmbeddingService } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
+import { AIError, ServerActionResult } from "@/lib/ai/types";
 
 /**
  * Generates context suggestions for a note based on its content and user's existing contexts
@@ -20,7 +21,7 @@ export async function suggestContexts({
 }: {
     content: string;
     userContexts: string[];
-}): Promise<string[]> {
+}): Promise<ServerActionResult<string[]>> {
     return measureExecutionTime("suggestContexts", async () => {
         try {
             const { suggestions } = await aiService.suggestContexts({
@@ -28,14 +29,27 @@ export async function suggestContexts({
                 userContexts,
             });
 
-            return suggestions;
+            return { success: true, data: suggestions };
         } catch (error) {
+            // If it's an AIError with a userMessage, use that
+            if (error instanceof AIError) {
+                console.error("Error suggesting contexts:", error.message);
+                return {
+                    success: false,
+                    error: error.userMessage || error.message,
+                    errorDetails: error.toErrorDetails(),
+                };
+            }
+
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error suggesting contexts:", errorMessage);
-            throw new Error(`Failed to suggest contexts: ${errorMessage}`);
+            return {
+                success: false,
+                error: `Failed to suggest contexts: ${errorMessage}`,
+            };
         }
     });
 }
@@ -83,21 +97,34 @@ export async function structurizeNote({
 }: {
     content: string;
     userContexts: string[];
-}): Promise<string> {
+}): Promise<ServerActionResult<string>> {
     return measureExecutionTime("structurizeNote", async () => {
         try {
             const { structuredContent } = await aiService.structurizeNote({
                 content,
                 userContexts,
             });
-            return structuredContent;
+            return { success: true, data: structuredContent };
         } catch (error: unknown) {
+            // If it's an AIError with a userMessage, use that
+            if (error instanceof AIError) {
+                console.error("Error structurizing note:", error.message);
+                return {
+                    success: false,
+                    error: error.userMessage || error.message,
+                    errorDetails: error.toErrorDetails(),
+                };
+            }
+
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error structurizing note:", errorMessage);
-            throw new Error(`Failed to structurize note: ${errorMessage}`);
+            return {
+                success: false,
+                error: `Failed to structurize note: ${errorMessage}`,
+            };
         }
     });
 }
@@ -121,7 +148,7 @@ export async function generateDocumentEmbedding({
     contexts?: string[];
     tags?: string[];
     noteType?: string;
-}): Promise<number[]> {
+}): Promise<ServerActionResult<number[]>> {
     return measureExecutionTime("generateDocumentEmbedding", async () => {
         try {
             const response = await embeddingService.generateDocumentEmbedding({
@@ -130,16 +157,27 @@ export async function generateDocumentEmbedding({
                 tags,
                 noteType,
             });
-            return response.embedding;
+            return { success: true, data: response.embedding };
         } catch (error: unknown) {
+            // If it's an AIError with a userMessage, use that
+            if (error instanceof AIError) {
+                console.error("Error generating document embedding:", error.message);
+                return {
+                    success: false,
+                    error: error.userMessage || error.message,
+                    errorDetails: error.toErrorDetails(),
+                };
+            }
+
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error generating document embedding:", errorMessage);
-            throw new Error(
-                `Failed to generate document embedding: ${errorMessage}`
-            );
+            return {
+                success: false,
+                error: `Failed to generate document embedding: ${errorMessage}`,
+            };
         }
     });
 }
@@ -154,22 +192,33 @@ export async function generateQueryEmbedding({
     question,
 }: {
     question: string;
-}): Promise<number[]> {
+}): Promise<ServerActionResult<number[]>> {
     return measureExecutionTime("generateQueryEmbedding", async () => {
         try {
             const response = await embeddingService.generateQueryEmbedding({
                 question,
             });
-            return response.embedding;
+            return { success: true, data: response.embedding };
         } catch (error: unknown) {
+            // If it's an AIError with a userMessage, use that
+            if (error instanceof AIError) {
+                console.error("Error generating query embedding:", error.message);
+                return {
+                    success: false,
+                    error: error.userMessage || error.message,
+                    errorDetails: error.toErrorDetails(),
+                };
+            }
+
             const errorMessage =
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
             console.error("Error generating query embedding:", errorMessage);
-            throw new Error(
-                `Failed to generate query embedding: ${errorMessage}`
-            );
+            return {
+                success: false,
+                error: `Failed to generate query embedding: ${errorMessage}`,
+            };
         }
     });
 }

@@ -80,6 +80,30 @@ notesMiddleware.startListening({
                     patches: finalPatches,
                 })
             );
+
+            // Generate embedding if content, contexts, or tags were updated
+            if (
+                finalPatches.content ||
+                finalPatches.contexts ||
+                finalPatches.tags
+            ) {
+                // We need the full note data for embedding generation
+                // Merge current note with patches
+                const updatedNote = {
+                    ...currentNote,
+                    ...finalPatches,
+                };
+
+                listenerApi.dispatch(
+                    generateEmbeddingThunk({
+                        noteId,
+                        content: updatedNote.content,
+                        contexts: updatedNote.contexts,
+                        tags: updatedNote.tags,
+                        noteType: updatedNote.note_type || "note",
+                    })
+                );
+            }
         } catch (error) {
             console.error("Failed to persist note update:", error);
             listenerApi.dispatch(

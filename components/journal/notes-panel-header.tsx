@@ -58,6 +58,11 @@ export function NotesPanelHeader() {
                             ? "Ask Hathi"
                             : slugToSentenceCase(currentContext)}
                     </h2>
+                    {!showHomeButton && !chatMode && (
+                        <span className="text-[10px] uppercase tracking-wider bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 px-1.5 py-0.5 rounded-full font-medium border border-teal-100/50 dark:border-teal-800/30">
+                            Today
+                        </span>
+                    )}
                 </div>
 
                 {/* Today button */}
