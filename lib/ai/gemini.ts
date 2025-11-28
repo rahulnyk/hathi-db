@@ -10,6 +10,7 @@ import {
     AIError,
     ExtractDeadlineRequest,
     ExtractDeadlineResponse,
+    classifyAIError,
 } from "./types";
 import {
     suggestContextSystemPrompt,
@@ -113,19 +114,8 @@ export class GeminiAIService implements AIService {
     }
 
     private handleGeminiError(error: unknown): AIError {
-        const errorMessage =
-            error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes("quota") || errorMessage.includes("Quota")) {
-            return new AIError("Quota exceeded", "QUOTA_EXCEEDED", false);
-        }
-        if (errorMessage.includes("rate") || errorMessage.includes("Rate")) {
-            return new AIError("Rate limit exceeded", "RATE_LIMIT", true);
-        }
-        return new AIError(
-            `Gemini API error: ${errorMessage}`,
-            undefined,
-            true
-        );
+        // Use the classifyAIError helper to get proper error classification
+        return classifyAIError(error);
     }
 
     private parseSuggestionsJSON(suggestionsText: string): string[] {

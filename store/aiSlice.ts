@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction, Dispatch } from "@reduxjs/toolkit";
 import {
     suggestContexts as suggestContextsAction,
     generateDocumentEmbedding as generateDocumentEmbeddingAction,
@@ -8,14 +8,21 @@ import { patchNote } from "@/app/actions/notes";
 import {
     updateNoteWithSuggestedContexts,
     updateNoteContent,
+    updateNoteOptimistically,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { getEmbeddingService } from "@/lib/ai";
+import { toast } from "@/components/ui/toast";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
     status: "idle" | "loading" | "succeeded" | "failed";
     error?: string;
+    errorDetails?: {
+        retryable: boolean;
+        userMessage: string;
+    };
+    retryCount?: number;
 }
 
 export interface StructurizedNoteState {
@@ -23,6 +30,11 @@ export interface StructurizedNoteState {
     structuredContent?: string;
     originalContent?: string; // Store original content for undo functionality
     error?: string;
+    errorDetails?: {
+        retryable: boolean;
+        userMessage: string;
+    };
+    retryCount?: number;
 }
 
 export interface AIAnswerState {
@@ -51,6 +63,62 @@ const initialState: AIState = {
     aiAnswers: {},
 };
 
+// Helper function to fetch and process context suggestions
+async function fetchAndProcessContextSuggestions(
+    noteId: string,
+    content: string,
+    userContexts: string[],
+    dispatch?: Dispatch
+) {
+    const result = await suggestContextsAction({
+        content,
+        userContexts,
+    });
+
+    if (!result.success) {
+        throw new Error(result.error);
+    }
+
+    const suggestions = result.data.map((ctx) => sentenceCaseToSlug(ctx));
+
+    // Update Redux store if dispatch is provided
+    if (dispatch) {
+        dispatch(
+            updateNoteWithSuggestedContexts({
+                noteId,
+                suggestions,
+            })
+        );
+    }
+
+    // Update database
+    await patchNote({
+        noteId,
+        patches: {
+            suggested_contexts: suggestions,
+        },
+    });
+
+    return suggestions;
+}
+
+// Helper function to fetch and process note structurization
+async function fetchAndProcessStructurization(
+    content: string,
+    userContexts: string[]
+) {
+    const result = await structurizeNoteAction({
+        content,
+        userContexts,
+    });
+
+    if (!result.success) {
+        throw new Error(result.error);
+    }
+
+    return result.data;
+}
+
 // Async thunk for generating context suggestions
 export const generateSuggestedContexts = createAsyncThunk(
     "ai/generateSuggestedContexts",
@@ -70,38 +138,22 @@ export const generateSuggestedContexts = createAsyncThunk(
         dispatch(clearSuggestedContexts(noteId));
 
         try {
-            const suggestionsResponse = await suggestContextsAction({
+            const suggestions = await fetchAndProcessContextSuggestions(
+                noteId,
                 content,
                 userContexts,
-            });
-
-            // Slugify each suggestion using sentenceCaseToSlug
-            const suggestions = suggestionsResponse.map((ctx) =>
-                sentenceCaseToSlug(ctx)
+                dispatch
             );
-
-            // Dispatch action to update the note in Redux store immediately
-            dispatch(
-                updateNoteWithSuggestedContexts({
-                    noteId,
-                    suggestions,
-                })
-            );
-
-            // Update the note optimistically in the database
-            await patchNote({
-                noteId,
-                patches: {
-                    suggested_contexts: suggestions,
-                },
-            });
 
             return { noteId, suggestions };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to generate context suggestions";
             return rejectWithValue({
                 noteId,
-                error:
-                    error?.message || "Failed to generate context suggestions",
+                error: errorMessage,
             });
         }
     }
@@ -123,17 +175,21 @@ export const structurizeNoteThunk = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const structuredContent = await structurizeNoteAction({
+            const structuredContent = await fetchAndProcessStructurization(
                 content,
-                userContexts,
-            });
+                userContexts
+            );
 
             // Return both original and structured content for preview mode
             return { noteId, structuredContent, originalContent: content };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to structurize note";
             return rejectWithValue({
                 noteId,
-                error: error?.message || "Failed to structurize note",
+                error: errorMessage,
             });
         }
     }
@@ -160,12 +216,21 @@ export const generateEmbeddingThunk = createAsyncThunk(
     ) => {
         try {
             // Use optimized document embedding for better retrieval
-            const embedding = await generateDocumentEmbeddingAction({
+            const result = await generateDocumentEmbeddingAction({
                 content,
                 contexts,
                 tags,
                 noteType,
             });
+
+            if (!result.success) {
+                return rejectWithValue({
+                    noteId,
+                    error: result.error,
+                });
+            }
+
+            const embedding = result.data;
 
             // Update the note directly in the database without triggering frontend updates
             // since embeddings are not used in the UI
@@ -180,10 +245,14 @@ export const generateEmbeddingThunk = createAsyncThunk(
             });
 
             return { noteId, embedding };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to generate embedding";
             return rejectWithValue({
                 noteId,
-                error: error?.message || "Failed to generate embedding",
+                error: errorMessage,
             });
         }
     }
@@ -209,33 +278,27 @@ export const acceptStructurizedNoteThunk = createAsyncThunk(
         { rejectWithValue, dispatch }
     ) => {
         try {
-            // Update the note content in the database
-            await patchNote({
+            // Update the note content in Redux store
+            // This will trigger the notesMiddleware which handles:
+            // 1. Metadata extraction (contexts/tags)
+            // 2. Database persistence
+            // 3. Embedding generation
+            dispatch(updateNoteOptimistically({
                 noteId,
                 patches: {
                     content: structuredContent,
-                },
-            });
-
-            // Update the note content in Redux store
-            dispatch(updateNoteContent({ noteId, content: structuredContent }));
-
-            // Regenerate embedding with updated content
-            dispatch(
-                generateEmbeddingThunk({
-                    noteId,
-                    content: structuredContent,
-                    contexts,
-                    tags,
-                    noteType,
-                })
-            );
+                }
+            }));
 
             return { noteId };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to save structured note";
             return rejectWithValue({
                 noteId,
-                error: error?.message || "Failed to save structured note",
+                error: errorMessage,
             });
         }
     }
@@ -255,10 +318,119 @@ export const rejectStructurizedNoteThunk = createAsyncThunk(
         try {
             // Just return success - no database update needed for undo
             return { noteId };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to undo structurization";
             return rejectWithValue({
                 noteId,
-                error: error?.message || "Failed to undo structurization",
+                error: errorMessage,
+            });
+        }
+    }
+);
+const MAX_RETRY_ATTEMPTS = 3;
+
+/**
+ * Retry generating context suggestions for a note
+ * This is a user-initiated action, so it will show toast notifications on error
+ */
+export const retryGenerateSuggestedContexts = createAsyncThunk(
+    "ai/retryGenerateSuggestedContexts",
+    async (
+        {
+            noteId,
+            content,
+            userContexts,
+        }: {
+            noteId: string;
+            content: string;
+            userContexts: string[];
+        },
+        { getState, rejectWithValue }
+    ) => {
+        const state = getState() as any;
+        const currentState = state.ai.suggestedContexts[noteId];
+        const retryCount = (currentState?.retryCount || 0) + 1;
+
+        if (retryCount > MAX_RETRY_ATTEMPTS) {
+            return rejectWithValue({
+                noteId,
+                error: "Maximum retry attempts exceeded. Please try again later.",
+                retryCount,
+            });
+        }
+
+        try {
+            // Pass dispatch to update the note in Redux store as well
+            const suggestions = await fetchAndProcessContextSuggestions(
+                noteId,
+                content,
+                userContexts
+            );
+
+            return { noteId, suggestions, retryCount };
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to generate context suggestions";
+            return rejectWithValue({
+                noteId,
+                error: errorMessage,
+                retryCount,
+            });
+        }
+    }
+);
+
+/**
+ * Retry structurizing a note
+ * This is a user-initiated action, so it will show toast notifications on error
+ */
+export const retryStructurizeNote = createAsyncThunk(
+    "ai/retryStructurizeNote",
+    async (
+        {
+            noteId,
+            content,
+            userContexts,
+        }: {
+            noteId: string;
+            content: string;
+            userContexts: string[];
+        },
+        { getState, rejectWithValue }
+    ) => {
+        const state = getState() as any;
+        const currentState = state.ai.structurizedNote[noteId];
+        const retryCount = (currentState?.retryCount || 0) + 1;
+
+        if (retryCount > MAX_RETRY_ATTEMPTS) {
+            return rejectWithValue({
+                noteId,
+                error: "Maximum retry attempts exceeded. Please try again later.",
+                retryCount,
+            });
+        }
+
+        try {
+            const structuredContent = await fetchAndProcessStructurization(
+                content,
+                userContexts
+            );
+
+            return { noteId, structuredContent, originalContent: content, retryCount };
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to structurize note";
+            return rejectWithValue({
+                noteId,
+                error: errorMessage,
+                retryCount,
             });
         }
     }
@@ -335,6 +507,8 @@ const aiSlice = createSlice({
                     status: "failed",
                     error,
                 };
+                // Show toast for user-initiated action
+                toast.error(error);
             })
             // Accept Structurize Note
             .addCase(acceptStructurizedNoteThunk.pending, (state, action) => {
@@ -381,6 +555,56 @@ const aiSlice = createSlice({
                     state.structurizedNote[noteId].status = "failed";
                     state.structurizedNote[noteId].error = error;
                 }
+                toast.error(error);
+            })
+            // Retry Context Suggestions
+            .addCase(retryGenerateSuggestedContexts.pending, (state, action) => {
+                const { noteId } = action.meta.arg;
+                if (state.suggestedContexts[noteId]) {
+                    state.suggestedContexts[noteId].status = "loading";
+                }
+            })
+            .addCase(retryGenerateSuggestedContexts.fulfilled, (state, action) => {
+                const { noteId, suggestions, retryCount } = action.payload;
+                state.suggestedContexts[noteId] = {
+                    suggestions,
+                    status: "succeeded",
+                    retryCount,
+                };
+            })
+            .addCase(retryGenerateSuggestedContexts.rejected, (state, action) => {
+                const { noteId, error, retryCount } = action.payload as any;
+                if (state.suggestedContexts[noteId]) {
+                    state.suggestedContexts[noteId].status = "failed";
+                    state.suggestedContexts[noteId].error = error;
+                    state.suggestedContexts[noteId].retryCount = retryCount;
+                }
+                toast.error(error);
+            })
+            // Retry Structurize Note
+            .addCase(retryStructurizeNote.pending, (state, action) => {
+                const { noteId } = action.meta.arg;
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "loading";
+                }
+            })
+            .addCase(retryStructurizeNote.fulfilled, (state, action) => {
+                const { noteId, structuredContent, originalContent, retryCount } = action.payload;
+                state.structurizedNote[noteId] = {
+                    status: "succeeded",
+                    structuredContent,
+                    originalContent,
+                    retryCount,
+                };
+            })
+            .addCase(retryStructurizeNote.rejected, (state, action) => {
+                const { noteId, error, retryCount } = action.payload as any;
+                if (state.structurizedNote[noteId]) {
+                    state.structurizedNote[noteId].status = "failed";
+                    state.structurizedNote[noteId].error = error;
+                    state.structurizedNote[noteId].retryCount = retryCount;
+                }
+                toast.error(error);
             });
     },
 });

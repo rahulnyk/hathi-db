@@ -3,7 +3,7 @@
 import { Note } from "@/store/notesSlice";
 import { useAppSelector } from "@/store";
 import { LoadingStateDisplay } from "./loading-state-display";
-import { ErrorStateDisplay } from "./error-state-display";
+import { NoteErrorBadge } from "./note-error-badge";
 
 export interface NoteStatusIndicatorProps {
     note: Note;
@@ -22,34 +22,42 @@ export function NoteStatusIndicator({
     const aiStructurizeState = useAppSelector(
         (state) => state.ai.structurizedNote[note.id]
     );
+
     return (
-        <>
-            {/* Context suggestions loading/error states */}
-            {aiSuggestedContexts && !note.suggested_contexts?.length && (
-                <>
-                    {aiSuggestedContexts.status === "loading" && (
-                        <LoadingStateDisplay message="Generating context suggestions..." />
-                    )}
-                    {aiSuggestedContexts.status === "failed" && (
-                        <ErrorStateDisplay
-                            message={`Failed to generate suggestions: ${aiSuggestedContexts.error}`}
-                            onRetry={onRefreshContextSuggestions}
-                        />
-                    )}
-                </>
+        <div className="flex items-center gap-2">
+            {/* Context suggestions loading state - only show when actively loading */}
+            {aiSuggestedContexts?.status === "loading" && (
+                <LoadingStateDisplay message="Generating context suggestions..." />
             )}
 
-            {/* Initial loading for new notes */}
+            {/* Context suggestions error state */}
+            {aiSuggestedContexts?.status === "failed" && (
+                <NoteErrorBadge
+                    message={
+                        aiSuggestedContexts.errorDetails?.userMessage ||
+                        `Failed to generate suggestions: ${aiSuggestedContexts.error}`
+                    }
+                    onRetry={onRefreshContextSuggestions}
+                />
+            )}
+
+            {/* Show retry button when no suggestions exist and not actively loading */}
             {!aiSuggestedContexts &&
                 !note.suggested_contexts?.length &&
                 note.persistenceStatus === "persisted" && (
-                    <LoadingStateDisplay message="Generating context suggestions..." />
+                    <NoteErrorBadge
+                        message="Context suggestions not available"
+                        onRetry={onRefreshContextSuggestions}
+                    />
                 )}
 
             {/* Structurization error state */}
             {aiStructurizeState?.status === "failed" && (
-                <ErrorStateDisplay
-                    message={`Failed to structurize note: ${aiStructurizeState.error}`}
+                <NoteErrorBadge
+                    message={
+                        aiStructurizeState.errorDetails?.userMessage ||
+                        `Failed to structurize note: ${aiStructurizeState.error}`
+                    }
                     onRetry={onRefreshStructurize}
                 />
             )}
@@ -59,10 +67,10 @@ export function NoteStatusIndicator({
                 <LoadingStateDisplay message="Deleting note..." />
             )}
             {note.persistenceStatus === "failed" && (
-                <ErrorStateDisplay
+                <NoteErrorBadge
                     message={note.errorMessage || "Failed to save note"}
                 />
             )}
-        </>
+        </div>
     );
 }
