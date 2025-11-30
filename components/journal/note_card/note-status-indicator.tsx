@@ -41,8 +41,9 @@ export function NoteStatusIndicator({
                 />
             )}
 
-            {/* Show retry button when no suggestions exist and not actively loading */}
-            {!aiSuggestedContexts &&
+            {/* Show retry button only when suggestions explicitly failed or succeeded with no results */}
+            {aiSuggestedContexts &&
+                aiSuggestedContexts.status === "succeeded" &&
                 !note.suggested_contexts?.length &&
                 note.persistenceStatus === "persisted" && (
                     <NoteErrorBadge
