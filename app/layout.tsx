@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Lexend } from "next/font/google";
+// import { Lexend } from "next/font/google";
+import { Work_Sans } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ReduxProvider } from "@/store/provider";
@@ -16,8 +17,14 @@ export const metadata: Metadata = {
         "Forget Remembering Everything. Hathi is your AI-powered second brain, seamlessly managing your notes, files, todos, and contexts across your personal and professional life.",
 };
 
-const lexend = Lexend({
-    variable: "--font-lexend",
+// const lexend = Lexend({
+//     variable: "--font-lexend",
+//     display: "swap",
+//     subsets: ["latin"],
+// });
+
+const workSans = Work_Sans({
+    variable: "--font-work-sans",
     display: "swap",
     subsets: ["latin"],
 });
@@ -29,7 +36,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={`${lexend.className} antialiased`}>
+            <body className={`${workSans.className} antialiased`}>
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="dark"

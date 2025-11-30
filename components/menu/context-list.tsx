@@ -74,16 +74,13 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         setRenameError(null);
     };
 
-    const handleCancelEdit = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleCancelEdit = () => {
         setEditingContext(null);
         setEditValue("");
         setRenameError(null);
     };
 
-    const handleSaveEdit = async (oldContextSlug: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-
+    const handleSaveEdit = async (oldContextSlug: string) => {
         const newName = editValue.trim();
         if (!newName) {
             setRenameError("Context name cannot be empty");
@@ -173,14 +170,19 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                                 autoFocus
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
-                                        handleSaveEdit(contextStat.context, e as any);
+                                        e.preventDefault();
+                                        handleSaveEdit(contextStat.context);
                                     } else if (e.key === "Escape") {
-                                        handleCancelEdit(e as any);
+                                        e.preventDefault();
+                                        handleCancelEdit();
                                     }
                                 }}
                             />
                             <button
-                                onClick={(e) => handleSaveEdit(contextStat.context, e)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSaveEdit(contextStat.context);
+                                }}
                                 disabled={isRenaming}
                                 className="p-1 hover:bg-gray-400 dark:hover:bg-gray-500 rounded"
                                 title="Save"
