@@ -82,6 +82,11 @@ export function useEditorPlugins({
         selectSelectedSuggestion(state, editorId)
     );
 
+    // Get user preference for Enter key behavior
+    const enterToSubmit = useAppSelector(
+        (state) => state.userPreferences.preferences.enterToSubmit.value
+    );
+
     // Build suggestion box state for context - memoized to prevent re-renders
     const suggestionBoxState: SuggestionBoxState = useMemo(
         () => ({
@@ -119,6 +124,7 @@ export function useEditorPlugins({
                 chatMode,
                 isSubmitting,
                 suggestionBoxState,
+                enterToSubmit,
             };
 
             // Execute plugin chain with initial result
@@ -177,6 +183,7 @@ export function useEditorPlugins({
             pluginChain,
             onContentChange,
             suggestionBoxState,
+            enterToSubmit,
         ]
     );
 

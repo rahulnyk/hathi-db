@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { ReduxProvider } from "@/store/provider";
 import { DeviceTypeDetector } from "@/components/device-type-detector";
+import { PreferencesInitializer } from "@/components/preferences-initializer";
 
 const defaultUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -45,6 +46,7 @@ export default function RootLayout({
                 >
                     <main className="min-h-screen flex">
                         <ReduxProvider>
+                            <PreferencesInitializer />
                             <DeviceTypeDetector />
                             {children}
                         </ReduxProvider>
