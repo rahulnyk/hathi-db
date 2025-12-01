@@ -304,7 +304,10 @@ export class HuggingFaceEmbeddingService implements EmbeddingService {
 
         const embedding = await this.generateEmbeddingVector(prompt);
 
-        return { embedding };
+        return {
+            embedding,
+            model: this.config.embedding.model,
+        };
     }
 
     async generateQueryEmbedding(

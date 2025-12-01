@@ -11,7 +11,6 @@ import {
     updateNoteOptimistically,
 } from "@/store/notesSlice";
 import { sentenceCaseToSlug } from "@/lib/utils";
-import { getEmbeddingService } from "@/lib/ai";
 import { toast } from "@/components/ui/toast";
 // Types for AI-generated data
 export interface SuggestedContexts {
@@ -230,7 +229,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
                 });
             }
 
-            const embedding = result.data;
+            const { embedding, model } = result.data;
 
             // Update the note directly in the database without triggering frontend updates
             // since embeddings are not used in the UI
@@ -238,8 +237,7 @@ export const generateEmbeddingThunk = createAsyncThunk(
                 noteId,
                 patches: {
                     embedding: embedding,
-                    embedding_model:
-                        getEmbeddingService().getCurrentEmbeddingConfig().model,
+                    embedding_model: model,
                     embedding_created_at: new Date().toISOString(),
                 },
             });

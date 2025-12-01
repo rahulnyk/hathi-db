@@ -148,7 +148,7 @@ export async function generateDocumentEmbedding({
     contexts?: string[];
     tags?: string[];
     noteType?: string;
-}): Promise<ServerActionResult<number[]>> {
+}): Promise<ServerActionResult<{ embedding: number[]; model: string }>> {
     return measureExecutionTime("generateDocumentEmbedding", async () => {
         try {
             const response = await embeddingService.generateDocumentEmbedding({
@@ -157,7 +157,13 @@ export async function generateDocumentEmbedding({
                 tags,
                 noteType,
             });
-            return { success: true, data: response.embedding };
+            return {
+                success: true,
+                data: {
+                    embedding: response.embedding,
+                    model: response.model,
+                },
+            };
         } catch (error: unknown) {
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {

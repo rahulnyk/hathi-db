@@ -91,6 +91,7 @@ export class GeminiEmbeddingService implements EmbeddingService {
 
             return {
                 embedding: result.embedding,
+                model: this.config.embedding.model,
             };
         } catch (error) {
             throw this.handleGeminiError(error);
@@ -162,8 +163,7 @@ export class GeminiEmbeddingService implements EmbeddingService {
 
                 if (!result.embeddings || result.embeddings.length === 0) {
                     throw new AIError(
-                        `No embeddings generated for batch: ${i}-${
-                            i + batch.length
+                        `No embeddings generated for batch: ${i}-${i + batch.length
                         }`
                     );
                 }
