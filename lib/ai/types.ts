@@ -58,6 +58,7 @@ export interface QueryEmbeddingRequest {
 
 export interface DocumentEmbeddingResponse {
     embedding: number[];
+    model: string;
 }
 
 export interface QueryEmbeddingResponse {
