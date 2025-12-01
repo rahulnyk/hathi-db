@@ -20,7 +20,12 @@ export function getAiService(): AIService {
     if (!aiServiceInstance) {
         console.log(`🔧 Using ${aiProvider} for text generation`);
         const config = getAIConfig()[aiProvider];
-        aiServiceInstance = new GeminiAIService(config);
+
+        if (aiProvider === "GEMINI") {
+            aiServiceInstance = new GeminiAIService(config);
+        } else {
+            throw new Error(`Unsupported AI provider: ${aiProvider}`);
+        }
     }
     return aiServiceInstance;
 }
