@@ -1,17 +1,16 @@
 // import { google } from "@ai-sdk/google";
 import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { agentSystemPrompt } from "@/lib/prompts/agent-prompt";
-import { getAiService } from "@/lib/ai";
+import { getAiService, getAiConfig } from "@/lib/ai";
 import { tools } from "@/app/agent_tools";
 import { UIMessage } from "ai";
 import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
-import { aiConfig } from "@/lib/ai";
 
 export const maxDuration = 50;
 
-const modelname = aiConfig.agentModel.model;
 const aiService = getAiService();
-const model = aiService.getLanguageModel(modelname);
+const aiConfig = getAiConfig();
+const model = aiService.getLanguageModel(aiConfig.agentModel.model);
 
 export async function POST(req: Request) {
     try {
@@ -21,7 +20,7 @@ export async function POST(req: Request) {
 
         console.log("Received messages:", messages?.length);
         console.log("Chat ID:", id);
-        console.log("Google API Key present:", !!process.env.GOOGLE_AI_API_KEY);
+        console.log("API Key present:", !!aiConfig.provider.apiKey);
 
         // Create comprehensive logger for this chat session
         const logger = createChatLogger(id);

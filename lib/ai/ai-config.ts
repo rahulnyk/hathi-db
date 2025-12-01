@@ -1,7 +1,7 @@
 /**
  * AI Model Configuration
  *
- * Separate configurations for LLM (text generation) and embedding services.
+ * Server-side only configuration for LLM (text generation) and embedding services.
  */
 
 import { AIConfig, EmbeddingConfig } from "./types";
@@ -10,10 +10,14 @@ export function getAIConfig(): Record<string, AIConfig> {
     return {
         GEMINI: {
             textGeneration: {
-                model: process.env.GEMINI_TEXT_GENERATION_MODEL || "gemini-2.5-flash",
+                model:
+                    process.env.GEMINI_TEXT_GENERATION_MODEL ||
+                    "gemini-2.5-flash",
             },
             textGenerationLite: {
-                model: process.env.GEMINI_TEXT_GENERATION_LITE_MODEL || "gemini-2.0-flash-lite",
+                model:
+                    process.env.GEMINI_TEXT_GENERATION_LITE_MODEL ||
+                    "gemini-2.0-flash-lite",
             },
             agentModel: {
                 model: process.env.GEMINI_AGENT_MODEL || "gemini-2.5-flash",
@@ -31,7 +35,9 @@ export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
     return {
         GEMINI: {
             embedding: {
-                model: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-exp-03-07",
+                model:
+                    process.env.GEMINI_EMBEDDING_MODEL ||
+                    "gemini-embedding-exp-03-07",
                 dimensions: 1536,
             },
             provider: {
@@ -42,7 +48,9 @@ export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
         },
         HUGGINGFACE: {
             embedding: {
-                model: process.env.HUGGINGFACE_EMBEDDING_MODEL || "intfloat/multilingual-e5-base",
+                model:
+                    process.env.HUGGINGFACE_EMBEDDING_MODEL ||
+                    "intfloat/multilingual-e5-base",
                 dimensions: 768,
             },
             provider: {
@@ -53,33 +61,3 @@ export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
         },
     } as const;
 }
-
-// Backward compatibility proxy
-export const AI_CONFIG = new Proxy({} as Record<string, AIConfig>, {
-    get(_, prop: string) {
-        return getAIConfig()[prop];
-    },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ownKeys(_) {
-        return Object.keys(getAIConfig());
-    },
-    has(_, prop: string) {
-        return prop in getAIConfig();
-    },
-});
-
-export const EMBEDDING_CONFIG = new Proxy(
-    {} as Record<string, EmbeddingConfig>,
-    {
-        get(_, prop: string) {
-            return getEmbeddingConfig()[prop];
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        ownKeys(_) {
-            return Object.keys(getEmbeddingConfig());
-        },
-        has(_, prop: string) {
-            return prop in getEmbeddingConfig();
-        },
-    }
-);
