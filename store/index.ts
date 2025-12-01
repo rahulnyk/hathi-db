@@ -10,6 +10,7 @@ import agentReducer from "./agentSlice";
 import draftReducer from "./draftSlice";
 import journalReducer from "./journalSlice";
 import contextSuggestionReducer from "./contextSuggestionSlice";
+import userPreferencesReducer from "./userPreferencesSlice";
 import { notesMiddleware } from "./middleware/notesMiddleware";
 
 // Persist configuration for draft slice only
@@ -31,6 +32,7 @@ export const store = configureStore({
         draft: persistedDraftReducer,
         journal: journalReducer,
         contextSuggestion: contextSuggestionReducer,
+        userPreferences: userPreferencesReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

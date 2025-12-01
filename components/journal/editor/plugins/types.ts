@@ -50,6 +50,8 @@ export interface EditorPluginContext {
     isSubmitting: boolean;
     /** Suggestion box state for context suggestions */
     suggestionBoxState: SuggestionBoxState;
+    /** User preference: whether Enter key should submit (true) or add newline (false) */
+    enterToSubmit: boolean;
 }
 
 /**

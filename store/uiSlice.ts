@@ -20,6 +20,7 @@ interface UIState {
     isMenuOpen: boolean; // Track if the menu is open
     isNavigatingToContext: boolean; // Track if currently navigating to a context
     todayContext: string; // Track the current date's context slug
+    menuMode: "context" | "preferences"; // Track current menu mode
 }
 
 const initialState: UIState = {
@@ -32,6 +33,7 @@ const initialState: UIState = {
     isMenuOpen: false, // Initialize menu as closed
     isNavigatingToContext: false, // Initialize context navigation state
     todayContext: dateToSlug(new Date()), // Initialize with current date
+    menuMode: "context", // Initialize with context menu
 };
 
 const uiSlice = createSlice({
@@ -96,6 +98,12 @@ const uiSlice = createSlice({
         setTodayContext: (state, action: PayloadAction<string>) => {
             state.todayContext = action.payload;
         },
+        setMenuMode: (state, action: PayloadAction<"context" | "preferences">) => {
+            state.menuMode = action.payload;
+        },
+        toggleMenuMode: (state) => {
+            state.menuMode = state.menuMode === "context" ? "preferences" : "context";
+        },
     },
 });
 
@@ -113,5 +121,7 @@ export const {
     toggleMenu,
     setIsNavigatingToContext,
     setTodayContext,
+    setMenuMode,
+    toggleMenuMode,
 } = uiSlice.actions;
 export default uiSlice.reducer;

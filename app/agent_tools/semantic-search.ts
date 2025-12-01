@@ -15,7 +15,14 @@ import { formatSearchMessage } from "./types";
  */
 async function generateSearchEmbedding(query: string): Promise<number[]> {
     try {
-        const embedding = await generateQueryEmbedding({ question: query });
+        const result = await generateQueryEmbedding({ question: query });
+
+        // Handle the ServerActionResult format
+        if (!result.success) {
+            throw new Error(result.error || "Failed to generate embedding");
+        }
+
+        const embedding = result.data;
 
         if (!Array.isArray(embedding) || embedding.length === 0) {
             throw new Error("Invalid embedding format received");
