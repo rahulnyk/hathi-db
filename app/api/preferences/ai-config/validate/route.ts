@@ -48,7 +48,9 @@ export async function POST(request: Request) {
                 default:
                     return NextResponse.json({
                         valid: false,
-                        error: `Unsupported provider: ${(config as any).provider?.name}`,
+                        error: `Unsupported provider: ${
+                            (config as UserAIConfig).provider?.name
+                        }`,
                     });
             }
 

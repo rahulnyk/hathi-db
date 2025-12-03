@@ -7,6 +7,8 @@ import {
     UserAIConfig,
     AI_PROVIDERS,
     getModelsForProvider,
+    AIProviderName,
+    TextGenerationModel,
 } from "@/lib/ai/ai-config-types";
 import { resetAIService } from "@/lib/ai";
 
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
         }
 
         // Validate provider name
-        if (!AI_PROVIDERS.includes(newConfig.provider.name as any)) {
+        if (!AI_PROVIDERS.includes(newConfig.provider.name as AIProviderName)) {
             return NextResponse.json(
                 { error: `Invalid provider: ${newConfig.provider.name}` },
                 { status: 400 }
@@ -53,7 +55,11 @@ export async function POST(request: Request) {
 
         // Validate models match the selected provider
         const validModels = getModelsForProvider(newConfig.provider.name);
-        if (!validModels.includes(newConfig.textGenerationModel as any)) {
+        if (
+            !validModels.includes(
+                newConfig.textGenerationModel as TextGenerationModel
+            )
+        ) {
             return NextResponse.json(
                 {
                     error: `Invalid textGenerationModel '${newConfig.textGenerationModel}' for provider '${newConfig.provider.name}'`,
@@ -62,7 +68,11 @@ export async function POST(request: Request) {
             );
         }
 
-        if (!validModels.includes(newConfig.textGenerationLiteModel as any)) {
+        if (
+            !validModels.includes(
+                newConfig.textGenerationLiteModel as TextGenerationModel
+            )
+        ) {
             return NextResponse.json(
                 {
                     error: `Invalid textGenerationLiteModel '${newConfig.textGenerationLiteModel}' for provider '${newConfig.provider.name}'`,
@@ -71,7 +81,9 @@ export async function POST(request: Request) {
             );
         }
 
-        if (!validModels.includes(newConfig.agentModel as any)) {
+        if (
+            !validModels.includes(newConfig.agentModel as TextGenerationModel)
+        ) {
             return NextResponse.json(
                 {
                     error: `Invalid agentModel '${newConfig.agentModel}' for provider '${newConfig.provider.name}'`,
