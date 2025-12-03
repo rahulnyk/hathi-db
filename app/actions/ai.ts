@@ -12,9 +12,6 @@ import { AIError, ServerActionResult } from "@/lib/ai/types";
  * @returns Promise that resolves to an array of suggested contexts
  */
 
-const aiService = getAiService();
-const embeddingService = getEmbeddingService();
-
 export async function suggestContexts({
     content,
     userContexts,
@@ -24,6 +21,7 @@ export async function suggestContexts({
 }): Promise<ServerActionResult<string[]>> {
     return measureExecutionTime("suggestContexts", async () => {
         try {
+            const aiService = await getAiService();
             const { suggestions } = await aiService.suggestContexts({
                 content,
                 userContexts,
@@ -67,6 +65,7 @@ export async function extractDeadlineFromContent({
 }): Promise<string | null> {
     return measureExecutionTime("extractDeadlineFromContent", async () => {
         try {
+            const aiService = await getAiService();
             const { deadline } = await aiService.extractDeadline({
                 content,
             });
@@ -100,6 +99,7 @@ export async function structurizeNote({
 }): Promise<ServerActionResult<string>> {
     return measureExecutionTime("structurizeNote", async () => {
         try {
+            const aiService = await getAiService();
             const { structuredContent } = await aiService.structurizeNote({
                 content,
                 userContexts,
@@ -151,6 +151,7 @@ export async function generateDocumentEmbedding({
 }): Promise<ServerActionResult<{ embedding: number[]; model: string }>> {
     return measureExecutionTime("generateDocumentEmbedding", async () => {
         try {
+            const embeddingService = getEmbeddingService();
             const response = await embeddingService.generateDocumentEmbedding({
                 content,
                 contexts,
@@ -201,6 +202,7 @@ export async function generateQueryEmbedding({
 }): Promise<ServerActionResult<number[]>> {
     return measureExecutionTime("generateQueryEmbedding", async () => {
         try {
+            const embeddingService = getEmbeddingService();
             const response = await embeddingService.generateQueryEmbedding({
                 question,
             });

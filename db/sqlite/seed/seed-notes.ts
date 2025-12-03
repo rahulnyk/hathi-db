@@ -19,9 +19,6 @@ import * as path from "path";
 import { getAiService, getEmbeddingService } from "../../../lib/ai";
 import { dateToSlug } from "../../../lib/utils";
 
-const aiService = getAiService();
-const embeddingService = getEmbeddingService();
-
 // Define types for better type safety
 interface SeedNote {
     content: string;
@@ -67,6 +64,7 @@ const sampleNotes: SeedNote[] = emNotes.map((note: any) => ({
  * Generate embeddings for multiple notes in batch
  */
 async function generateBatchEmbeddings(
+    embeddingService: Awaited<ReturnType<typeof getEmbeddingService>>,
     notesData: Array<{
         id: string;
         content: string;
@@ -75,13 +73,6 @@ async function generateBatchEmbeddings(
         note_type?: string;
     }>
 ): Promise<Array<{ id: string; embedding: number[] }>> {
-    if (!aiService) {
-        console.log(
-            "⚠️  Skipping embedding generation - no AI provider available"
-        );
-        return [];
-    }
-
     try {
         console.log(
             `🧠 Generating embeddings for ${notesData.length} notes in batch...`
@@ -122,6 +113,7 @@ async function generateBatchEmbeddings(
  * Update notes with embeddings using SQLite adapter
  */
 async function updateNotesWithEmbeddings(
+    embeddingService: Awaited<ReturnType<typeof getEmbeddingService>>,
     embeddingsData: Array<{ id: string; embedding: number[] }>
 ): Promise<void> {
     if (embeddingsData.length === 0) {
@@ -366,22 +358,22 @@ async function seedSqliteDatabase() {
         console.log(`✅ Created contexts and note-context relationships`);
 
         // Generate and store embeddings if AI provider is available
-        if (aiService && notesDataForEmbeddings.length > 0) {
-            try {
-                console.log("🧠 Starting embedding generation process...");
+        try {
+            console.log("🧠 Starting embedding generation process...");
+            const aiService = await getAiService();
+            const embeddingService = getEmbeddingService();
+
+            if (notesDataForEmbeddings.length > 0) {
                 const embeddingsData = await generateBatchEmbeddings(
+                    embeddingService,
                     notesDataForEmbeddings
                 );
-                await updateNotesWithEmbeddings(embeddingsData);
+                await updateNotesWithEmbeddings(embeddingService, embeddingsData);
                 console.log("✅ Embedding generation completed successfully");
-            } catch (error) {
-                console.error("❌ Embedding generation failed:", error);
-                console.log("⚠️  Notes were seeded but without embeddings");
             }
-        } else {
-            console.log(
-                "⚠️  Skipping embedding generation - no AI provider available"
-            );
+        } catch (error) {
+            console.error("❌ Embedding generation failed:", error);
+            console.log("⚠️  Notes were seeded but without embeddings");
         }
 
         // Log summary

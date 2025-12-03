@@ -10,9 +10,7 @@ import { notes, contexts, notesContexts } from "../schema";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import seedData from "@/db/seed-data/entrepreneur-notes.json";
-
-const aiService = getAiService();
-const embeddingService = getEmbeddingService();
+import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 interface SeedNote {
     content: string;
@@ -41,6 +39,7 @@ interface NoteToInsert {
 
 // Function to generate embeddings for multiple notes in batch
 async function generateBatchEmbeddings(
+    embeddingService: Awaited<ReturnType<typeof getEmbeddingService>>,
     notesData: Array<{
         id: string;
         content: string;
@@ -85,8 +84,6 @@ async function generateBatchEmbeddings(
     }
 }
 
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-
 // Function to update notes with embeddings in the database
 async function updateNotesWithEmbeddings(
     db: NodePgDatabase<{
@@ -94,6 +91,7 @@ async function updateNotesWithEmbeddings(
         contexts: typeof contexts;
         notesContexts: typeof notesContexts;
     }>,
+    embeddingService: Awaited<ReturnType<typeof getEmbeddingService>>,
     embeddingsData: Array<{ id: string; embedding: number[] }>
 ): Promise<void> {
     console.log(
@@ -338,10 +336,11 @@ async function runSeedNotes() {
         await linkNotesToContexts(db, notesToInsert);
 
         // Generate embeddings for all notes in batch
-        const embeddingsData = await generateBatchEmbeddings(insertedNotes);
+        const embeddingService = getEmbeddingService();
+        const embeddingsData = await generateBatchEmbeddings(embeddingService, insertedNotes);
 
         // Update notes with embeddings
-        await updateNotesWithEmbeddings(db, embeddingsData);
+        await updateNotesWithEmbeddings(db, embeddingService, embeddingsData);
 
         console.log("🎉 Seeding completed successfully!");
         console.log(`📊 Summary:`);

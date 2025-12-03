@@ -38,13 +38,21 @@ export async function loadUserPreferencesFromFile(): Promise<UserPreferences> {
             PREFERENCES_FILE_PATH,
             "utf-8"
         );
-        const preferences = JSON.parse(fileContent) as UserPreferences;
+        const preferences = JSON.parse(fileContent) as Partial<UserPreferences>;
 
-        // Merge with defaults to ensure all preferences exist
+        // Deep merge with defaults to handle new preferences
         // This handles cases where new preferences are added in updates
         return {
             ...DEFAULT_USER_PREFERENCES,
             ...preferences,
+            aiConfig: {
+                ...DEFAULT_USER_PREFERENCES.aiConfig,
+                ...(preferences.aiConfig || {}),
+                value: {
+                    ...DEFAULT_USER_PREFERENCES.aiConfig.value,
+                    ...(preferences.aiConfig?.value || {}),
+                },
+            },
         };
     } catch (error) {
         console.error("Error loading user preferences:", error);

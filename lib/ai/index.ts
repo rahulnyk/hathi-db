@@ -10,26 +10,26 @@ import { GeminiEmbeddingService } from "./gemini-embedding";
 import { HuggingFaceEmbeddingService } from "./huggingface-embedding";
 import { getAIConfig, getEmbeddingConfig } from "./ai-config";
 
-const aiProvider = process.env.AI_PROVIDER || "GEMINI";
 const embeddingProvider = process.env.EMBEDDING_PROVIDER || "HUGGINGFACE";
 
 let aiServiceInstance: AIService | null = null;
 let embeddingServiceInstance: EmbeddingService | null = null;
 
-export function getAiService(): AIService {
+export async function getAiService(): Promise<AIService> {
     if (!aiServiceInstance) {
-        console.log(`🔧 Using ${aiProvider} for text generation`);
-        const config = getAIConfig()[aiProvider];
+        const config = await getAIConfig();
+        console.log(`🔧 Using ${config.provider.name} for text generation`);
 
-        if (aiProvider === "GEMINI") {
+        if (config.provider.name === "Google") {
             aiServiceInstance = new GeminiAIService(config);
         } else {
-            throw new Error(`Unsupported AI provider: ${aiProvider}`);
+            throw new Error(`Unsupported AI provider: ${config.provider.name}`);
         }
     }
     return aiServiceInstance;
 }
 
+// getEmbeddingService remains synchronous - embeddings stay local
 export function getEmbeddingService(): EmbeddingService {
     if (!embeddingServiceInstance) {
         const config = getEmbeddingConfig()[embeddingProvider];
@@ -46,11 +46,21 @@ export function getEmbeddingService(): EmbeddingService {
 }
 
 /**
+ * Reset AI service instance (called when configuration changes)
+ * Embedding service is not reset as it remains local
+ */
+export function resetAIService(): void {
+    console.log("🔄 Resetting AI service instance");
+    aiServiceInstance = null;
+}
+
+/**
  * Get the current AI configuration
  * Useful for accessing model names and other config without importing the service
  */
-export function getAiConfig() {
-    return getAIConfig()[aiProvider];
+export async function getAiConfig() {
+    const config = await getAIConfig();
+    return config;
 }
 
 export * from "./types";
