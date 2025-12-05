@@ -360,7 +360,6 @@ async function seedSqliteDatabase() {
         // Generate and store embeddings if AI provider is available
         try {
             console.log("🧠 Starting embedding generation process...");
-            const aiService = await getAiService();
             const embeddingService = getEmbeddingService();
 
             if (notesDataForEmbeddings.length > 0) {
