@@ -69,7 +69,7 @@ async function verifyAIConfig() {
 
     console.log("   Fetching new AI service instance...");
     try {
-        const service = await getAiService();
+        await getAiService();
         const config = await getAiConfig();
 
         if (config.textGeneration.model === "gemini-2.5-pro") {
