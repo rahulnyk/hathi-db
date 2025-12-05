@@ -2,35 +2,36 @@
  * AI Model Configuration
  *
  * Server-side only configuration for LLM (text generation) and embedding services.
+ * LLM configuration is loaded from user preferences.
+ * Embedding configuration remains environment-based.
  */
 
 import { AIConfig, EmbeddingConfig } from "./types";
+import { loadUserPreferencesFromFile } from "@/lib/user-preferences-server";
 
-export function getAIConfig(): Record<string, AIConfig> {
+/**
+ * Load AI configuration from user preferences
+ * Falls back to environment variables if preferences not available
+ */
+export async function getAIConfig(): Promise<AIConfig> {
+    const preferences = await loadUserPreferencesFromFile();
+    const userAIConfig = preferences.aiConfig.value;
+
     return {
-        GEMINI: {
-            textGeneration: {
-                model:
-                    process.env.GEMINI_TEXT_GENERATION_MODEL ||
-                    "gemini-2.5-flash",
-            },
-            textGenerationLite: {
-                model:
-                    process.env.GEMINI_TEXT_GENERATION_LITE_MODEL ||
-                    "gemini-2.0-flash-lite",
-            },
-            agentModel: {
-                model: process.env.GEMINI_AGENT_MODEL || "gemini-2.5-flash",
-            },
-            provider: {
-                name: "Google",
-                apiKey: process.env.GOOGLE_AI_API_KEY,
-                baseURL: process.env.GOOGLE_AI_BASE_URL,
-            },
+        textGeneration: {
+            model: userAIConfig.textGenerationModel,
         },
-    } as const;
+        textGenerationLite: {
+            model: userAIConfig.textGenerationLiteModel,
+        },
+        agentModel: {
+            model: userAIConfig.agentModel,
+        },
+        provider: userAIConfig.provider,
+    };
 }
 
+// getEmbeddingConfig remains unchanged - embeddings stay local
 export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
     return {
         GEMINI: {

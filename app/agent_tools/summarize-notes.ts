@@ -36,7 +36,7 @@ export async function summarizeNotes(
     params: SummarizeNotesParams
 ): Promise<SummarizeNotesResult> {
     try {
-        const aiService = getAiService();
+        const aiService = await getAiService();
         const { noteIds, includeMetadata = true } = params;
 
         // Get the notes by their IDs

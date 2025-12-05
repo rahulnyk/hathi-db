@@ -8,10 +8,6 @@ import { createChatLogger } from "@/lib/chat-loggers/server-chat-logger";
 
 export const maxDuration = 50;
 
-const aiService = getAiService();
-const aiConfig = getAiConfig();
-const model = aiService.getLanguageModel(aiConfig.agentModel.model);
-
 export async function POST(req: Request) {
     try {
         const { messages, id }: { messages: UIMessage[]; id: string } =
@@ -20,6 +16,12 @@ export async function POST(req: Request) {
 
         console.log("Received messages:", messages?.length);
         console.log("Chat ID:", id);
+
+        // Get AI service and config asynchronously
+        const aiService = await getAiService();
+        const aiConfig = await getAiConfig();
+        const model = aiService.getLanguageModel(aiConfig.agentModel.model);
+
         console.log("API Key present:", !!aiConfig.provider.apiKey);
 
         // Create comprehensive logger for this chat session

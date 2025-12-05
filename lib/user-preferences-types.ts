@@ -5,6 +5,8 @@
  * for UI rendering and persistence.
  */
 
+import { UserAIConfig } from "./ai/ai-config-types";
+
 export interface PreferenceSetting<T = unknown> {
     value: T;
     display_name: string;
@@ -13,10 +15,7 @@ export interface PreferenceSetting<T = unknown> {
 
 export interface UserPreferences {
     enterToSubmit: PreferenceSetting<boolean>;
-    // Future preferences can be added here:
-    // geminiApiKey: PreferenceSetting<string>;
-    // selectedModel: PreferenceSetting<string>;
-    // theme: PreferenceSetting<string>;
+    aiConfig: PreferenceSetting<UserAIConfig>;
 }
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
@@ -25,5 +24,19 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
         display_name: "Enter to Submit",
         description:
             "When enabled, pressing Enter submits the note. When disabled, press Shift+Enter to submit and Enter to add a new line.",
+    },
+    aiConfig: {
+        value: {
+            provider: {
+                name: "Google",
+                apiKey: "",
+                baseURL: "",
+            },
+            textGenerationModel: "gemini-2.5-flash",
+            textGenerationLiteModel: "gemini-2.0-flash-lite",
+            agentModel: "gemini-2.5-flash",
+        },
+        display_name: "AI Configuration",
+        description: "Configure AI provider, models, and API credentials",
     },
 };
