@@ -30,7 +30,7 @@ DATE EXTRACTION RULES:
         new Date().toISOString().split("T")[0]
     }
 3. Handle relative terms: "tomorrow", "next Monday", "in 3 days", "end of week", "next month", "this week"
-4. If no specific deadline is mentioned or it's too vague (e.g., "soon", "later", "eventually"), return "null"
+4. If no specific deadline is mentioned or it's too vague (e.g., "soon", "later", "eventually"), Return your best guess. 
 
 EXAMPLES OF CORRECT RESPONSES:
 - For "complete this by next Monday" (today is 2025-07-19, Saturday) -> 2025-07-21
