@@ -32,8 +32,13 @@ export interface SuggestContextsRequest {
     userContexts: string[];
 }
 
+export interface ContextSuggestionWithConfidence {
+    context: string;
+    confidence: "High" | "Low";
+}
+
 export interface SuggestContextsResponse {
-    suggestions: string[];
+    suggestions: ContextSuggestionWithConfidence[];
 }
 
 export interface EmbeddingRequest {
@@ -250,8 +255,7 @@ export class AIAuthenticationError extends AIError {
  * Helper function to classify and create appropriate error from API responses
  */
 export function classifyAIError(error: unknown): AIError {
-    const errorMessage =
-        error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const lowerMessage = errorMessage.toLowerCase();
 
     // Check for rate limit errors

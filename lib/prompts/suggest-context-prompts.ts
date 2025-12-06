@@ -23,12 +23,15 @@ ${CONTEXT_FORMAT_RULES}
 - Each context should be a noun or noun phrase that could stand alone as a knowledge graph node
 
 **Critical Response Format:**
-- You MUST respond with ONLY a valid JSON array of strings
+- You MUST respond with ONLY a valid JSON array of objects with confidence levels
+- Format: [{"context": "Context Name", "confidence": "High" | "Low"}]
 - Do NOT include markdown code blocks (no \`\`\`json or \`\`\`)
 - Do NOT include explanations, comments, or additional text
 - Do NOT use any formatting other than plain JSON
 - The response must be parseable by JSON.parse()
 - Return contexts in Title Case with spaces (e.g., "Project Alpha", "Machine Learning")
+- "High" confidence: Reused existing contexts, named entities, specific proper nouns
+- "Low" confidence: General categories, broader themes, inferred topics
 
 ${CONTEXT_EXAMPLES}`;
 }
@@ -59,9 +62,11 @@ ${contextsListString}
 Remember:
 - Only suggest concrete entities, topics, or named concepts that could be nodes in a knowledge graph
 - Do NOT suggest adjectives, verbs, or abstract modifiers
-- Prioritize reusing existing contexts when relevant
+- Prioritize reusing existing contexts when relevant (mark as "High" confidence)
+- Mark named entities and specific proper nouns as "High" confidence
+- Mark general categories and broader themes as "Low" confidence
 - Return contexts in Title Case with spaces (e.g., "Project Alpha", not "project-alpha")
-- Return ONLY a JSON array of strings, no additional text`;
+- Return ONLY a JSON array of objects: [{"context": "Name", "confidence": "High" or "Low"}]`;
 
     return prompt.trim();
 }

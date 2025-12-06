@@ -1,4 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction, Dispatch } from "@reduxjs/toolkit";
+import {
+    createSlice,
+    createAsyncThunk,
+    PayloadAction,
+    Dispatch,
+} from "@reduxjs/toolkit";
 import {
     suggestContexts as suggestContextsAction,
     generateDocumentEmbedding as generateDocumentEmbeddingAction,
@@ -7,6 +12,7 @@ import {
 import { patchNote } from "@/app/actions/notes";
 import {
     updateNoteWithSuggestedContexts,
+    updateNoteWithContextsAndSuggestions,
     updateNoteContent,
     updateNoteOptimistically,
 } from "@/store/notesSlice";
@@ -23,6 +29,7 @@ export interface SuggestedContexts {
     };
     retryCount?: number;
 }
+import type { RootState } from ".";
 
 export interface StructurizedNoteState {
     status: "idle" | "loading" | "succeeded" | "failed";
@@ -67,6 +74,8 @@ async function fetchAndProcessContextSuggestions(
     noteId: string,
     content: string,
     userContexts: string[],
+    autoContextEnabled: boolean,
+    currentNoteContexts: string[],
     dispatch?: Dispatch
 ) {
     const result = await suggestContextsAction({
@@ -78,27 +87,77 @@ async function fetchAndProcessContextSuggestions(
         throw new Error(result.error);
     }
 
-    const suggestions = result.data.map((ctx) => sentenceCaseToSlug(ctx));
+    // Split suggestions by confidence level
+    const highConfidenceSuggestions = result.data
+        .filter((s) => s.confidence === "High")
+        .map((s) => sentenceCaseToSlug(s.context));
 
-    // Update Redux store if dispatch is provided
-    if (dispatch) {
-        dispatch(
-            updateNoteWithSuggestedContexts({
-                noteId,
-                suggestions,
-            })
-        );
+    const lowConfidenceSuggestions = result.data
+        .filter((s) => s.confidence === "Low")
+        .map((s) => sentenceCaseToSlug(s.context));
+
+    let contextsToAdd: string[] = [];
+    let suggestedContextsToAdd: string[] = [];
+
+    if (autoContextEnabled) {
+        // Auto-context ON: High confidence → contexts, Low confidence → suggested_contexts
+        // Merge high-confidence contexts with existing contexts (deduplicate)
+        const mergedContexts = [
+            ...new Set([...currentNoteContexts, ...highConfidenceSuggestions]),
+        ];
+        contextsToAdd = mergedContexts;
+        suggestedContextsToAdd = lowConfidenceSuggestions;
+
+        // Update Redux store if dispatch is provided
+        if (dispatch) {
+            dispatch(
+                updateNoteWithContextsAndSuggestions({
+                    noteId,
+                    contexts: contextsToAdd,
+                    suggestions: suggestedContextsToAdd,
+                })
+            );
+        }
+
+        // Update database with both fields
+        await patchNote({
+            noteId,
+            patches: {
+                contexts: contextsToAdd,
+                suggested_contexts: suggestedContextsToAdd,
+            },
+        });
+    } else {
+        // Auto-context OFF: All suggestions go to suggested_contexts
+        const allSuggestions = [
+            ...highConfidenceSuggestions,
+            ...lowConfidenceSuggestions,
+        ];
+        suggestedContextsToAdd = allSuggestions;
+
+        // Update Redux store if dispatch is provided
+        if (dispatch) {
+            dispatch(
+                updateNoteWithSuggestedContexts({
+                    noteId,
+                    suggestions: suggestedContextsToAdd,
+                })
+            );
+        }
+
+        // Update database with only suggested_contexts
+        await patchNote({
+            noteId,
+            patches: {
+                suggested_contexts: suggestedContextsToAdd,
+            },
+        });
     }
 
-    // Update database
-    await patchNote({
-        noteId,
-        patches: {
-            suggested_contexts: suggestions,
-        },
-    });
-
-    return suggestions;
+    return {
+        contexts: contextsToAdd,
+        suggestions: suggestedContextsToAdd,
+    };
 }
 
 // Helper function to fetch and process note structurization
@@ -131,20 +190,33 @@ export const generateSuggestedContexts = createAsyncThunk(
             content: string;
             userContexts: string[];
         },
-        { rejectWithValue, dispatch }
+        { rejectWithValue, dispatch, getState }
     ) => {
         // Clear any existing suggestions for this note
         dispatch(clearSuggestedContexts(noteId));
 
         try {
-            const suggestions = await fetchAndProcessContextSuggestions(
+            // Get autoContext preference from state
+            const state = getState() as RootState;
+            const autoContextEnabled =
+                state.userPreferences?.preferences?.autoContext?.value ?? true;
+
+            // Get current note contexts from state
+            const note =
+                state.notes.contextNotes.find((n) => n.id === noteId) ||
+                state.notes.searchResultNotes.find((n) => n.id === noteId);
+            const currentNoteContexts = note?.contexts || [];
+
+            const result = await fetchAndProcessContextSuggestions(
                 noteId,
                 content,
                 userContexts,
+                autoContextEnabled,
+                currentNoteContexts,
                 dispatch
             );
 
-            return { noteId, suggestions };
+            return { noteId, ...result };
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -281,12 +353,14 @@ export const acceptStructurizedNoteThunk = createAsyncThunk(
             // 1. Metadata extraction (contexts/tags)
             // 2. Database persistence
             // 3. Embedding generation
-            dispatch(updateNoteOptimistically({
-                noteId,
-                patches: {
-                    content: structuredContent,
-                }
-            }));
+            dispatch(
+                updateNoteOptimistically({
+                    noteId,
+                    patches: {
+                        content: structuredContent,
+                    },
+                })
+            );
 
             return { noteId };
         } catch (error: unknown) {
@@ -346,9 +420,9 @@ export const retryGenerateSuggestedContexts = createAsyncThunk(
             content: string;
             userContexts: string[];
         },
-        { getState, rejectWithValue }
+        { getState, rejectWithValue, dispatch }
     ) => {
-        const state = getState() as any;
+        const state = getState() as RootState;
         const currentState = state.ai.suggestedContexts[noteId];
         const retryCount = (currentState?.retryCount || 0) + 1;
 
@@ -361,14 +435,27 @@ export const retryGenerateSuggestedContexts = createAsyncThunk(
         }
 
         try {
+            // Get autoContext preference from state
+            const autoContextEnabled =
+                state.userPreferences?.preferences?.autoContext?.value ?? true;
+
+            // Get current note contexts from state
+            const note =
+                state.notes.contextNotes.find((n) => n.id === noteId) ||
+                state.notes.searchResultNotes.find((n) => n.id === noteId);
+            const currentNoteContexts = note?.contexts || [];
+
             // Pass dispatch to update the note in Redux store as well
-            const suggestions = await fetchAndProcessContextSuggestions(
+            const result = await fetchAndProcessContextSuggestions(
                 noteId,
                 content,
-                userContexts
+                userContexts,
+                autoContextEnabled,
+                currentNoteContexts,
+                dispatch
             );
 
-            return { noteId, suggestions, retryCount };
+            return { noteId, ...result, retryCount };
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -401,7 +488,7 @@ export const retryStructurizeNote = createAsyncThunk(
         },
         { getState, rejectWithValue }
     ) => {
-        const state = getState() as any;
+        const state = getState() as RootState;
         const currentState = state.ai.structurizedNote[noteId];
         const retryCount = (currentState?.retryCount || 0) + 1;
 
@@ -419,7 +506,12 @@ export const retryStructurizeNote = createAsyncThunk(
                 userContexts
             );
 
-            return { noteId, structuredContent, originalContent: content, retryCount };
+            return {
+                noteId,
+                structuredContent,
+                originalContent: content,
+                retryCount,
+            };
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error
@@ -463,7 +555,9 @@ const aiSlice = createSlice({
                 };
             })
             .addCase(generateSuggestedContexts.fulfilled, (state, action) => {
-                const { noteId, suggestions } = action.payload;
+                const { noteId, suggestions, contexts } = action.payload;
+                // Store only low-confidence suggestions in AI state
+                // High-confidence contexts are already in note.contexts via Redux update
                 state.suggestedContexts[noteId] = {
                     suggestions,
                     status: "succeeded",
@@ -556,29 +650,41 @@ const aiSlice = createSlice({
                 toast.error(error);
             })
             // Retry Context Suggestions
-            .addCase(retryGenerateSuggestedContexts.pending, (state, action) => {
-                const { noteId } = action.meta.arg;
-                if (state.suggestedContexts[noteId]) {
-                    state.suggestedContexts[noteId].status = "loading";
+            .addCase(
+                retryGenerateSuggestedContexts.pending,
+                (state, action) => {
+                    const { noteId } = action.meta.arg;
+                    if (state.suggestedContexts[noteId]) {
+                        state.suggestedContexts[noteId].status = "loading";
+                    }
                 }
-            })
-            .addCase(retryGenerateSuggestedContexts.fulfilled, (state, action) => {
-                const { noteId, suggestions, retryCount } = action.payload;
-                state.suggestedContexts[noteId] = {
-                    suggestions,
-                    status: "succeeded",
-                    retryCount,
-                };
-            })
-            .addCase(retryGenerateSuggestedContexts.rejected, (state, action) => {
-                const { noteId, error, retryCount } = action.payload as any;
-                if (state.suggestedContexts[noteId]) {
-                    state.suggestedContexts[noteId].status = "failed";
-                    state.suggestedContexts[noteId].error = error;
-                    state.suggestedContexts[noteId].retryCount = retryCount;
+            )
+            .addCase(
+                retryGenerateSuggestedContexts.fulfilled,
+                (state, action) => {
+                    const { noteId, suggestions, contexts, retryCount } =
+                        action.payload;
+                    // Store only low-confidence suggestions in AI state
+                    // High-confidence contexts are already in note.contexts via Redux update
+                    state.suggestedContexts[noteId] = {
+                        suggestions,
+                        status: "succeeded",
+                        retryCount,
+                    };
                 }
-                toast.error(error);
-            })
+            )
+            .addCase(
+                retryGenerateSuggestedContexts.rejected,
+                (state, action) => {
+                    const { noteId, error, retryCount } = action.payload as any;
+                    if (state.suggestedContexts[noteId]) {
+                        state.suggestedContexts[noteId].status = "failed";
+                        state.suggestedContexts[noteId].error = error;
+                        state.suggestedContexts[noteId].retryCount = retryCount;
+                    }
+                    toast.error(error);
+                }
+            )
             // Retry Structurize Note
             .addCase(retryStructurizeNote.pending, (state, action) => {
                 const { noteId } = action.meta.arg;
@@ -587,7 +693,12 @@ const aiSlice = createSlice({
                 }
             })
             .addCase(retryStructurizeNote.fulfilled, (state, action) => {
-                const { noteId, structuredContent, originalContent, retryCount } = action.payload;
+                const {
+                    noteId,
+                    structuredContent,
+                    originalContent,
+                    retryCount,
+                } = action.payload;
                 state.structurizedNote[noteId] = {
                     status: "succeeded",
                     structuredContent,
@@ -611,13 +722,13 @@ export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } =
     aiSlice.actions;
 
 // Utility function to check if a note is an AI answer
-export const isAIAnswerNote = (state: any, noteId: string): boolean => {
+export const isAIAnswerNote = (state: RootState, noteId: string): boolean => {
     return state.ai.aiAnswers[noteId]?.isAIAnswer || false;
 };
 
 // Utility function to get AI answer details
 export const getAIAnswerDetails = (
-    state: any,
+    state: RootState,
     noteId: string
 ): AIAnswerState | null => {
     return state.ai.aiAnswers[noteId] || null;

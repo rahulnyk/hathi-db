@@ -2,14 +2,18 @@
 
 import { getAiService, getEmbeddingService } from "@/lib/ai";
 import { measureExecutionTime } from "@/lib/performance";
-import { AIError, ServerActionResult } from "@/lib/ai/types";
+import {
+    AIError,
+    ServerActionResult,
+    ContextSuggestionWithConfidence,
+} from "@/lib/ai/types";
 
 /**
  * Generates context suggestions for a note based on its content and user's existing contexts
  *
  * @param content - The content of the note
  * @param userContexts - Array of existing user contexts
- * @returns Promise that resolves to an array of suggested contexts
+ * @returns Promise that resolves to an array of suggested contexts with confidence levels
  */
 
 export async function suggestContexts({
@@ -18,7 +22,7 @@ export async function suggestContexts({
 }: {
     content: string;
     userContexts: string[];
-}): Promise<ServerActionResult<string[]>> {
+}): Promise<ServerActionResult<ContextSuggestionWithConfidence[]>> {
     return measureExecutionTime("suggestContexts", async () => {
         try {
             const aiService = await getAiService();
@@ -168,7 +172,10 @@ export async function generateDocumentEmbedding({
         } catch (error: unknown) {
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {
-                console.error("Error generating document embedding:", error.message);
+                console.error(
+                    "Error generating document embedding:",
+                    error.message
+                );
                 return {
                     success: false,
                     error: error.userMessage || error.message,
@@ -210,7 +217,10 @@ export async function generateQueryEmbedding({
         } catch (error: unknown) {
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {
-                console.error("Error generating query embedding:", error.message);
+                console.error(
+                    "Error generating query embedding:",
+                    error.message
+                );
                 return {
                     success: false,
                     error: error.userMessage || error.message,

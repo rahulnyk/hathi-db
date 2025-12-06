@@ -118,12 +118,14 @@ export class GeminiAIService implements AIService {
         return classifyAIError(error);
     }
 
-    private parseSuggestionsJSON(suggestionsText: string): string[] {
+    private parseSuggestionsJSON(
+        suggestionsText: string
+    ): Array<{ context: string; confidence: "High" | "Low" }> {
         try {
             const cleanedText = suggestionsText.trim();
             const parsed = JSON.parse(cleanedText);
 
-            // Expect a direct array of strings
+            // Expect an array of objects with {context, confidence}
             if (!Array.isArray(parsed)) {
                 throw new Error("Response is not an array");
             }
@@ -133,18 +135,27 @@ export class GeminiAIService implements AIService {
             // which will be slugified by the caller
             const validSuggestions = parsed
                 .filter(
-                    (suggestion: unknown) =>
-                        typeof suggestion === "string" &&
-                        suggestion.trim().length > 0
+                    (suggestion: any) =>
+                        typeof suggestion === "object" &&
+                        suggestion !== null &&
+                        typeof suggestion.context === "string" &&
+                        suggestion.context.trim().length > 0 &&
+                        (suggestion.confidence === "High" ||
+                            suggestion.confidence === "Low")
                 )
                 .slice(0, 5) // Limit to 5
-                .map((suggestion: string) => suggestion.trim());
+                .map((suggestion: any) => ({
+                    context: suggestion.context.trim(),
+                    confidence: suggestion.confidence as "High" | "Low",
+                }));
 
             return validSuggestions;
         } catch (error) {
             console.error("Failed to parse Gemini response as JSON:", error);
             console.error("Raw response:", suggestionsText);
-            throw new AIError("Gemini did not return a valid JSON array");
+            throw new AIError(
+                "Gemini did not return a valid JSON array with confidence levels"
+            );
         }
     }
 

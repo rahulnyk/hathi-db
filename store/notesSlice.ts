@@ -245,23 +245,31 @@ const notesSlice = createSlice({
         ) => {
             const { id, status, errorMessage } = action.payload;
             // Update in contextNotes
-            const contextNoteIndex = state.contextNotes.findIndex((note) => note.id === id);
+            const contextNoteIndex = state.contextNotes.findIndex(
+                (note) => note.id === id
+            );
             if (contextNoteIndex !== -1) {
                 state.contextNotes[contextNoteIndex].persistenceStatus = status;
                 if (errorMessage) {
-                    state.contextNotes[contextNoteIndex].errorMessage = errorMessage;
+                    state.contextNotes[contextNoteIndex].errorMessage =
+                        errorMessage;
                 } else {
                     delete state.contextNotes[contextNoteIndex].errorMessage;
                 }
             }
             // Update in searchResultNotes
-            const searchNoteIndex = state.searchResultNotes.findIndex((note) => note.id === id);
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === id
+            );
             if (searchNoteIndex !== -1) {
-                state.searchResultNotes[searchNoteIndex].persistenceStatus = status;
+                state.searchResultNotes[searchNoteIndex].persistenceStatus =
+                    status;
                 if (errorMessage) {
-                    state.searchResultNotes[searchNoteIndex].errorMessage = errorMessage;
+                    state.searchResultNotes[searchNoteIndex].errorMessage =
+                        errorMessage;
                 } else {
-                    delete state.searchResultNotes[searchNoteIndex].errorMessage;
+                    delete state.searchResultNotes[searchNoteIndex]
+                        .errorMessage;
                 }
             }
         },
@@ -271,13 +279,15 @@ const notesSlice = createSlice({
                 (note) => note.id === noteId
             );
             if (contextNoteIndex !== -1) {
-                state.contextNotes[contextNoteIndex].persistenceStatus = "deleting";
+                state.contextNotes[contextNoteIndex].persistenceStatus =
+                    "deleting";
             }
             const searchNoteIndex = state.searchResultNotes.findIndex(
                 (note) => note.id === noteId
             );
             if (searchNoteIndex !== -1) {
-                state.searchResultNotes[searchNoteIndex].persistenceStatus = "deleting";
+                state.searchResultNotes[searchNoteIndex].persistenceStatus =
+                    "deleting";
             }
         },
         setCurrentContext: (state, action: PayloadAction<string>) => {
@@ -298,13 +308,41 @@ const notesSlice = createSlice({
                 (note) => note.id === noteId
             );
             if (contextNoteIndex !== -1) {
-                state.contextNotes[contextNoteIndex].suggested_contexts = suggestions;
+                state.contextNotes[contextNoteIndex].suggested_contexts =
+                    suggestions;
             }
             const searchNoteIndex = state.searchResultNotes.findIndex(
                 (note) => note.id === noteId
             );
             if (searchNoteIndex !== -1) {
-                state.searchResultNotes[searchNoteIndex].suggested_contexts = suggestions;
+                state.searchResultNotes[searchNoteIndex].suggested_contexts =
+                    suggestions;
+            }
+        },
+        updateNoteWithContextsAndSuggestions: (
+            state,
+            action: PayloadAction<{
+                noteId: string;
+                contexts: string[];
+                suggestions: string[];
+            }>
+        ) => {
+            const { noteId, contexts, suggestions } = action.payload;
+            const contextNoteIndex = state.contextNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (contextNoteIndex !== -1) {
+                state.contextNotes[contextNoteIndex].contexts = contexts;
+                state.contextNotes[contextNoteIndex].suggested_contexts =
+                    suggestions;
+            }
+            const searchNoteIndex = state.searchResultNotes.findIndex(
+                (note) => note.id === noteId
+            );
+            if (searchNoteIndex !== -1) {
+                state.searchResultNotes[searchNoteIndex].contexts = contexts;
+                state.searchResultNotes[searchNoteIndex].suggested_contexts =
+                    suggestions;
             }
         },
         updateNoteContent: (
@@ -405,7 +443,7 @@ const notesSlice = createSlice({
                 // Only clear notesContext if we're fetching for a different context
                 const requestedContext =
                     action.meta?.arg?.contexts &&
-                        action.meta.arg.contexts.length > 0
+                    action.meta.arg.contexts.length > 0
                         ? action.meta.arg.contexts[0]
                         : null;
                 if (
@@ -488,8 +526,12 @@ const notesSlice = createSlice({
             })
             .addCase(deleteNote.fulfilled, (state, action) => {
                 const { noteId } = action.payload; // payload is { noteId: string }
-                state.contextNotes = state.contextNotes.filter((note) => note.id !== noteId);
-                state.searchResultNotes = state.searchResultNotes.filter((note) => note.id !== noteId);
+                state.contextNotes = state.contextNotes.filter(
+                    (note) => note.id !== noteId
+                );
+                state.searchResultNotes = state.searchResultNotes.filter(
+                    (note) => note.id !== noteId
+                );
             })
             .addCase(deleteNote.rejected, (state, action: any) => {
                 const { noteId, error } = action.payload;
@@ -499,15 +541,18 @@ const notesSlice = createSlice({
                 if (contextNoteIndex !== -1) {
                     // Revert status from "deleting" to "persisted" or "failed"
                     // Assuming "persisted" is the state before deletion was attempted
-                    state.contextNotes[contextNoteIndex].persistenceStatus = "persisted";
+                    state.contextNotes[contextNoteIndex].persistenceStatus =
+                        "persisted";
                     state.contextNotes[contextNoteIndex].errorMessage = error;
                 }
                 const searchNoteIndex = state.searchResultNotes.findIndex(
                     (note) => note.id === noteId
                 );
                 if (searchNoteIndex !== -1) {
-                    state.searchResultNotes[searchNoteIndex].persistenceStatus = "persisted";
-                    state.searchResultNotes[searchNoteIndex].errorMessage = error;
+                    state.searchResultNotes[searchNoteIndex].persistenceStatus =
+                        "persisted";
+                    state.searchResultNotes[searchNoteIndex].errorMessage =
+                        error;
                 }
             })
             .addCase(patchNote.fulfilled, (state, action) => {
@@ -541,15 +586,18 @@ const notesSlice = createSlice({
                     (note) => note.id === noteId
                 );
                 if (contextNoteIndex !== -1) {
-                    state.contextNotes[contextNoteIndex].persistenceStatus = "failed";
+                    state.contextNotes[contextNoteIndex].persistenceStatus =
+                        "failed";
                     state.contextNotes[contextNoteIndex].errorMessage = error;
                 }
                 const searchNoteIndex = state.searchResultNotes.findIndex(
                     (note) => note.id === noteId
                 );
                 if (searchNoteIndex !== -1) {
-                    state.searchResultNotes[searchNoteIndex].persistenceStatus = "failed";
-                    state.searchResultNotes[searchNoteIndex].errorMessage = error;
+                    state.searchResultNotes[searchNoteIndex].persistenceStatus =
+                        "failed";
+                    state.searchResultNotes[searchNoteIndex].errorMessage =
+                        error;
                 }
             });
     },
@@ -562,6 +610,7 @@ export const {
     markNoteAsDeleting,
     setCurrentContext,
     updateNoteWithSuggestedContexts,
+    updateNoteWithContextsAndSuggestions,
     updateNoteContent,
     updateNoteOptimistically,
     createNoteOptimistically,

@@ -60,6 +60,25 @@ export function PreferencesMenu() {
                 />
             </div>
 
+            {/* Auto Context Preference */}
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                    <h3 className="text-xs font-medium text-foreground mb-0.5">
+                        {preferences.autoContext.display_name}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                        {preferences.autoContext.description}
+                    </p>
+                </div>
+                <Switch
+                    className="scale-75 origin-right"
+                    checked={preferences.autoContext.value}
+                    onCheckedChange={(checked) =>
+                        handlePreferenceChange("autoContext", checked)
+                    }
+                />
+            </div>
+
             {/* Divider */}
             <div className="border-t border-foreground/20 my-1" />
 
