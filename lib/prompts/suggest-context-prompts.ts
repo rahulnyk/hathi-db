@@ -1,6 +1,7 @@
 import {
     CONTEXT_DEFINITION,
     CONTEXT_FORMAT_RULES,
+    CONTEXT_EXAMPLES,
 } from "./context-definitions";
 
 /**
@@ -29,16 +30,7 @@ ${CONTEXT_FORMAT_RULES}
 - The response must be parseable by JSON.parse()
 - Return contexts in Title Case with spaces (e.g., "Project Alpha", "Machine Learning")
 
-**Examples of correct responses:**
-["Work", "Project Alpha", "Meeting Notes"]
-["Personal", "Health", "Meditation"]
-["Finance", "Budgeting", "Tax Planning"]
-["Sarah", "Q4 Planning", "Strategy"]
-
-**Examples of incorrect responses:**
-["valuable", "significant", "learning"] ❌ (these are modifiers/verbs, not concrete contexts)
-["interpretation", "worthwhile"] ❌ (abstract modifiers)
-["project-alpha", "machine-learning"] ❌ (use Title Case with spaces, not slugs)`;
+${CONTEXT_EXAMPLES}`;
 }
 
 /**

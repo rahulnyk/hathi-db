@@ -33,11 +33,26 @@ export const CONTEXT_FORMAT_RULES = `**Context Format Requirements:**
 - Use proper capitalization for proper nouns: [[Sarah]], [[TypeScript]] ✅`;
 
 /**
- * Common examples of correct context usage
+ * Common examples of correct context usage in structured notes
  */
-export const CONTEXT_EXAMPLES = `**Examples of correct context usage:**
+export const CONTEXT_USAGE_EXAMPLES = `**Examples of correct context usage:**
 - "Working on [[Project Alpha]] deadline" ✅
 - "Meeting with [[Sarah]] about [[Q4 Planning]]" ✅
 - "Learning [[TypeScript]] for the new feature" ✅
 - "Exploring the [[Meaning Of Life]] and its implications" ✅
 - "The meaning of life is about significance and purpose" ✅ (no contexts - these are just descriptive words)`;
+
+/**
+ * Examples for suggest-context AI responses
+ * Shows correct Title Case format for JSON array responses
+ */
+export const CONTEXT_EXAMPLES = `**Examples of correct responses:**
+["Work", "Project Alpha", "Meeting Notes"]
+["Personal", "Health", "Meditation"]
+["Finance", "Budgeting", "Tax Planning"]
+["Sarah", "Q4 Planning", "Strategy"]
+
+**Examples of incorrect responses:**
+["valuable", "significant", "learning"] ❌ (these are modifiers/verbs, not concrete contexts)
+["interpretation", "worthwhile"] ❌ (abstract modifiers)
+["project-alpha", "machine-learning"] ❌ (use Title Case with spaces, not slugs)`;

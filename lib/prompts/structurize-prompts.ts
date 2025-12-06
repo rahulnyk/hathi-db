@@ -1,7 +1,7 @@
 import {
     CONTEXT_DEFINITION,
     CONTEXT_FORMAT_RULES,
-    CONTEXT_EXAMPLES,
+    CONTEXT_USAGE_EXAMPLES,
 } from "./context-definitions";
 
 /**
@@ -26,7 +26,7 @@ ${CONTEXT_DEFINITION}
 
 ${CONTEXT_FORMAT_RULES}
 
-${CONTEXT_EXAMPLES}
+${CONTEXT_USAGE_EXAMPLES}
 
 **Formatting Guidelines:**
 - Use clean, simple, readable language
@@ -36,7 +36,7 @@ ${CONTEXT_EXAMPLES}
 - Use bullet points (-, •) for lists and tasks
 - Use numbered lists for sequential items or steps
 - Add line breaks for better readability between different topics
-- NEVER use # or ## headings
+- NEVER use # or ## headings. Use smaller headings like ### or #### if needed.
 - Group related content logically with blank lines as separators
 
 **Structure Requirements:**
