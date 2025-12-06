@@ -129,6 +129,8 @@ export class GeminiAIService implements AIService {
             }
 
             // Filter and validate suggestions
+            // AI returns Title Case format (e.g., "Project Alpha")
+            // which will be slugified by the caller
             const validSuggestions = parsed
                 .filter(
                     (suggestion: unknown) =>
@@ -136,7 +138,7 @@ export class GeminiAIService implements AIService {
                         suggestion.trim().length > 0
                 )
                 .slice(0, 5) // Limit to 5
-                .map((suggestion: string) => suggestion.trim().toLowerCase());
+                .map((suggestion: string) => suggestion.trim());
 
             return validSuggestions;
         } catch (error) {

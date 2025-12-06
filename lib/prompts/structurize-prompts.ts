@@ -1,3 +1,9 @@
+import {
+    CONTEXT_DEFINITION,
+    CONTEXT_FORMAT_RULES,
+    CONTEXT_EXAMPLES,
+} from "./context-definitions";
+
 /**
  * Generates the system prompt for note structurization with context wrapping rules.
  * @returns {string} The system prompt for structurizing notes
@@ -16,31 +22,11 @@ You will receive raw, unstructured notes that may contain:
 **Context Wrapping Rules (CRITICAL):**
 Contexts are wrapped in double square brackets like [[example]] and represent significant nodes in the user's knowledge graph—NOT modifiers or descriptive words.
 
-**What qualifies as a context:**
-- ✅ Proper nouns (people, places, projects, products)
-- ✅ Specific concepts or topics (e.g., [[Machine Learning]], [[Marketing Strategy]])
-- ✅ Named entities or frameworks (e.g., [[React]], [[Agile]])
-- ✅ Specific areas of work or life (e.g., [[Career]], [[Health]])
-- ✅ Concrete subjects that could be a node in a knowledge graph
+${CONTEXT_DEFINITION}
 
-**What is NOT a context:**
-- ❌ Adjectives (valuable, important, interesting)
-- ❌ Verbs (learning, understanding, implementing)
-- ❌ Abstract modifiers (significance, interpretation, worthwhile)
-- ❌ Generic nouns (idea, task, meeting) unless they're part of a specific named entity
+${CONTEXT_FORMAT_RULES}
 
-**Context Format Requirements:**
-- ALWAYS use sentence case with spaces: [[Meaning Of Life]] ✅
-- NEVER use hyphens or lowercase: [[meaning-of-life]] ❌
-- Use proper capitalization for proper nouns: [[Sarah]], [[TypeScript]] ✅
-- Capitalize first letter of each significant word in multi-word contexts ✅
-
-**Examples of correct context usage:**
-- "Working on [[Project Alpha]] deadline" ✅
-- "Meeting with [[Sarah]] about [[Q4 Planning]]" ✅
-- "Learning [[TypeScript]] for the new feature" ✅
-- "Exploring the [[Meaning Of Life]] and its implications" ✅
-- "The meaning of life is about significance and purpose" ✅ (no contexts - these are just descriptive words)
+${CONTEXT_EXAMPLES}
 
 **Formatting Guidelines:**
 - Use clean, simple, readable language
@@ -91,7 +77,7 @@ ${contextsHint}
 
 Remember:
 - Only wrap meaningful concepts/entities as [[contexts]], not modifiers or generic words
-- ALWAYS use sentence case with spaces in contexts: [[Project Alpha]], NOT [[project-alpha]]
+- ALWAYS use Title Case with spaces in contexts: [[Project Alpha]], NOT [[project-alpha]]
 - Prioritize existing contexts from the user's list
 - Use simple, clear language
 - Create visual structure with formatting and spacing

@@ -1,3 +1,8 @@
+import {
+    CONTEXT_DEFINITION,
+    CONTEXT_FORMAT_RULES,
+} from "./context-definitions";
+
 /**
  * Generates a system prompt that defines context suggestion behavior and guidelines.
  * @returns A formatted string prompt with context suggestion rules.
@@ -5,29 +10,14 @@
 export function suggestContextSystemPrompt(): string {
     return `You are a context suggestion assistant that analyzes note content and suggests relevant organizational contexts (tags/categories).
 
-**What qualifies as a context:**
-Contexts represent significant nodes in the user's knowledge graph—concrete, identifiable entities or concepts.
-
-✅ VALID CONTEXTS:
-- Proper nouns (people, places, projects, products): [[Sarah]], [[Tokyo]], [[Project Alpha]]
-- Specific concepts or topics: [[Machine Learning]], [[Marketing Strategy]], [[Meditation]]
-- Named entities or frameworks: [[React]], [[Agile]], [[Python]]
-- Specific areas of work or life: [[Career]], [[Health]], [[Fitness]], [[Finance]]
-- Concrete subjects that could be nodes in a knowledge graph: [[Meeting Notes]], [[Book Reviews]]
-
-❌ INVALID CONTEXTS (do NOT suggest):
-- Adjectives: valuable, important, interesting, significant
-- Verbs: learning, understanding, implementing, working
-- Abstract modifiers: significance, interpretation, worthwhile, intelligible
-- Generic descriptive words: idea, thought, reflection, update
+${CONTEXT_DEFINITION}
 
 **Context Selection Guidelines:**
 1. **First Priority**: Reuse existing contexts when relevant
 2. **Second Priority**: Extract proper nouns, named entities, specific topics, or concrete themes from the note
 3. **Third Priority**: Suggest general but concrete categories (work, personal, health, finance, family, travel, learning, projects)
 
-**Context Format Rules:**
-- Use lowercase, hyphenated format (e.g., "project-alpha", "machine-learning", "meeting-notes")
+${CONTEXT_FORMAT_RULES}
 - Maximum 5 contexts per note
 - Each context should be a noun or noun phrase that could stand alone as a knowledge graph node
 
@@ -37,16 +27,18 @@ Contexts represent significant nodes in the user's knowledge graph—concrete, i
 - Do NOT include explanations, comments, or additional text
 - Do NOT use any formatting other than plain JSON
 - The response must be parseable by JSON.parse()
+- Return contexts in Title Case with spaces (e.g., "Project Alpha", "Machine Learning")
 
 **Examples of correct responses:**
-["work", "project-alpha", "meeting-notes"]
-["personal", "health", "meditation"]
-["finance", "budgeting", "tax-planning"]
-["sarah", "q4-planning", "strategy"]
+["Work", "Project Alpha", "Meeting Notes"]
+["Personal", "Health", "Meditation"]
+["Finance", "Budgeting", "Tax Planning"]
+["Sarah", "Q4 Planning", "Strategy"]
 
 **Examples of incorrect responses:**
 ["valuable", "significant", "learning"] ❌ (these are modifiers/verbs, not concrete contexts)
-["interpretation", "worthwhile"] ❌ (abstract modifiers)`;
+["interpretation", "worthwhile"] ❌ (abstract modifiers)
+["project-alpha", "machine-learning"] ❌ (use Title Case with spaces, not slugs)`;
 }
 
 /**
@@ -76,6 +68,7 @@ Remember:
 - Only suggest concrete entities, topics, or named concepts that could be nodes in a knowledge graph
 - Do NOT suggest adjectives, verbs, or abstract modifiers
 - Prioritize reusing existing contexts when relevant
+- Return contexts in Title Case with spaces (e.g., "Project Alpha", not "project-alpha")
 - Return ONLY a JSON array of strings, no additional text`;
 
     return prompt.trim();
