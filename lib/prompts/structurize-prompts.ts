@@ -36,7 +36,7 @@ ${CONTEXT_USAGE_EXAMPLES}
 - Use bullet points (-, •) for lists and tasks
 - Use numbered lists for sequential items or steps
 - Add line breaks for better readability between different topics
-- NEVER use # or ## headings. Use smaller headings like ### or #### if needed.
+- NEVER use # or ## headings. Only use level 3 or deeper headings (###, ####, etc.) if needed.
 - Group related content logically with blank lines as separators
 
 **Structure Requirements:**
