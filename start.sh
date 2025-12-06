@@ -634,6 +634,10 @@ main() {
     else
         print_status "Setup already completed."
         
+        # Ensure dependencies are up to date
+        print_status "Checking dependencies..."
+        install_dependencies
+        
         # Check if migrations need to be run or forced
         if [ "$force_migration" = true ]; then
             print_status "Force migration requested. Running migrations..."

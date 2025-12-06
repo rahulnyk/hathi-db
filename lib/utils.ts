@@ -85,8 +85,21 @@ export function slugToSentenceCase(slug: string): string {
 
 export function sentenceCaseToSlug(sentence: string): string {
     if (!sentence) return "";
-    return sentence
-        .trim() // Remove leading and trailing spaces
+
+    const trimmed = sentence.trim();
+
+    // Detect if input is already in slug format (lowercase with hyphens, no spaces)
+    const isAlreadySlug = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(trimmed);
+
+    if (isAlreadySlug && process.env.NODE_ENV !== "production") {
+        console.warn(
+            `[sentenceCaseToSlug] Input "${trimmed}" appears to already be in slug format. ` +
+                `Expected Title Case input (e.g., "Project Alpha"). ` +
+                `This may indicate a missed conversion point in the code.`
+        );
+    }
+
+    return trimmed
         .toLowerCase()
         .replace(/\s+/g, "-") // Replace spaces with hyphens
         .replace(/[^\w-]+/g, ""); // Remove non-alphanumeric characters except hyphens
