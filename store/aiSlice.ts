@@ -84,6 +84,9 @@ async function fetchAndProcessContextSuggestions(
     }
 
     const suggestions = result.data.map((ctx) => sentenceCaseToSlug(ctx));
+    const mergedContexts = [
+        ...new Set([...currentNoteContexts, ...suggestions]),
+    ];
 
     // Update Redux store if dispatch is provided
     if (dispatch) {
@@ -95,14 +98,11 @@ async function fetchAndProcessContextSuggestions(
         );
 
         if (autoContext && suggestions.length > 0) {
-            const newContexts = [
-                ...new Set([...currentNoteContexts, ...suggestions]),
-            ];
             dispatch(
                 updateNoteOptimistically({
                     noteId,
                     patches: {
-                        contexts: newContexts,
+                        contexts: mergedContexts,
                     },
                 })
             );
@@ -114,9 +114,7 @@ async function fetchAndProcessContextSuggestions(
     };
 
     if (autoContext && suggestions.length > 0) {
-        patches.contexts = [
-            ...new Set([...currentNoteContexts, ...suggestions]),
-        ];
+        patches.contexts = mergedContexts;
     }
 
     // Update database
@@ -174,7 +172,7 @@ export const generateSuggestedContexts = createAsyncThunk(
                 state.notes.searchResultNotes.find(
                     (n: Note) => n.id === noteId
                 );
-            const currentNoteContexts = note ? note.contexts : [];
+            const currentNoteContexts = note?.contexts ?? [];
 
             const suggestions = await fetchAndProcessContextSuggestions(
                 noteId,
@@ -411,7 +409,7 @@ export const retryGenerateSuggestedContexts = createAsyncThunk(
                 state.notes.searchResultNotes.find(
                     (n: Note) => n.id === noteId
                 );
-            const currentNoteContexts = note ? note.contexts : [];
+            const currentNoteContexts = note?.contexts ?? [];
 
             // Pass dispatch to update the note in Redux store as well
             const suggestions = await fetchAndProcessContextSuggestions(

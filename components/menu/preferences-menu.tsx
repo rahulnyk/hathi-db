@@ -57,6 +57,7 @@ export function PreferencesMenu() {
                     onCheckedChange={(checked) =>
                         handlePreferenceChange("enterToSubmit", checked)
                     }
+                    aria-label={preferences.enterToSubmit.display_name}
                 />
             </div>
 
@@ -76,6 +77,7 @@ export function PreferencesMenu() {
                     onCheckedChange={(checked) =>
                         handlePreferenceChange("autoContext", checked)
                     }
+                    aria-label={preferences.autoContext.display_name}
                 />
             </div>
 

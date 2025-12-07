@@ -121,9 +121,37 @@ export function createSqliteConnection(): Database.Database {
     // Load sqlite-vec extension
     loadSqliteVecExtension(dbInstance);
 
+    // Register shutdown handlers
+    registerShutdownHandlers();
+
     console.log(`✓ SQLite database connected at: ${dbPath}`);
 
     return dbInstance;
+}
+
+/**
+ * Register process signal handlers for graceful shutdown
+ */
+function registerShutdownHandlers() {
+    // Handle graceful shutdown
+    const handleShutdown = (signal: string) => {
+        console.log(`\nReceived ${signal}. Closing SQLite connection...`);
+        closeSqliteConnection();
+        process.exit(0);
+    };
+
+    // Register handlers if not already registered (checking exact listeners is tricky, 
+    // but better-sqlite3 usually survives multiple opens/closes if handled right. 
+    // We'll just add them, worst case they run twice on restart but process.exit stops that).
+    // Actually, to avoid duplicate listeners in dev mode, we can check listener count or just depend on module caching.
+    
+    // We only want to register these once per process usually.
+    if (process.listenerCount('SIGINT') === 0) {
+        process.on('SIGINT', () => handleShutdown('SIGINT'));
+        process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+        process.on('SIGQUIT', () => handleShutdown('SIGQUIT'));
+        process.on('SIGHUP', () => handleShutdown('SIGHUP'));
+    }
 }
 
 /**
@@ -145,11 +173,17 @@ export function createSqliteDb(): DatabaseType {
  */
 export function closeSqliteConnection(): void {
     if (dbInstance) {
-        dbInstance.close();
+        try {
+            console.log("Closing SQLite database connection...");
+            dbInstance.close();
+            console.log("SQLite connection closed successfully");
+        } catch (error) {
+            console.error("Error closing SQLite connection:", error);
+        }
         dbInstance = null;
         drizzleInstance = null;
-        extensionLoaded = false; // Reset extension flag
-        migrationsCompleted = false; // Reset migrations flag
+        extensionLoaded = false;
+        migrationsCompleted = false;
     }
 }
 
