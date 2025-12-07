@@ -6,7 +6,7 @@ import {
 
 /**
  * Generates the system prompt for note structurization with context wrapping rules.
- * @returns {string} The system prompt for structurizing notes
+ * @returns The system prompt for structurizing notes
  */
 export function structurizeSystemPrompt(): string {
     return `
@@ -52,9 +52,9 @@ ${CONTEXT_USAGE_EXAMPLES}
 
 /**
  * Generates the user prompt for structurizing a specific note with available contexts.
- * @param {string} content - The raw note content to structurize
- * @param {string[]} userContexts - Array of existing user contexts to prioritize
- * @returns {string} The user prompt for structurization
+ * @param content - The raw note content to structurize
+ * @param userContexts - Array of existing user contexts to prioritize
+ * @returns The user prompt for structurization
  */
 export function structurizeUserPrompt(
     content: string,

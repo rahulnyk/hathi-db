@@ -137,7 +137,7 @@ export class GeminiAIService implements AIService {
                         typeof suggestion === "string" &&
                         suggestion.trim().length > 0
                 )
-                .slice(0, 5) // Limit to 5
+                // .slice(0, 5) // Limit to 5
                 .map((suggestion: string) => suggestion.trim());
 
             return validSuggestions;

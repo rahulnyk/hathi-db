@@ -39,7 +39,7 @@ export const CONTEXT_USAGE_EXAMPLES = `**Examples of correct context usage:**
 - "Working on [[Project Alpha]] deadline" ✅
 - "Meeting with [[Sarah]] about [[Q4 Planning]]" ✅
 - "Learning [[TypeScript]] for the new feature" ✅
-- "Exploring the [[Meaning Of Life]] and its implications" ✅
+- "Exploring the [[Meaning of Life]] and its implications" ✅
 - "The meaning of life is about significance and purpose" ✅ (no contexts - these are just descriptive words)`;
 
 /**

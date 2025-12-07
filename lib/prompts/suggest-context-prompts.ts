@@ -4,6 +4,8 @@ import {
     CONTEXT_EXAMPLES,
 } from "./context-definitions";
 
+const MAX_CONTEXTS_PER_NOTE = 4;
+
 /**
  * Generates a system prompt that defines context suggestion behavior and guidelines.
  * @returns A formatted string prompt with context suggestion rules.
@@ -48,7 +50,7 @@ export function suggestContextUserPrompt(
             ? contextsList.map((ctx) => `- ${ctx}`).join("\n")
             : "No existing contexts available";
 
-    const prompt = `Analyze this note content and suggest 1-5 relevant contexts:
+    const prompt = `Analyze this note content and suggest 1-${MAX_CONTEXTS_PER_NOTE} relevant contexts:
 
 NOTE CONTENT:
 "${content}"
