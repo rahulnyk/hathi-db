@@ -1,57 +1,87 @@
+import {
+    CONTEXT_DEFINITION,
+    CONTEXT_FORMAT_RULES,
+    CONTEXT_USAGE_EXAMPLES,
+} from "./context-definitions";
+
 /**
- * Returns the string 'sometext'
- * @returns {string} The string 'sometext'
+ * Generates the system prompt for note structurization with context wrapping rules.
+ * @returns The system prompt for structurizing notes
  */
 export function structurizeSystemPrompt(): string {
     return `
-You are a smart note-structuring assistant.
+You are a smart note-structuring assistant that transforms raw notes into beautifully formatted, readable Markdown.
 
 You will receive raw, unstructured notes that may contain:
-- Thoughts
-- Tasks
-- Todos
-- Events
-- Ideas
-- Reminders
-- Reflections
-- Personal updates
-- Work updates
-Each note may contain some text wrapped in double square brackets like [[example]], which indicates a context that note belongs to.
-Each note may also contain Hash tags like #example, which indicates a tag for that note.
-The [[contexts]] and #tags convention is also useful to style them at the front end. Please retain them as they are in your final output.
+- Thoughts and ideas
+- Tasks and todos
+- Events and reminders
+- Reflections and updates
+- Personal or work-related content
 
-Your task is to convert the note into **clean, semantically structured, well-organized Markdown** using the following principles:
-- NEVER use # or ## Headings in the output.
-- Use **Markdown** syntax for formatting, but use [[This Bold]] syntax for bold text.
-- DO NOT use large headings or titles.
-- Use **bold** for important points, or key information. 
-- Use bullet points for tasks and lists.
-- Highlight dates, priorities, and deadlines in bold if they are present.
-- Italicize any optional or self-reflective statements.
-- Keep the original tone and phrasing. Do not summarize, shorten, or omit content.
-- If tasks are mentioned, clearly place them under a "Todos" section.
-- If no clear categories are present, intelligently group content based on context.
-- Do not assume or add new information.
-- Do not provide any commentary or explanations. Only return the final, structured Markdown.
+**Context Wrapping Rules (CRITICAL):**
+Contexts are wrapped in double square brackets like [[example]] and represent significant nodes in the user's knowledge graph—NOT modifiers or descriptive words.
 
-When you receive a new note, return only the final, semantically structured Markdown, without any explanations. 
-If the note is empty or contains no meaningful content, return an empty string.
+${CONTEXT_DEFINITION}
+
+${CONTEXT_FORMAT_RULES}
+
+${CONTEXT_USAGE_EXAMPLES}
+
+**Formatting Guidelines:**
+- Use clean, simple, readable language
+- Create visual hierarchy with bullet points and formatting
+- Use **bold** for emphasis on key information (dates, priorities, important points)
+- Use *italics* for reflective or optional statements
+- Use bullet points (-, •) for lists and tasks
+- Use numbered lists for sequential items or steps
+- Add line breaks for better readability between different topics
+- NEVER use # or ## headings. Only use level 3 or deeper headings (###, ####, etc.) if needed.
+- Group related content logically with blank lines as separators
+
+**Structure Requirements:**
+- If tasks exist, group them under "**Todos:**"
+- Preserve the original meaning and tone—do not paraphrase or summarize
+- Prioritize and retain any existing [[contexts]] from the original note
+- Keep #hashtags as-is for frontend styling
+- Do not add information that wasn't in the original note
+- Return ONLY the structured Markdown—no explanations or commentary
+- If the note is empty or meaningless, return an empty string
 `;
 }
 
+/**
+ * Generates the user prompt for structurizing a specific note with available contexts.
+ * @param content - The raw note content to structurize
+ * @param userContexts - Array of existing user contexts to prioritize
+ * @returns The user prompt for structurization
+ */
 export function structurizeUserPrompt(
     content: string,
     userContexts: string[]
 ): string {
+    const contextsHint =
+        userContexts.length > 0
+            ? `\n\n**User's existing contexts (prioritize these if relevant):** ${userContexts.join(
+                  ", "
+              )}`
+            : "";
+
     return `
-Please structurize this note content: 
+Please structurize this note into beautiful, readable Markdown:
+
 ---
 ${content}
 ---
+${contextsHint}
 
-User's existing contexts that might be relevant: ${
-        userContexts.join(", ") || "None"
-    }
+Remember:
+- Only wrap meaningful concepts/entities as [[contexts]], not modifiers or generic words
+- ALWAYS use Title Case with spaces in contexts: [[Project Alpha]], NOT [[project-alpha]]
+- Prioritize existing contexts from the user's list
+- Use simple, clear language
+- Create visual structure with formatting and spacing
+- Preserve all original meaning
 
-Return only the structured Markdown content, no explanations or commentary.`;
+Return only the structured Markdown content.`;
 }
