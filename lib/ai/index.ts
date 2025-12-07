@@ -9,15 +9,26 @@ import { GeminiAIService } from "./gemini";
 import { GeminiEmbeddingService } from "./gemini-embedding";
 import { HuggingFaceEmbeddingService } from "./huggingface-embedding";
 import { getAIConfig, getEmbeddingConfig } from "./ai-config";
+import { getPreferencesLastModified } from "@/lib/user-preferences-server";
 
 const embeddingProvider = process.env.EMBEDDING_PROVIDER || "HUGGINGFACE";
 
 let aiServiceInstance: AIService | null = null;
 let embeddingServiceInstance: EmbeddingService | null = null;
+let lastConfigLoadTime = 0;
 
 export async function getAiService(): Promise<AIService> {
+    const currentModTime = getPreferencesLastModified();
+    
+    // Check if configuration file has changed
+    if (aiServiceInstance && currentModTime > lastConfigLoadTime) {
+        console.log("🔄 Configuration changed (detected fs change), reloading AI service");
+        aiServiceInstance = null;
+    }
+
     if (!aiServiceInstance) {
         const config = await getAIConfig();
+        lastConfigLoadTime = currentModTime;
         console.log(`🔧 Using ${config.provider.name} for text generation`);
 
         if (config.provider.name === "Google") {

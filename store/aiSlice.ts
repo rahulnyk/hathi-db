@@ -9,9 +9,12 @@ import {
     updateNoteWithSuggestedContexts,
     updateNoteContent,
     updateNoteOptimistically,
+    Note,
 } from "@/store/notesSlice";
+import { UpdateNoteParams } from "@/db/types";
 import { sentenceCaseToSlug } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { RootState } from ".";
 // Types for AI-generated data
 export interface SuggestedContexts {
     suggestions: string[];
@@ -67,7 +70,9 @@ async function fetchAndProcessContextSuggestions(
     noteId: string,
     content: string,
     userContexts: string[],
-    dispatch?: Dispatch
+    dispatch?: Dispatch,
+    autoContext: boolean = false,
+    currentNoteContexts: string[] = []
 ) {
     const result = await suggestContextsAction({
         content,
@@ -88,14 +93,36 @@ async function fetchAndProcessContextSuggestions(
                 suggestions,
             })
         );
+
+        if (autoContext && suggestions.length > 0) {
+            const newContexts = [
+                ...new Set([...currentNoteContexts, ...suggestions]),
+            ];
+            dispatch(
+                updateNoteOptimistically({
+                    noteId,
+                    patches: {
+                        contexts: newContexts,
+                    },
+                })
+            );
+        }
+    }
+
+    const patches: UpdateNoteParams = {
+        suggested_contexts: suggestions,
+    };
+
+    if (autoContext && suggestions.length > 0) {
+        patches.contexts = [
+            ...new Set([...currentNoteContexts, ...suggestions]),
+        ];
     }
 
     // Update database
     await patchNote({
         noteId,
-        patches: {
-            suggested_contexts: suggestions,
-        },
+        patches,
     });
 
     return suggestions;
@@ -131,17 +158,31 @@ export const generateSuggestedContexts = createAsyncThunk(
             content: string;
             userContexts: string[];
         },
-        { rejectWithValue, dispatch }
+        { rejectWithValue, dispatch, getState }
     ) => {
         // Clear any existing suggestions for this note
         dispatch(clearSuggestedContexts(noteId));
 
         try {
+            const state = getState() as RootState;
+            const autoContext =
+                state.userPreferences.preferences.autoContext.value;
+            const note =
+                state.notes.contextNotes.find(
+                    (n: Note) => n.id === noteId
+                ) ||
+                state.notes.searchResultNotes.find(
+                    (n: Note) => n.id === noteId
+                );
+            const currentNoteContexts = note ? note.contexts : [];
+
             const suggestions = await fetchAndProcessContextSuggestions(
                 noteId,
                 content,
                 userContexts,
-                dispatch
+                dispatch,
+                autoContext,
+                currentNoteContexts
             );
 
             return { noteId, suggestions };
@@ -346,9 +387,9 @@ export const retryGenerateSuggestedContexts = createAsyncThunk(
             content: string;
             userContexts: string[];
         },
-        { getState, rejectWithValue }
+        { getState, rejectWithValue, dispatch }
     ) => {
-        const state = getState() as any;
+        const state = getState() as RootState;
         const currentState = state.ai.suggestedContexts[noteId];
         const retryCount = (currentState?.retryCount || 0) + 1;
 
@@ -361,11 +402,25 @@ export const retryGenerateSuggestedContexts = createAsyncThunk(
         }
 
         try {
+            const autoContext =
+                state.userPreferences.preferences.autoContext.value;
+            const note =
+                state.notes.contextNotes.find(
+                    (n: Note) => n.id === noteId
+                ) ||
+                state.notes.searchResultNotes.find(
+                    (n: Note) => n.id === noteId
+                );
+            const currentNoteContexts = note ? note.contexts : [];
+
             // Pass dispatch to update the note in Redux store as well
             const suggestions = await fetchAndProcessContextSuggestions(
                 noteId,
                 content,
-                userContexts
+                userContexts,
+                dispatch,
+                autoContext,
+                currentNoteContexts
             );
 
             return { noteId, suggestions, retryCount };
@@ -401,7 +456,7 @@ export const retryStructurizeNote = createAsyncThunk(
         },
         { getState, rejectWithValue }
     ) => {
-        const state = getState() as any;
+        const state = getState() as RootState;
         const currentState = state.ai.structurizedNote[noteId];
         const retryCount = (currentState?.retryCount || 0) + 1;
 
@@ -611,13 +666,13 @@ export const { clearSuggestedContexts, clearStructurizeNote, clearAllAI } =
     aiSlice.actions;
 
 // Utility function to check if a note is an AI answer
-export const isAIAnswerNote = (state: any, noteId: string): boolean => {
+export const isAIAnswerNote = (state: RootState, noteId: string): boolean => {
     return state.ai.aiAnswers[noteId]?.isAIAnswer || false;
 };
 
 // Utility function to get AI answer details
 export const getAIAnswerDetails = (
-    state: any,
+    state: RootState,
     noteId: string
 ): AIAnswerState | null => {
     return state.ai.aiAnswers[noteId] || null;
