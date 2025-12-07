@@ -7,30 +7,21 @@
  * Common definition of what qualifies as a valid context
  * Used by both suggest-context and structurize prompts
  */
-export const CONTEXT_DEFINITION = `**What qualifies as a context:**
-Contexts represent significant nodes in the user's knowledge graph—concrete, identifiable entities or concepts.
+export const CONTEXT_DEFINITION = `Valid Contexts = Knowledge Graph Nodes:
+- Concrete entities (People, Places, Projects)
+- Specific topics/subjects (React, Psychology, Finance)
+- Distinct categories (Work, Journal, Ideas)
 
-✅ VALID CONTEXTS:
-- Proper nouns (people, places, projects, products): [[Sarah]], [[Tokyo]], [[Project Alpha]]
-- Specific concepts or topics: [[Machine Learning]], [[Marketing Strategy]], [[Meditation]]
-- Named entities or frameworks: [[React]], [[Agile]], [[Python]]
-- Specific areas of work or life: [[Career]], [[Health]], [[Fitness]], [[Finance]]
-- Concrete subjects that could be nodes in a knowledge graph: [[Meeting Notes]], [[Book Reviews]]
-
-❌ INVALID CONTEXTS (do NOT suggest):
-- Adjectives: valuable, important, interesting, significant
-- Verbs: learning, understanding, implementing, working
-- Abstract modifiers: significance, interpretation, worthwhile, intelligible
-- Generic descriptive words: idea, thought, reflection, update`;
+INVALID Contexts (Modifiers/Actions):
+- Adjectives (Important, Good, Valuable)
+- Verbs (Learning, Doing, Meeting)
+- Abstract/Vague (Thoughts, Updates, Miscellaneous)`;
 
 /**
  * Common format rules for contexts
  * Used by both suggest-context and structurize prompts
  */
-export const CONTEXT_FORMAT_RULES = `**Context Format Requirements:**
-- ALWAYS use Title Case with spaces: [[Meaning of Life]] ✅
-- NEVER use hyphens or lowercase: [[meaning-of-life]] ❌
-- Use proper capitalization for proper nouns: [[Sarah]], [[TypeScript]] ✅`;
+export const CONTEXT_FORMAT_RULES = `Format: Title Case with spaces ([[Meaning of Life]]). No hyphens/lowercase ([[meaning-of-life]] ❌).`;
 
 /**
  * Common examples of correct context usage in structured notes
@@ -46,13 +37,10 @@ export const CONTEXT_USAGE_EXAMPLES = `**Examples of correct context usage:**
  * Examples for suggest-context AI responses
  * Shows correct Title Case format for JSON array responses
  */
-export const CONTEXT_EXAMPLES = `**Examples of correct responses:**
+export const CONTEXT_EXAMPLES = `Examples:
 ["Work", "Project Alpha", "Meeting Notes"]
-["Personal", "Health", "Meditation"]
-["Finance", "Budgeting", "Tax Planning"]
-["Sarah", "Q4 Planning", "Strategy"]
+["Sarah", "Q4 Planning"]
 
-**Examples of incorrect responses:**
-["valuable", "significant", "learning"] ❌ (these are modifiers/verbs, not concrete contexts)
-["interpretation", "worthwhile"] ❌ (abstract modifiers)
-["project-alpha", "machine-learning"] ❌ (use Title Case with spaces, not slugs)`;
+Incorrect:
+["valuable", "learning"] (not concrete)
+["project-alpha"] (use Title Case)`;

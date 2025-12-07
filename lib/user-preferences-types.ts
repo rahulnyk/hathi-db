@@ -15,6 +15,7 @@ export interface PreferenceSetting<T = unknown> {
 
 export interface UserPreferences {
     enterToSubmit: PreferenceSetting<boolean>;
+    autoContext: PreferenceSetting<boolean>;
     aiConfig: PreferenceSetting<UserAIConfig>;
 }
 
@@ -24,6 +25,12 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
         display_name: "Enter to Submit",
         description:
             "When enabled, pressing Enter submits the note. When disabled, press Shift+Enter to submit and Enter to add a new line.",
+    },
+    autoContext: {
+        value: false,
+        display_name: "Auto Context",
+        description:
+            "When enabled, AI suggested contexts are automatically applied to the note.",
     },
     aiConfig: {
         value: {

@@ -87,3 +87,19 @@ export async function saveUserPreferencesToFile(
         throw error;
     }
 }
+
+/**
+ * Get the last modification time of the preferences file
+ * Used for cache invalidation
+ */
+export function getPreferencesLastModified(): number {
+    try {
+        if (!fs.existsSync(PREFERENCES_FILE_PATH)) {
+            return 0;
+        }
+        return fs.statSync(PREFERENCES_FILE_PATH).mtimeMs;
+    } catch (error) {
+        console.error("Error checking preferences file stats:", error);
+        return 0;
+    }
+}
