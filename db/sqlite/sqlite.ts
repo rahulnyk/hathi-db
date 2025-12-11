@@ -1184,60 +1184,72 @@ export class SqliteAdapter implements DatabaseAdapter {
                         if (oldLinks.length > 0) {
                             const noteIds = oldLinks.map((n) => n.note_id);
 
-                            for (const link of oldLinks) {
-                                // Check if note is already linked to new context
-                                const existingLink = await db
-                                    .select()
-                                    .from(notesContexts)
-                                    .where(
-                                        and(
-                                            eq(notesContexts.note_id, link.note_id),
-                                            eq(notesContexts.context_id, newContextId)
-                                        )
-                                    )
-                                    .limit(1);
+                            // Fetch all existing links for the new context upfront to avoid N+1 queries
+                            const existingNewContextLinks = await db
+                                .select()
+                                .from(notesContexts)
+                                .where(eq(notesContexts.context_id, newContextId));
 
-                                if (existingLink.length > 0) {
-                                    // Duplicate link would be created, just delete the old one
-                                    await db
-                                        .delete(notesContexts)
-                                        .where(
-                                            and(
-                                                eq(notesContexts.note_id, link.note_id),
-                                                eq(notesContexts.context_id, oldContextId)
-                                            )
-                                        );
+                            // Create a Set of note IDs already linked to the new context for O(1) lookups
+                            const existingNoteIds = new Set(
+                                existingNewContextLinks.map((link) => link.note_id)
+                            );
+
+                            // Batch operations: separate links into those to delete vs update
+                            const noteIdsToDelete: string[] = [];
+                            const noteIdsToUpdate: string[] = [];
+
+                            for (const link of oldLinks) {
+                                if (existingNoteIds.has(link.note_id)) {
+                                    noteIdsToDelete.push(link.note_id);
                                 } else {
-                                    // No duplicate, update the old link to point to new context
-                                    await db
-                                        .update(notesContexts)
-                                        .set({ context_id: newContextId })
-                                        .where(
-                                            and(
-                                                eq(notesContexts.note_id, link.note_id),
-                                                eq(notesContexts.context_id, oldContextId)
-                                            )
-                                        );
+                                    noteIdsToUpdate.push(link.note_id);
                                 }
                             }
 
-                            // 2. Update note content
+                            // Perform bulk DELETE for duplicate links
+                            if (noteIdsToDelete.length > 0) {
+                                await db
+                                    .delete(notesContexts)
+                                    .where(
+                                        and(
+                                            inArray(notesContexts.note_id, noteIdsToDelete),
+                                            eq(notesContexts.context_id, oldContextId)
+                                        )
+                                    );
+                            }
+
+                            // Perform bulk UPDATE for non-duplicate links
+                            if (noteIdsToUpdate.length > 0) {
+                                await db
+                                    .update(notesContexts)
+                                    .set({ context_id: newContextId })
+                                    .where(
+                                        and(
+                                            inArray(notesContexts.note_id, noteIdsToUpdate),
+                                            eq(notesContexts.context_id, oldContextId)
+                                        )
+                                    );
+                            }
+
+                            // 2. Update note content in batch
                             const notesToUpdate = await db
                                 .select()
                                 .from(notes)
                                 .where(inArray(notes.id, noteIds));
 
-                            for (const note of notesToUpdate) {
-                                const oldNameSentenceCase = slugToSentenceCase(oldName);
-                                const newNameSentenceCase = slugToSentenceCase(newName);
+                            const oldNameSentenceCase = slugToSentenceCase(oldName);
+                            const newNameSentenceCase = slugToSentenceCase(newName);
+                            const regex = new RegExp(
+                                `\\[\\[${oldNameSentenceCase.replace(
+                                    /[.*+?^${}()|[\]\\]/g,
+                                    "\\$&"
+                                )}\\]\\]`,
+                                "gi"
+                            );
 
-                                const regex = new RegExp(
-                                    `\\[\\[${oldNameSentenceCase.replace(
-                                        /[.*+?^${}()|[\]\\]/g,
-                                        "\\$&"
-                                    )}\\]\\]`,
-                                    "gi"
-                                );
+                            // Batch note updates using raw SQL for efficiency
+                            for (const note of notesToUpdate) {
                                 const updatedContent = note.content.replace(
                                     regex,
                                     `[[${newNameSentenceCase}]]`
