@@ -245,4 +245,5 @@ export interface DatabaseAdapter {
     ): Promise<PaginatedContextStats>;
     searchContexts(searchTerm: string, limit?: number): Promise<ContextStats[]>;
     renameContext(oldName: string, newName: string): Promise<void>;
+    contextExists(name: string): Promise<boolean>;
 }

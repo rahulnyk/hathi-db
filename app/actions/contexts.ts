@@ -94,3 +94,14 @@ export async function renameContext(
         }
     });
 }
+export async function checkContextExists(name: string): Promise<boolean> {
+    return measureExecutionTime("checkContextExists", async () => {
+        if (!name.trim()) return false;
+        try {
+            return await databaseAdapter.contextExists(name);
+        } catch (error) {
+            console.error("Error checking context existence:", error);
+            return false;
+        }
+    });
+}
