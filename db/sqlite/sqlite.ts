@@ -1369,7 +1369,7 @@ export class SqliteAdapter implements DatabaseAdapter {
                     .where(eq(contexts.name, name));
                     
                  return Number(result[0].count) > 0;
-             } catch(error) {
+             } catch (error) {
                  console.error("Error checking context existence:", error);
                  return false;
              }
