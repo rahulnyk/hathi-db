@@ -10,7 +10,7 @@ import { cn, slugToSentenceCase, isValidDateSlug, sentenceCaseToSlug } from "@/l
 import { Button } from "@/components/ui/button";
 import { Loader2, Pencil, Check, X } from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
-import { renameContext } from "@/app/actions/contexts";
+import { renameContext, checkContextExists } from "@/app/actions/contexts";
 import { setCurrentContext } from "@/store/notesSlice";
 
 interface ContextListProps {
@@ -98,6 +98,20 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
         setRenameError(null);
 
         try {
+            // Check if context exists
+            const exists = await checkContextExists(newSlug);
+            
+            if (exists) {
+                const confirmed = window.confirm(
+                    `Context "${slugToSentenceCase(newSlug)}" already exists.\n\nDo you want to merge "${slugToSentenceCase(oldContextSlug)}" into it?\n\nThis will move all notes to the new context and delete "${slugToSentenceCase(oldContextSlug)}".`
+                );
+                
+                if (!confirmed) {
+                    setIsRenaming(false);
+                    return;
+                }
+            }
+
             await renameContext(oldContextSlug, newSlug);
 
             // Update current context if it was the one being renamed

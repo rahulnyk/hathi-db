@@ -1016,68 +1016,189 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                 await client.query("BEGIN");
 
                 try {
-                    // 1. Update the context name in the contexts table
-                    const contextResult = await db
-                        .update(contexts)
-                        .set({ name: newName })
-                        .where(eq(contexts.name, oldName))
-                        .returning();
+                    // Check if new context already exists
+                    const existingContext = await db
+                        .select()
+                        .from(contexts)
+                        .where(eq(contexts.name, newName))
+                        .limit(1);
 
-                    if (!contextResult || contextResult.length === 0) {
+                    const oldContextParams = await db
+                        .select()
+                        .from(contexts)
+                        .where(eq(contexts.name, oldName))
+                        .limit(1);
+
+                    if (!oldContextParams || oldContextParams.length === 0) {
                         throw new Error(`Context "${oldName}" not found`);
                     }
+                    const oldContextId = oldContextParams[0].id;
 
-                    const contextId = contextResult[0].id;
+                    if (existingContext.length > 0) {
+                        // MERGE LOGIC
+                        const newContextId = existingContext[0].id;
 
-                    // 2. Fetch all notes linked to this context
-                    const linkedNotes = await db
-                        .select({ noteId: notesContexts.note_id })
-                        .from(notesContexts)
-                        .where(eq(notesContexts.context_id, contextId));
-
-                    if (linkedNotes.length > 0) {
-                        const noteIds = linkedNotes.map((n) => n.noteId);
-
-                        // 3. Fetch the actual notes to update their content
-                        const notesToUpdate = await db
+                        // 1. Fetch links for old context
+                        const oldLinks = await db
                             .select()
-                            .from(notes)
-                            .where(inArray(notes.id, noteIds));
+                            .from(notesContexts)
+                            .where(eq(notesContexts.context_id, oldContextId));
 
-                        // 4. Update each note's content and key_context
-                        for (const note of notesToUpdate) {
-                            // Convert slugs to sentence case for pattern matching
+                        if (oldLinks.length > 0) {
+                            const noteIds = oldLinks.map((n) => n.note_id);
+
+                            // Fetch all existing links for the new context upfront to avoid N+1 queries
+                            const existingNewContextLinks = await db
+                                .select()
+                                .from(notesContexts)
+                                .where(eq(notesContexts.context_id, newContextId));
+
+                            // Create a Set of note IDs already linked to the new context for O(1) lookups
+                            const existingNoteIds = new Set(
+                                existingNewContextLinks.map((link) => link.note_id)
+                            );
+
+                            // Batch operations: separate links into those to delete vs update
+                            const noteIdsToDelete: string[] = [];
+                            const noteIdsToUpdate: string[] = [];
+
+                            for (const link of oldLinks) {
+                                if (existingNoteIds.has(link.note_id)) {
+                                    noteIdsToDelete.push(link.note_id);
+                                } else {
+                                    noteIdsToUpdate.push(link.note_id);
+                                }
+                            }
+
+                            // Perform bulk DELETE for duplicate links
+                            if (noteIdsToDelete.length > 0) {
+                                await db
+                                    .delete(notesContexts)
+                                    .where(
+                                        and(
+                                            inArray(notesContexts.note_id, noteIdsToDelete),
+                                            eq(notesContexts.context_id, oldContextId)
+                                        )
+                                    );
+                            }
+
+                            // Perform bulk UPDATE for non-duplicate links
+                            if (noteIdsToUpdate.length > 0) {
+                                await db
+                                    .update(notesContexts)
+                                    .set({ context_id: newContextId })
+                                    .where(
+                                        and(
+                                            inArray(notesContexts.note_id, noteIdsToUpdate),
+                                            eq(notesContexts.context_id, oldContextId)
+                                        )
+                                    );
+                            }
+
+                            // 2. Update note content in batch
+                            const notesToUpdate = await db
+                                .select()
+                                .from(notes)
+                                .where(inArray(notes.id, noteIds));
+
+                            const oldNameSentenceCase = slugToSentenceCase(oldName);
+                            const newNameSentenceCase = slugToSentenceCase(newName);
+                            const regex = new RegExp(
+                                `\\[\\[${oldNameSentenceCase.replace(
+                                    /[.*+?^${}()|[\]\\]/g,
+                                    "\\$&"
+                                )}\\]\\]`,
+                                "gi"
+                            );
+
+                            // Batch note updates
+                            for (const note of notesToUpdate) {
+                                const updatedContent = note.content.replace(
+                                    regex,
+                                    `[[${newNameSentenceCase}]]`
+                                );
+
+                                const updatedKeyContext =
+                                    note.key_context === oldName
+                                        ? newName
+                                        : note.key_context;
+
+                                if (
+                                    updatedContent !== note.content ||
+                                    updatedKeyContext !== note.key_context
+                                ) {
+                                    await db
+                                        .update(notes)
+                                        .set({
+                                            content: updatedContent,
+                                            key_context: updatedKeyContext,
+                                        })
+                                        .where(eq(notes.id, note.id));
+                                }
+                            }
+                        }
+
+                        // 3. Delete old context
+                        await db.delete(contexts).where(eq(contexts.id, oldContextId));
+
+                    } else {
+                        // RENAME LOGIC (Existing)
+                        // 1. Update the context name in the contexts table
+                        await db
+                            .update(contexts)
+                            .set({ name: newName })
+                            .where(eq(contexts.id, oldContextId));
+
+                        // 2. Fetch all notes linked to this context
+                        const linkedNotes = await db
+                            .select({ noteId: notesContexts.note_id })
+                            .from(notesContexts)
+                            .where(eq(notesContexts.context_id, oldContextId));
+
+                        if (linkedNotes.length > 0) {
+                            const noteIds = linkedNotes.map((n) => n.noteId);
+
+                            // 3. Fetch the actual notes to update their content
+                            const notesToUpdate = await db
+                                .select()
+                                .from(notes)
+                                .where(inArray(notes.id, noteIds));
+
+                            // 4. Update each note's content and key_context
                             const oldNameSentenceCase = slugToSentenceCase(oldName);
                             const newNameSentenceCase = slugToSentenceCase(newName);
 
-                            // Create regex to match [[Old Name]] in sentence case (case-insensitive)
                             const regex = new RegExp(
-                                `\\[\\[${oldNameSentenceCase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]\\]`,
+                                `\\[\\[${oldNameSentenceCase.replace(
+                                    /[.*+?^${}()|[\]\\]/g,
+                                    "\\$&"
+                                )}\\]\\]`,
                                 "gi"
                             );
-                            const updatedContent = note.content.replace(
-                                regex,
-                                `[[${newNameSentenceCase}]]`
-                            );
 
-                            // Update key_context if it matches
-                            const updatedKeyContext =
-                                note.key_context === oldName
-                                    ? newName
-                                    : note.key_context;
+                            for (const note of notesToUpdate) {
+                                const updatedContent = note.content.replace(
+                                    regex,
+                                    `[[${newNameSentenceCase}]]`
+                                );
 
-                            // Only update if something changed
-                            if (
-                                updatedContent !== note.content ||
-                                updatedKeyContext !== note.key_context
-                            ) {
-                                await db
-                                    .update(notes)
-                                    .set({
-                                        content: updatedContent,
-                                        key_context: updatedKeyContext,
-                                    })
-                                    .where(eq(notes.id, note.id));
+                                const updatedKeyContext =
+                                    note.key_context === oldName
+                                        ? newName
+                                        : note.key_context;
+
+                                if (
+                                    updatedContent !== note.content ||
+                                    updatedKeyContext !== note.key_context
+                                ) {
+                                    await db
+                                        .update(notes)
+                                        .set({
+                                            content: updatedContent,
+                                            key_context: updatedKeyContext,
+                                        })
+                                        .where(eq(notes.id, note.id));
+                                }
                             }
                         }
                     }
@@ -1099,6 +1220,31 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
             } finally {
                 await client.end();
             }
+        });
+    }
+
+    /**
+     * Checks if a context exists
+     */
+    async contextExists(name: string): Promise<boolean> {
+        return measureExecutionTime("contextExists", async () => {
+             const client = createClient();
+             try {
+                 await client.connect();
+                 const db = drizzle(client, { schema });
+                 
+                 const result = await db
+                    .select({ count: sql<number>`count(*)` })
+                    .from(contexts)
+                    .where(eq(contexts.name, name));
+                    
+                 return Number(result[0].count) > 0;
+             } catch (error) {
+                 console.error("Error checking context existence:", error);
+                 return false;
+             } finally {
+                 await client.end();
+             }
         });
     }
 }
