@@ -1165,17 +1165,18 @@ export class PostgreSQLAdapter implements DatabaseAdapter {
                                 .where(inArray(notes.id, noteIds));
 
                             // 4. Update each note's content and key_context
-                            for (const note of notesToUpdate) {
-                                const oldNameSentenceCase = slugToSentenceCase(oldName);
-                                const newNameSentenceCase = slugToSentenceCase(newName);
+                            const oldNameSentenceCase = slugToSentenceCase(oldName);
+                            const newNameSentenceCase = slugToSentenceCase(newName);
 
-                                const regex = new RegExp(
-                                    `\\[\\[${oldNameSentenceCase.replace(
-                                        /[.*+?^${}()|[\]\\]/g,
-                                        "\\$&"
-                                    )}\\]\\]`,
-                                    "gi"
-                                );
+                            const regex = new RegExp(
+                                `\\[\\[${oldNameSentenceCase.replace(
+                                    /[.*+?^${}()|[\]\\]/g,
+                                    "\\$&"
+                                )}\\]\\]`,
+                                "gi"
+                            );
+
+                            for (const note of notesToUpdate) {
                                 const updatedContent = note.content.replace(
                                     regex,
                                     `[[${newNameSentenceCase}]]`

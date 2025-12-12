@@ -3,11 +3,11 @@ import { PostgreSQLAdapter } from "../db/postgres/adapter/postgresql";
 import { SqliteAdapter } from "../db/sqlite/sqlite";
 import { createClient } from "../db/postgres/connection";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { contexts, notes, notesContexts, schema } from "../db/postgres/schema"; 
-import { contexts as sqliteContexts, notes as sqliteNotes, notesContexts as sqliteNotesContexts, schema as sqliteSchema } from "../db/sqlite/schema"; 
-import { eq, inArray } from "drizzle-orm";
+import { contexts, notesContexts, schema } from "../db/postgres/schema"; 
+import { contexts as sqliteContexts, notesContexts as sqliteNotesContexts } from "../db/sqlite/schema"; 
+import { inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { createSqliteDb, getRawSqliteConnection } from "../db/sqlite/connection";
+import { createSqliteDb } from "../db/sqlite/connection";
 import "../jest.env";
 
 describe("Context Rename merge logic", () => {
