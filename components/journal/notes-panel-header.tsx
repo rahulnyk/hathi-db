@@ -23,7 +23,8 @@ export function NotesPanelHeader() {
             className={cn(
                 "w-full sticky top-0 z-10 py-2",
                 "bg-background",
-                "h-14 rounded-b-xl" // Set height
+                "h-14", // Set height
+                "border-b border-border"
             )}
         >
             <div
@@ -48,31 +49,31 @@ export function NotesPanelHeader() {
                     >
                         {slugToSentenceCase(currentContext)}
                     </h2>
-                    {!showHomeButton && (
-                        <span className="text-[10px] uppercase tracking-wider bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 px-1.5 py-0.5 rounded-full font-medium border border-teal-100/50 dark:border-teal-800/30">
-                            Today
-                        </span>
-                    )}
                 </div>
 
                 {/* Today button */}
-                {showHomeButton && (
-                    <button
-                        onClick={handleGoToToday}
+                <button
+                    onClick={showHomeButton ? handleGoToToday : undefined}
+                    disabled={!showHomeButton}
+                    className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200 border",
+                        showHomeButton
+                            ? "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 button-font-secondary cursor-pointer"
+                            : "bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 border-teal-100/50 dark:border-teal-800/30 cursor-default"
+                    )}
+                    title={showHomeButton ? "Go to Today's Journal" : "Today"}
+                >
+                    <Calendar size={14} />
+                    <span
                         className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-full",
-                            "bg-gray-200 dark:bg-gray-700",
-                            "border border-gray-300 dark:border-gray-600",
-                            "hover:bg-gray-300 dark:hover:bg-gray-600",
-                            "transition-all duration-200",
-                            "button-font-secondary"
+                            "hidden sm:inline",
+                            !showHomeButton &&
+                                "uppercase text-[10px] tracking-wider font-medium"
                         )}
-                        title="Go to Today's Journal"
                     >
-                        <Calendar size={14} />
-                        <span className="hidden sm:inline">Today</span>
-                    </button>
-                )}
+                        Today
+                    </span>
+                </button>
             </div>
         </div>
     );
