@@ -53,7 +53,6 @@ Each plugin receives context containing:
 -   `textareaRef`: Reference to textarea element
 -   `dispatch`: Redux dispatch function
 -   `isEditMode`: Whether editing existing note
--   `chatMode`: Whether chat mode is active
 -   `isSubmitting`: Whether submission is in progress
 
 ### Plugin Result
@@ -176,7 +175,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         content,
         textareaRef,
         isEditMode: !!note,
-        chatMode: false,
         isSubmitting: false,
         pluginChain: defaultEditorPluginChain,
         onContentChange: setContent,
@@ -244,7 +242,6 @@ export { myCustomPlugin } from "./my-plugin";
 import { myCustomPlugin } from "./my-plugin";
 
 export const defaultEditorPluginChain = composePlugins(
-    commandTriggerPlugin,
     myCustomPlugin, // Add here
     bracketWrapPlugin,
     bracketCompletionPlugin,

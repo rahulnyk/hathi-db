@@ -1,7 +1,7 @@
 "use client"; // Must be a client component to use state
 
 import { Menu } from "@/components/menu";
-import { PanelLeftOpen } from "lucide-react";
+import { Menu as MenuIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useViewportHeight } from "@/hooks/use_viewport_height";
 import { useAppSelector, useAppDispatch } from "@/store";
@@ -27,7 +27,7 @@ export default function JournalLayout({
                 aria-expanded={isMenuOpen}
                 title="Open menu"
             >
-                <PanelLeftOpen size={22} />
+                <MenuIcon size={22} />
             </button>
 
             <Menu
@@ -39,7 +39,7 @@ export default function JournalLayout({
                 className={cn(
                     "flex-1 transition-all duration-300 ease-in-out",
                     {
-                        "lg:ml-80": isMenuOpen, // Apply ml-80 (20rem) on lg screens when menu is open
+                        "lg:ml-[33vw]": isMenuOpen, // Apply 1/3 viewport width margin on lg screens when menu is open
                     }
                 )}
             >

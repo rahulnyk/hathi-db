@@ -1,29 +1,21 @@
 "use client";
 
-import { cn, slugToSentenceCase } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
-import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
-import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
-import { Target, Calendar, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
-import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
+import { cn, slugToSentenceCase } from "@/lib/utils";
+import { useAppSelector } from "@/store";
+import { Target, Calendar } from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
+
 export function NotesPanelHeader() {
-    const dispatch = useAppDispatch(); // Initialize dispatch
     const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
-    const { chatMode, isNavigatingToContext, todayContext } = useAppSelector(
-        (state) => state.ui
-    );
+    const { todayContext } = useAppSelector((state) => state.ui);
     const todaysDateSlug = todayContext;
 
     const showHomeButton = currentContext !== todaysDateSlug;
 
     const handleGoToToday = () => {
-        // Use context navigation hook to properly exit chat mode and navigate to today
+        // Use context navigation hook to properly navigate to today
         navigateToContext(todaysDateSlug);
-    };
-
-    const handleToggleChatMode = () => {
-        dispatch(setChatMode(!chatMode));
     };
 
     return (
@@ -36,7 +28,7 @@ export function NotesPanelHeader() {
         >
             <div
                 className={cn(
-                    "flex flex-row justify-start items-center gap-4 h-full", // Ensure content uses full height
+                    "flex flex-row justify-between items-center gap-4 h-full",
                     "px-4 py-2 group"
                 )}
             >
@@ -54,11 +46,9 @@ export function NotesPanelHeader() {
                             "truncate text-center md:text-left"
                         )}
                     >
-                        {chatMode
-                            ? "Ask Hathi"
-                            : slugToSentenceCase(currentContext)}
+                        {slugToSentenceCase(currentContext)}
                     </h2>
-                    {!showHomeButton && !chatMode && (
+                    {!showHomeButton && (
                         <span className="text-[10px] uppercase tracking-wider bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 px-1.5 py-0.5 rounded-full font-medium border border-teal-100/50 dark:border-teal-800/30">
                             Today
                         </span>
@@ -66,7 +56,7 @@ export function NotesPanelHeader() {
                 </div>
 
                 {/* Today button */}
-                {showHomeButton && !chatMode && (
+                {showHomeButton && (
                     <button
                         onClick={handleGoToToday}
                         className={cn(
@@ -83,58 +73,7 @@ export function NotesPanelHeader() {
                         <span className="hidden sm:inline">Today</span>
                     </button>
                 )}
-
-                {/* Toggle switch between Notes and Assistant */}
-                <div
-                    className={cn(
-                        "relative inline-flex rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
-                        // "bg-gray-200 dark:bg-gray-800"
-                    )}
-                    onClick={handleToggleChatMode}
-                >
-                    {/* Sliding background indicator */}
-                    <div
-                        className={cn(
-                            "absolute top-1 w-16 h-6 rounded-full transition-all duration-300 ease-in-out",
-                            "bg-gray-200 dark:bg-gray-700",
-                            "border border-gray-300 dark:border-gray-600",
-                            "hover:bg-gray-300 dark:hover:bg-gray-600",
-                            chatMode ? "translate-x-16" : "translate-x-0"
-                        )}
-                    />
-
-                    {/* Note Option */}
-                    <div
-                        className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font" : "button-font-secondary"
-                        )}
-                    >
-                        {isNavigatingToContext && !chatMode ? (
-                            <Loader2 size={10} className="animate-spin" />
-                        ) : (
-                            <NotebookPen size={10} />
-                        )}
-                        <span>Note</span>
-                    </div>
-
-                    {/* Ask Option */}
-                    <div
-                        className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font-secondary" : "button-font"
-                        )}
-                    >
-                        {isNavigatingToContext && chatMode ? (
-                            <Loader2 size={10} className="animate-spin" />
-                        ) : (
-                            <LucideMessageCircleQuestion size={10} />
-                        )}
-                        <span>Ask</span>
-                    </div>
-                </div>
             </div>
-            {/* Removed Calendar menu div */}
         </div>
     );
 }

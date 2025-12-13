@@ -14,7 +14,6 @@ import { EditorPlugin, EditorPluginContext, PluginResult } from "./types";
  * @example
  * ```typescript
  * const editorChain = composePlugins(
- *   commandTriggerPlugin,
  *   bracketCompletionPlugin,
  *   enterHandlerPlugin
  * );
