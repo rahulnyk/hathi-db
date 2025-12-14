@@ -2,10 +2,10 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import {
-    PanelLeftClose,
     Settings2,
     LayoutList,
     MessageCircle,
+    ChevronRight,
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { setMenuMode } from "@/store/uiSlice";
@@ -62,10 +62,10 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
             <div
                 ref={menuRef}
                 className={cn(
-                    "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
-                    "transition-transform duration-300 ease-in-out border-r border-zinc-300/50 dark:border-zinc-700/50 w-full sm:w-1/2 lg:w-[33vw] z-[100]",
+                    "fixed top-0 right-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
+                    "transition-transform duration-300 ease-in-out border-l border-zinc-300/50 dark:border-zinc-700/50 w-full sm:w-1/2 lg:w-[33vw] z-[100]",
                     "flex flex-col",
-                    isOpen ? "translate-x-0" : "-translate-x-full"
+                    isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
                 {/* Header */}
@@ -138,13 +138,14 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                         </div>
                     </div>
 
+                    {/* Close button - visible only on smaller screens where menu overlays */}
                     <button
                         onClick={handleClose}
-                        className="text-foreground hover:bg-accent p-1 rounded-md"
+                        className="lg:hidden flex items-center p-2 rounded-full transition-colors duration-150 bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
                         aria-label="Close menu"
                         title="Close menu"
                     >
-                        <PanelLeftClose size={22} />
+                        <ChevronRight size={22} />
                     </button>
                 </div>
 

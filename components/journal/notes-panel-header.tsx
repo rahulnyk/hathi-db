@@ -1,14 +1,16 @@
 "use client";
 
 import { cn, slugToSentenceCase } from "@/lib/utils";
-import { useAppSelector } from "@/store";
-import { Target, Calendar } from "lucide-react";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { toggleMenu } from "@/store/uiSlice";
+import { Target, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
 
 export function NotesPanelHeader() {
+    const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
-    const { todayContext } = useAppSelector((state) => state.ui);
+    const { todayContext, isMenuOpen } = useAppSelector((state) => state.ui);
     const todaysDateSlug = todayContext;
 
     const showHomeButton = currentContext !== todaysDateSlug;
@@ -73,6 +75,21 @@ export function NotesPanelHeader() {
                     >
                         Today
                     </span>
+                </button>
+
+                {/* Menu toggle button */}
+                <button
+                    onClick={() => dispatch(toggleMenu())}
+                    className="text-foreground bg-accent/50 backdrop-blur-md hover:bg-accent p-2 rounded-md"
+                    aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+                    aria-expanded={isMenuOpen}
+                    title={isMenuOpen ? "Close menu" : "Open menu"}
+                >
+                    {isMenuOpen ? (
+                        <ChevronRight size={22} />
+                    ) : (
+                        <ChevronLeft size={22} />
+                    )}
                 </button>
             </div>
         </div>
