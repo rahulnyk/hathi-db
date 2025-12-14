@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/store";
-import { setChatMode, setIsNavigatingToContext } from "@/store/uiSlice";
+import { setIsNavigatingToContext } from "@/store/uiSlice";
 import { useCallback } from "react";
 
 /**
@@ -17,9 +17,6 @@ export function useContextNavigation() {
             try {
                 // Set loading state
                 dispatch(setIsNavigatingToContext(true));
-
-                // Switch to thread mode to show the journal view
-                dispatch(setChatMode(false));
 
                 // Navigate to the journal URL (can be context or date)
                 router.push(`/journal/${journalRoute}`);

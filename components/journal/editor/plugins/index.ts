@@ -46,7 +46,6 @@
  *
  * // Add to composition
  * export const defaultEditorPluginChain = composePlugins(
- *   commandTriggerPlugin,
  *   contextDetectionPlugin,
  *   contextSuggestionKeyboardPlugin,
  *   myPlugin, // Add your plugin here
@@ -74,7 +73,6 @@ export { bracketCompletionPlugin } from "./bracket-completion";
 export { bracketDeletionPlugin } from "./bracket-deletion";
 export { bracketWrapPlugin } from "./bracket-wrap";
 export { enterHandlerPlugin } from "./enter-handler";
-export { commandTriggerPlugin } from "./command-trigger";
 export { contextDetectionPlugin } from "./context-detection";
 export { contextSuggestionKeyboardPlugin } from "./context-suggestion-keyboard";
 
@@ -83,7 +81,6 @@ export { useEditorPlugins } from "./hooks/use-editor-plugins";
 
 // Import plugins for composition
 import { composePlugins } from "./compose";
-import { commandTriggerPlugin } from "./command-trigger";
 import { contextDetectionPlugin } from "./context-detection";
 import { contextSuggestionKeyboardPlugin } from "./context-suggestion-keyboard";
 import { bracketWrapPlugin } from "./bracket-wrap";
@@ -95,16 +92,14 @@ import { enterHandlerPlugin } from "./enter-handler";
  * Default plugin chain for the notes editor
  *
  * Plugins are executed in the following order:
- * 1. **commandTriggerPlugin** - Activates chat mode with 'qq' or exits with 'nn'
- * 2. **contextDetectionPlugin** - Detects when user is typing between [[ ]] and manages suggestion box
- * 3. **contextSuggestionKeyboardPlugin** - Handles keyboard navigation when suggestions are active
- * 4. **bracketWrapPlugin** - Wraps selected text with bracket pairs (stops chain when wrapping)
- * 5. **bracketCompletionPlugin** - Auto-completes brackets when no text is selected
- * 6. **bracketDeletionPlugin** - Deletes matching closing bracket when opening is deleted with Backspace
- * 7. **enterHandlerPlugin** - Handles Enter key for form submission (stops chain in create mode)
+ * 1. **contextDetectionPlugin** - Detects when user is typing between [[ ]] and manages suggestion box
+ * 2. **contextSuggestionKeyboardPlugin** - Handles keyboard navigation when suggestions are active
+ * 3. **bracketWrapPlugin** - Wraps selected text with bracket pairs (stops chain when wrapping)
+ * 4. **bracketCompletionPlugin** - Auto-completes brackets when no text is selected
+ * 5. **bracketDeletionPlugin** - Deletes matching closing bracket when opening is deleted with Backspace
+ * 6. **enterHandlerPlugin** - Handles Enter key for form submission (stops chain in create mode)
  *
  * This order ensures that:
- * - Command triggers ('qq'/'nn') are detected first
  * - Context detection happens early to open/close suggestion box
  * - Context keyboard handling (Arrow keys, Enter, Escape) intercepts keys before other handlers
  * - Bracket wrapping happens before completion (handles selected text, stops chain)
@@ -118,7 +113,6 @@ import { enterHandlerPlugin } from "./enter-handler";
  *   content,
  *   textareaRef,
  *   isEditMode,
- *   chatMode,
  *   isSubmitting,
  *   pluginChain: defaultEditorPluginChain,
  *   onContentChange: setContent,
@@ -126,7 +120,6 @@ import { enterHandlerPlugin } from "./enter-handler";
  * ```
  */
 export const defaultEditorPluginChain = composePlugins(
-    commandTriggerPlugin,
     contextDetectionPlugin,
     contextSuggestionKeyboardPlugin,
     bracketWrapPlugin,

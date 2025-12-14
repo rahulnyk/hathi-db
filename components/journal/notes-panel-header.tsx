@@ -1,29 +1,121 @@
 "use client";
 
-import { cn, slugToSentenceCase } from "@/lib/utils"; // Added slugToSentenceCase and dateToSlug
-import { useAppDispatch, useAppSelector } from "@/store"; // Added useAppDispatch
-import { setChatMode } from "@/store/uiSlice"; // Added setChatMode
-import { Target, Calendar, NotebookPen, Loader2 } from "lucide-react"; // Added NotebookPen and Loader2 icons
-import { LucideMessageCircleQuestion } from "lucide-react"; // Import MessageCircleQuestionMark icon
+import { useState } from "react";
+import {
+    cn,
+    slugToSentenceCase,
+    isValidDateSlug,
+    sentenceCaseToSlug,
+} from "@/lib/utils";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { toggleMenu } from "@/store/uiSlice";
+import { setCurrentContext } from "@/store/notesSlice";
+import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
+import {
+    Target,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    FolderPen,
+    Check,
+    X,
+    Loader2,
+} from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
+import { renameContext, checkContextExists } from "@/app/actions/contexts";
+
 export function NotesPanelHeader() {
-    const dispatch = useAppDispatch(); // Initialize dispatch
+    const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
     const { currentContext } = useAppSelector((state) => state.notes);
-    const { chatMode, isNavigatingToContext, todayContext } = useAppSelector(
-        (state) => state.ui
-    );
+    const { todayContext, isMenuOpen } = useAppSelector((state) => state.ui);
     const todaysDateSlug = todayContext;
 
+    // State for edit mode
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState("");
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renameError, setRenameError] = useState<string | null>(null);
+
     const showHomeButton = currentContext !== todaysDateSlug;
+    // Don't allow editing date contexts
+    const canEditContext = !isValidDateSlug(currentContext);
 
     const handleGoToToday = () => {
-        // Use context navigation hook to properly exit chat mode and navigate to today
+        // Use context navigation hook to properly navigate to today
         navigateToContext(todaysDateSlug);
     };
 
-    const handleToggleChatMode = () => {
-        dispatch(setChatMode(!chatMode));
+    const handleEditClick = () => {
+        setIsEditing(true);
+        setEditValue(slugToSentenceCase(currentContext));
+        setRenameError(null);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditValue("");
+        setRenameError(null);
+    };
+
+    const handleSaveEdit = async () => {
+        const newName = editValue.trim();
+        if (!newName) {
+            setRenameError("Context name cannot be empty");
+            return;
+        }
+
+        const newSlug = sentenceCaseToSlug(newName);
+        if (newSlug === currentContext) {
+            setIsEditing(false);
+            setEditValue("");
+            return;
+        }
+
+        setIsRenaming(true);
+        setRenameError(null);
+
+        try {
+            // Check if context exists
+            const exists = await checkContextExists(newSlug);
+
+            if (exists) {
+                const confirmed = window.confirm(
+                    `Context "${slugToSentenceCase(
+                        newSlug
+                    )}" already exists.\n\nDo you want to merge "${slugToSentenceCase(
+                        currentContext
+                    )}" into it?\n\nThis will move all notes to the new context and delete "${slugToSentenceCase(
+                        currentContext
+                    )}".`
+                );
+
+                if (!confirmed) {
+                    setIsRenaming(false);
+                    return;
+                }
+            }
+
+            await renameContext(currentContext, newSlug);
+
+            // Update current context and navigate to new context
+            dispatch(setCurrentContext(newSlug));
+            navigateToContext(newSlug);
+
+            // Refresh the context list
+            dispatch(fetchContextsPaginated({ reset: true }));
+
+            setIsEditing(false);
+            setEditValue("");
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to rename context";
+            setRenameError(errorMessage);
+        } finally {
+            setIsRenaming(false);
+        }
     };
 
     return (
@@ -31,110 +123,132 @@ export function NotesPanelHeader() {
             className={cn(
                 "w-full sticky top-0 z-10 py-2",
                 "bg-background",
-                "h-14 rounded-b-xl" // Set height
+                "h-14", // Set height
+                "border-b border-border"
             )}
         >
             <div
                 className={cn(
-                    "flex flex-row justify-start items-center gap-4 h-full", // Ensure content uses full height
+                    "flex flex-row justify-between items-center gap-4 h-full",
                     "px-4 py-2 group"
                 )}
             >
                 {/* Context title */}
                 <div
                     className={cn(
-                        "flex flex-row items-center gap-4 min-w-0 flex-1 md:justify-start justify-center md:px-5 py-4",
+                        "flex flex-row items-center gap-4 min-w-0 max-w-[50vw] md:px-5 py-4",
                         "accent-font"
                     )}
                 >
                     <Target size={22} className="hidden md:block" />
-                    <h2
+                    {isEditing ? (
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 min-w-0 px-2 py-1 text-lg rounded border border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleSaveEdit();
+                                    } else if (e.key === "Escape") {
+                                        e.preventDefault();
+                                        handleCancelEdit();
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={isRenaming}
+                                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                title="Save"
+                            >
+                                {isRenaming ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                )}
+                            </button>
+                            <button
+                                onClick={handleCancelEdit}
+                                disabled={isRenaming}
+                                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                title="Cancel"
+                            >
+                                <X className="h-5 w-5 text-red-600 dark:text-red-400" />
+                            </button>
+                            {renameError && (
+                                <span className="text-xs text-red-500 ml-2">
+                                    {renameError}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 min-w-0 group/title">
+                            <h2
+                                className={cn("text-2xl", "truncate text-left")}
+                            >
+                                {slugToSentenceCase(currentContext)}
+                            </h2>
+                            {canEditContext && (
+                                <button
+                                    onClick={handleEditClick}
+                                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors mx-2"
+                                    title="Edit context name"
+                                >
+                                    <FolderPen size={22} />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Right side buttons group */}
+                <div className="flex items-center gap-2">
+                    {/* Today button */}
+                    <button
+                        onClick={showHomeButton ? handleGoToToday : undefined}
+                        disabled={!showHomeButton}
                         className={cn(
-                            "text-2xl",
-                            "truncate text-center md:text-left"
+                            "flex items-center gap-1.5 px-2 py-1 rounded-full transition-all duration-200 border text-xs",
+                            showHomeButton
+                                ? "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 button-font-secondary cursor-pointer"
+                                : "bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 border-teal-100/50 dark:border-teal-800/30 cursor-default"
                         )}
+                        title={
+                            showHomeButton ? "Go to Today's Journal" : "Today"
+                        }
                     >
-                        {chatMode
-                            ? "Ask Hathi"
-                            : slugToSentenceCase(currentContext)}
-                    </h2>
-                    {!showHomeButton && !chatMode && (
-                        <span className="text-[10px] uppercase tracking-wider bg-teal-50/50 dark:bg-teal-900/20 text-teal-600/70 dark:text-teal-400/70 px-1.5 py-0.5 rounded-full font-medium border border-teal-100/50 dark:border-teal-800/30">
+                        <Calendar size={12} />
+                        <span
+                            className={cn(
+                                "hidden sm:inline",
+                                !showHomeButton &&
+                                    "uppercase text-[10px] tracking-wider font-medium"
+                            )}
+                        >
                             Today
                         </span>
-                    )}
-                </div>
-
-                {/* Today button */}
-                {showHomeButton && !chatMode && (
-                    <button
-                        onClick={handleGoToToday}
-                        className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-full",
-                            "bg-gray-200 dark:bg-gray-700",
-                            "border border-gray-300 dark:border-gray-600",
-                            "hover:bg-gray-300 dark:hover:bg-gray-600",
-                            "transition-all duration-200",
-                            "button-font-secondary"
-                        )}
-                        title="Go to Today's Journal"
-                    >
-                        <Calendar size={14} />
-                        <span className="hidden sm:inline">Today</span>
                     </button>
-                )}
 
-                {/* Toggle switch between Notes and Assistant */}
-                <div
-                    className={cn(
-                        "relative inline-flex rounded-full p-1 border border-gray-300 dark:border-gray-600 cursor-pointer"
-                        // "bg-gray-200 dark:bg-gray-800"
-                    )}
-                    onClick={handleToggleChatMode}
-                >
-                    {/* Sliding background indicator */}
-                    <div
-                        className={cn(
-                            "absolute top-1 w-16 h-6 rounded-full transition-all duration-300 ease-in-out",
-                            "bg-gray-200 dark:bg-gray-700",
-                            "border border-gray-300 dark:border-gray-600",
-                            "hover:bg-gray-300 dark:hover:bg-gray-600",
-                            chatMode ? "translate-x-16" : "translate-x-0"
-                        )}
-                    />
-
-                    {/* Note Option */}
-                    <div
-                        className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font" : "button-font-secondary"
-                        )}
+                    {/* Menu toggle button */}
+                    <button
+                        onClick={() => dispatch(toggleMenu())}
+                        className="text-foreground bg-accent/50 backdrop-blur-md hover:bg-accent p-2 rounded-md"
+                        aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={isMenuOpen}
+                        title={isMenuOpen ? "Close menu" : "Open menu"}
                     >
-                        {isNavigatingToContext && !chatMode ? (
-                            <Loader2 size={10} className="animate-spin" />
+                        {isMenuOpen ? (
+                            <ChevronRight size={22} />
                         ) : (
-                            <NotebookPen size={10} />
+                            <ChevronLeft size={22} />
                         )}
-                        <span>Note</span>
-                    </div>
-
-                    {/* Ask Option */}
-                    <div
-                        className={cn(
-                            "relative z-10 flex items-center justify-center gap-1 w-16 h-6 rounded-full transition-colors duration-300",
-                            chatMode ? "button-font-secondary" : "button-font"
-                        )}
-                    >
-                        {isNavigatingToContext && chatMode ? (
-                            <Loader2 size={10} className="animate-spin" />
-                        ) : (
-                            <LucideMessageCircleQuestion size={10} />
-                        )}
-                        <span>Ask</span>
-                    </div>
+                    </button>
                 </div>
             </div>
-            {/* Removed Calendar menu div */}
         </div>
     );
 }

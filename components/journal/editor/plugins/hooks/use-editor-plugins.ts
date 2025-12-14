@@ -18,8 +18,6 @@ interface UseEditorPluginsProps {
     textareaRef: React.RefObject<HTMLTextAreaElement | null>;
     /** Whether editor is in edit mode (editing existing note) */
     isEditMode: boolean;
-    /** Whether chat mode is active */
-    chatMode: boolean;
     /** Whether submission is in progress */
     isSubmitting: boolean;
     /** Composed plugin chain to execute on key down */
@@ -48,7 +46,6 @@ interface UseEditorPluginsProps {
  *   content,
  *   textareaRef,
  *   isEditMode,
- *   chatMode,
  *   isSubmitting,
  *   pluginChain: defaultEditorPluginChain,
  *   onContentChange: setContent,
@@ -61,7 +58,6 @@ export function useEditorPlugins({
     content,
     textareaRef,
     isEditMode,
-    chatMode,
     isSubmitting,
     pluginChain,
     onContentChange,
@@ -121,7 +117,6 @@ export function useEditorPlugins({
                 textareaRef,
                 dispatch,
                 isEditMode,
-                chatMode,
                 isSubmitting,
                 suggestionBoxState,
                 enterToSubmit,
@@ -178,7 +173,6 @@ export function useEditorPlugins({
             textareaRef,
             dispatch,
             isEditMode,
-            chatMode,
             isSubmitting,
             pluginChain,
             onContentChange,

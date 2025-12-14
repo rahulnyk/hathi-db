@@ -16,11 +16,10 @@ interface UIState {
     activeNoteId: string | null;
     editingNoteId: string | null; // Added for tracking the note being edited
     originalNoteStates: Record<string, OriginalNoteState>; // Store original states by note ID
-    chatMode: boolean; // Track if the editor is in chat mode
     isMenuOpen: boolean; // Track if the menu is open
     isNavigatingToContext: boolean; // Track if currently navigating to a context
     todayContext: string; // Track the current date's context slug
-    menuMode: "context" | "preferences"; // Track current menu mode
+    menuMode: "context" | "preferences" | "chat"; // Track current menu mode
 }
 
 const initialState: UIState = {
@@ -29,7 +28,6 @@ const initialState: UIState = {
     activeNoteId: null,
     editingNoteId: null, // Initialize editingNoteId
     originalNoteStates: {}, // Initialize empty original note states
-    chatMode: false, // Initialize chat mode to false
     isMenuOpen: false, // Initialize menu as closed
     isNavigatingToContext: false, // Initialize context navigation state
     todayContext: dateToSlug(new Date()), // Initialize with current date
@@ -83,9 +81,6 @@ const uiSlice = createSlice({
             const noteId = action.payload;
             delete state.originalNoteStates[noteId];
         },
-        setChatMode: (state, action: PayloadAction<boolean>) => {
-            state.chatMode = action.payload;
-        },
         setIsMenuOpen: (state, action: PayloadAction<boolean>) => {
             state.isMenuOpen = action.payload;
         },
@@ -98,11 +93,11 @@ const uiSlice = createSlice({
         setTodayContext: (state, action: PayloadAction<string>) => {
             state.todayContext = action.payload;
         },
-        setMenuMode: (state, action: PayloadAction<"context" | "preferences">) => {
+        setMenuMode: (
+            state,
+            action: PayloadAction<"context" | "preferences" | "chat">
+        ) => {
             state.menuMode = action.payload;
-        },
-        toggleMenuMode: (state) => {
-            state.menuMode = state.menuMode === "context" ? "preferences" : "context";
         },
     },
 });
@@ -116,12 +111,10 @@ export const {
     setEditingNoteId, // Export the new action
     storeOriginalNoteState,
     clearOriginalNoteState,
-    setChatMode,
     setIsMenuOpen,
     toggleMenu,
     setIsNavigatingToContext,
     setTodayContext,
     setMenuMode,
-    toggleMenuMode,
 } = uiSlice.actions;
 export default uiSlice.reducer;

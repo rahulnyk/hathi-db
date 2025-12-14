@@ -2,17 +2,13 @@
 
 import { Thread } from "./thread";
 import { InputPanel } from "./input-panel";
-import { AssistantPanel } from "./assistant-panel";
 import { NotesPanelHeader } from "./notes-panel-header";
-import { useAppSelector } from "@/store";
 import { cn } from "@/lib/utils";
 import { ToastProvider, ErrorBoundary } from "@/components/ui";
 
 import { useTodayTracker } from "@/hooks/use-today-tracker";
 
 export function NotesPanel() {
-    const chatMode = useAppSelector((state) => state.ui.chatMode);
-
     // Track today's date and redirect if it changes
     useTodayTracker();
 
@@ -21,11 +17,12 @@ export function NotesPanel() {
             <ErrorBoundary>
                 <div
                     className={cn(
-                        "flex flex-col h-screen w-full md:max-w-screen-lg md:mx-auto"
+                        "flex flex-col h-screen w-full md:max-w-screen-lg md:mx-auto",
+                        "px-4 sm:px-6 md:px-6"
                     )}
                 >
                     <NotesPanelHeader />
-                    {chatMode ? <AssistantPanel /> : <Thread />}
+                    <Thread />
                     <InputPanel />
                 </div>
             </ErrorBoundary>

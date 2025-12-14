@@ -1,20 +1,20 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import { PanelLeftClose, Settings2, LayoutList, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import {
+    Settings2,
+    LayoutList,
+    MessageCircle,
+    ChevronRight,
+} from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store";
-import { toggleMenuMode } from "@/store/uiSlice";
+import { setMenuMode } from "@/store/uiSlice";
 import { cn } from "@/lib/utils";
 import { HathiIcon } from "../icon";
 import { ContextMenu } from "./context-menu";
 import { PreferencesMenu } from "./preferences-menu";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ChatMenu } from "./chat-menu";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface RetractableMenuProps {
     isOpen: boolean;
@@ -23,7 +23,6 @@ interface RetractableMenuProps {
 
 export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     const dispatch = useAppDispatch();
-    const { theme, setTheme } = useTheme();
     const deviceType = useAppSelector((state) => state.ui.deviceType);
     const menuMode = useAppSelector((state) => state.ui.menuMode);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -31,8 +30,8 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     const handleClose = useCallback(() => {
         // Reset to context menu when closing for better UX
         // This ensures the menu always opens to the context view
-        if (menuMode === "preferences") {
-            dispatch(toggleMenuMode());
+        if (menuMode !== "context") {
+            dispatch(setMenuMode("context"));
         }
         onClose();
     }, [menuMode, dispatch, onClose]);
@@ -58,27 +57,15 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
         };
     }, [isOpen, handleClose, deviceType]);
 
-    const handleToggleMenuMode = () => {
-        dispatch(toggleMenuMode());
-    };
-
-    const handleToggleTheme = () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-    };
-
-    const isCurrentlyDark = theme === "dark";
-    const ThemeIcon = isCurrentlyDark ? Sun : Moon;
-    const MenuModeIcon = menuMode === "context" ? Settings2 : LayoutList;
-
     return (
         <TooltipProvider delayDuration={300}>
             <div
                 ref={menuRef}
                 className={cn(
-                    "fixed top-0 left-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
-                    "transition-transform duration-300 ease-in-out border-r border-border/20 w-80 z-[100]",
+                    "fixed top-0 right-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
+                    "transition-transform duration-300 ease-in-out border-l border-zinc-300/50 dark:border-zinc-700/50 w-full sm:w-1/2 lg:w-[33vw] z-[100]",
                     "flex flex-col",
-                    isOpen ? "translate-x-0" : "-translate-x-full"
+                    isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
                 {/* Header */}
@@ -94,69 +81,71 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                             hathi
                         </span>
 
-                        {/* Theme and Preferences Buttons */}
+                        {/* Navigation Buttons */}
                         <div className="flex items-center gap-1 ml-2">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        onClick={handleToggleTheme}
-                                        className={cn(
-                                            "p-1.5 rounded-md text-foreground/70",
-                                            "hover:bg-gray-300/50 dark:hover:bg-gray-700/50",
-                                            "hover:text-foreground",
-                                            "transition-colors duration-150"
-                                        )}
-                                        aria-label={`Switch to ${isCurrentlyDark ? "light" : "dark"} mode`}
-                                    >
-                                        <ThemeIcon size={16} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                    <p>
-                                        {isCurrentlyDark
-                                            ? "Light mode"
-                                            : "Dark mode"}
-                                    </p>
-                                </TooltipContent>
-                            </Tooltip>
+                            {/* Settings Button - Pill Style */}
+                            <button
+                                onClick={() =>
+                                    dispatch(setMenuMode("preferences"))
+                                }
+                                className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+                                    "transition-colors duration-150",
+                                    "text-xs font-medium",
+                                    menuMode === "preferences"
+                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
+                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
+                                )}
+                                aria-label="Preferences menu"
+                            >
+                                <Settings2 size={14} />
+                                <span>Settings</span>
+                            </button>
 
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        onClick={handleToggleMenuMode}
-                                        className={cn(
-                                            "p-1.5 rounded-md text-foreground/70",
-                                            "hover:bg-gray-300/50 dark:hover:bg-gray-700/50",
-                                            "hover:text-foreground",
-                                            "transition-colors duration-150"
-                                        )}
-                                        aria-label={
-                                            menuMode === "context"
-                                                ? "Open preferences"
-                                                : "Back to contexts"
-                                        }
-                                    >
-                                        <MenuModeIcon size={16} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                    <p>
-                                        {menuMode === "context"
-                                            ? "Preferences"
-                                            : "Contexts"}
-                                    </p>
-                                </TooltipContent>
-                            </Tooltip>
+                            {/* Context Button - Pill Style */}
+                            <button
+                                onClick={() => dispatch(setMenuMode("context"))}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+                                    "transition-colors duration-150",
+                                    "text-xs font-medium",
+                                    menuMode === "context"
+                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
+                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
+                                )}
+                                aria-label="Context menu"
+                            >
+                                <LayoutList size={14} />
+                                <span>Context</span>
+                            </button>
+
+                            {/* Chat Button - Pill Style */}
+                            <button
+                                onClick={() => dispatch(setMenuMode("chat"))}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+                                    "transition-colors duration-150",
+                                    "text-xs font-medium",
+                                    menuMode === "chat"
+                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
+                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
+                                )}
+                                aria-label="Chat menu"
+                            >
+                                <MessageCircle size={14} />
+                                <span>Chat</span>
+                            </button>
                         </div>
                     </div>
 
+                    {/* Close button - visible only on smaller screens where menu overlays */}
                     <button
                         onClick={handleClose}
-                        className="text-foreground hover:bg-accent p-1 rounded-md"
+                        className="lg:hidden flex items-center p-2 rounded-full transition-colors duration-150 bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
                         aria-label="Close menu"
                         title="Close menu"
                     >
-                        <PanelLeftClose size={22} />
+                        <ChevronRight size={22} />
                     </button>
                 </div>
 
@@ -165,6 +154,8 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                     <div className="flex-grow overflow-y-auto px-2 space-y-2">
                         {menuMode === "context" ? (
                             <ContextMenu onCloseMenu={onClose} />
+                        ) : menuMode === "chat" ? (
+                            <ChatMenu />
                         ) : (
                             <PreferencesMenu />
                         )}

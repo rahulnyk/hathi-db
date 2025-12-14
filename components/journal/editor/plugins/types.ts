@@ -44,8 +44,6 @@ export interface EditorPluginContext {
     dispatch: Dispatch;
     /** Whether editor is in edit mode (editing existing note) */
     isEditMode: boolean;
-    /** Whether chat mode is active */
-    chatMode: boolean;
     /** Whether submission is in progress */
     isSubmitting: boolean;
     /** Suggestion box state for context suggestions */

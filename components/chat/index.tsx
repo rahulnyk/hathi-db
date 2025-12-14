@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
 import { HashLoader } from "react-spinners";
@@ -16,6 +16,8 @@ import {
 } from "@/store/agentSlice";
 import { useSharedChatContext } from "@/lib/chat-context";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 import { HathiIcon } from "../icon";
 import { TextPartRenderer } from "./renderers/text-part-renderer";
@@ -39,7 +41,10 @@ export interface ChatComponentProps {
     showInput?: boolean; // Control whether to show the input
 }
 
-export function ChatComponent({ className }: ChatComponentProps) {
+export function ChatComponent({
+    className,
+    showInput = true,
+}: ChatComponentProps) {
     const dispatch = useAppDispatch();
     const displayToolInfo = useAppSelector(selectDisplayToolInfo);
     const isProcessing = useAppSelector(selectIsProcessing);
@@ -50,7 +55,10 @@ export function ChatComponent({ className }: ChatComponentProps) {
     const chatHook = useChat({ chat });
 
     // Use the chatHook from shared context
-    const { messages, status, error } = chatHook;
+    const { messages, status, error, sendMessage } = chatHook;
+
+    // Local state for input
+    const [inputValue, setInputValue] = useState("");
 
     // Auto-scroll refs and logic
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +133,16 @@ export function ChatComponent({ className }: ChatComponentProps) {
         prevIsProcessingRef.current = isProcessing;
     }, [isProcessing]);
 
+    // Handle message submission
+    const handleSendMessage = (e?: React.FormEvent | React.KeyboardEvent) => {
+        e?.preventDefault();
+        if (!inputValue.trim()) return;
+        sendMessage({
+            text: inputValue.trim(),
+        });
+        setInputValue("");
+    };
+
     return (
         <div
             className={cn(
@@ -166,6 +184,35 @@ export function ChatComponent({ className }: ChatComponentProps) {
                             loading={true}
                         />
                     </div>
+                </div>
+            )}
+
+            {/* Input Area */}
+            {showInput && (
+                <div className="p-2 sm:p-4 border-t bg-background">
+                    <form
+                        onSubmit={handleSendMessage}
+                        className="relative flex items-end gap-2"
+                    >
+                        <Textarea
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Ask Hathi..."
+                            className="min-h-[44px] max-h-[200px] resize-none"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    handleSendMessage(e);
+                                }
+                            }}
+                        />
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={!inputValue.trim() || isProcessing}
+                        >
+                            <ArrowUp className="h-4 w-4" />
+                        </Button>
+                    </form>
                 </div>
             )}
         </div>

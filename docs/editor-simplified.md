@@ -46,7 +46,6 @@ interface NotesEditorProps {
 
 #### Redux State
 
--   `chatMode`: Whether the editor is in chat mode
 -   `currentKeyContext`: Current context for organizing notes
 -   `draftContent`: Auto-saved draft content for new notes
 -   `originalNoteStates`: Original state of notes being edited
@@ -147,14 +146,6 @@ Routes form submission to the appropriate handler based on mode.
 const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!content.trim() || isSubmitting) return;
-
-    // Chat mode: send message to AI
-    if (chatMode && chatHook && !isEditMode) {
-        chatHook.sendMessage({ text: content.trim() });
-        setContent("");
-        dispatch(clearDraft());
-        return;
-    }
 
     // Note mode: create or update note
     if (isEditMode) {

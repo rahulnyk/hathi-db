@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { insertContextInBrackets } from "@/lib/bracketMatchUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Check, X, LucideMessageCircleQuestion } from "lucide-react";
+import { ArrowUp, Check, X } from "lucide-react";
 import { HashLoader } from "react-spinners";
 import { ContextContainer } from "../note_card/context-container";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -18,8 +18,6 @@ import {
 } from "@/store/notesSlice";
 import { createOptimisticNote, extractMetadata } from "@/lib/noteUtils";
 import { determineNoteType } from "@/lib/note-type-utils";
-import { useChat } from "@ai-sdk/react";
-import { useSharedChatContext } from "@/lib/chat-context";
 import { useEditorPlugins, defaultEditorPluginChain } from "./plugins";
 import { ContextSuggestionBox } from "@/components/ui/context-suggestion-box";
 import {
@@ -47,7 +45,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const dispatch = useAppDispatch();
 
     // Redux state
-    const chatMode = useAppSelector((state) => state.ui.chatMode);
     const currentKeyContext = useAppSelector(
         (state) => state.notes.currentContext
     );
@@ -60,10 +57,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [content, setContent] = useState(note ? note.content : "");
-
-    // Chat functionality
-    const { chat } = useSharedChatContext();
-    const chatHook = useChat({ chat });
 
     // Derived state
     const isEditMode = !!note;
@@ -79,7 +72,6 @@ export function NotesEditor({ note }: NotesEditorProps) {
         content,
         textareaRef,
         isEditMode,
-        chatMode,
         isSubmitting,
         pluginChain: defaultEditorPluginChain,
         onContentChange: setContent,
@@ -162,19 +154,11 @@ export function NotesEditor({ note }: NotesEditorProps) {
 
     /**
      * Handles form submission
-     * Routes to chat or note creation/editing based on mode
+     * Routes to note creation/editing
      */
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
-
-        // Chat mode: send message to AI
-        if (chatMode && chatHook && !isEditMode) {
-            chatHook.sendMessage({ text: content.trim() });
-            setContent("");
-            dispatch(clearDraft());
-            return;
-        }
 
         // Note mode: create or update note
         if (isEditMode) {
@@ -277,13 +261,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                         value={content}
                         onChange={handleContentChange}
                         onKeyDown={handleKeyDown}
-                        placeholder={
-                            isEditMode
-                                ? "Edit your note..."
-                                : chatMode
-                                ? "Ask me to find your notes..."
-                                : "Use Markdown to format your notes..."
-                        }
+                        placeholder="Use Markdown to format your notes..."
                     />
                 </div>
 
@@ -340,19 +318,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                                 {isSubmitting ? (
                                     <HashLoader size={16} />
                                 ) : (
-                                    <>
-                                        {chatMode ? (
-                                            <LucideMessageCircleQuestion
-                                                strokeWidth={3}
-                                                size={16}
-                                            />
-                                        ) : (
-                                            <ArrowUp
-                                                strokeWidth={3}
-                                                size={16}
-                                            />
-                                        )}
-                                    </>
+                                    <ArrowUp strokeWidth={3} size={16} />
                                 )}
                             </Button>
                         </div>
