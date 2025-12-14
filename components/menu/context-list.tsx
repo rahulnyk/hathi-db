@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchContextsPaginated } from "@/store/notesMetadataSlice";
-// import { setCurrentContext } from "@/store/notesSlice";
 import { DeviceType, clearDatePickerSelection } from "@/store/uiSlice";
 import { ContextStats } from "@/db/types";
 import { cn, slugToSentenceCase, isValidDateSlug } from "@/lib/utils";

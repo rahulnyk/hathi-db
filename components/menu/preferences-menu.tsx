@@ -9,7 +9,7 @@ import { useTheme } from "next-themes";
 
 export function PreferencesMenu() {
     const dispatch = useAppDispatch();
-    const { theme, setTheme } = useTheme();
+    const { theme, setTheme, resolvedTheme } = useTheme();
     const preferences = useAppSelector(
         (state) => state.userPreferences.preferences
     );
@@ -59,7 +59,10 @@ export function PreferencesMenu() {
                 </div>
                 <Switch
                     className="scale-75 origin-right"
-                    checked={theme === "dark"}
+                    checked={
+                        theme === "dark" ||
+                        (theme === "system" && resolvedTheme === "dark")
+                    }
                     onCheckedChange={handleThemeChange}
                     aria-label="Dark mode"
                 />
