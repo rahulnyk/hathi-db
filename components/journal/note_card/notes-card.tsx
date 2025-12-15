@@ -44,7 +44,9 @@ export function NoteCard({
     // Check if there's a version of this note in the Redux store
     // If so, use that version to ensure edits are reflected in the UI
     const storeNote = useAppSelector((state) => {
-        const inContext = state.notes.contextNotes.find((n) => n.id === note.id);
+        const inContext = state.notes.contextNotes.find(
+            (n) => n.id === note.id
+        );
         if (inContext) return inContext;
         return state.notes.searchResultNotes.find((n) => n.id === note.id);
     });
@@ -68,7 +70,7 @@ export function NoteCard({
 
     const displayContent =
         aiStructurizedState?.status === "succeeded" &&
-            aiStructurizedState.structuredContent
+        aiStructurizedState.structuredContent
             ? aiStructurizedState.structuredContent
             : currentNote.content;
 
@@ -150,13 +152,25 @@ export function NoteCard({
             onDoubleClick={handleDoubleClick}
             onTouchStart={handleTouchStart}
             className={cn(
-                "px-2 sm:px-4 my-2 rounded-lg relative transition-colors duration-500",
-                // isNoteEditing && "ring-1 ring-zinc-300/50 dark:ring-zinc-600/50 my-0"
-                isNoteEditing &&
-                "border-l-2 border-dashed border-blue-500 rounded-none"
+                "border-l-2 px-4 py-2 relative transition-colors duration-500 group",
+                isNoteEditing
+                    ? "border-dashed border-blue-500 rounded-none"
+                    : "border-zinc-200 dark:border-zinc-700"
             )}
         >
-            {showCardHeader && <CardHeader note={currentNote} />}
+            <div
+                className={cn(
+                    "absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full border-2 bg-background",
+                    isNoteEditing
+                        ? "border-blue-500"
+                        : "border-zinc-200 dark:border-zinc-700"
+                )}
+            />
+            {showCardHeader && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <CardHeader note={currentNote} />
+                </div>
+            )}
 
             {isNoteEditing ? (
                 <div className="mb-0">

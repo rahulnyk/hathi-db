@@ -13,32 +13,51 @@ import { useContextNavigation } from "@/lib/context-navigation";
 interface ContextListProps {
     onCloseMenu: () => void;
     deviceType: DeviceType;
+    contextsOverride?: ContextStats[];
+    isLoadingOverride?: boolean;
 }
 
-export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
+export function ContextList({
+    onCloseMenu,
+    deviceType,
+    contextsOverride,
+    isLoadingOverride,
+}: ContextListProps) {
     const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
-    const { contexts, status, hasMore, isLoadingMore } = useAppSelector(
-        (state) => state.notesMetadata
-    );
+    const {
+        contexts,
+        status,
+        hasMore,
+        isLoadingMore: reduxIsLoadingMore,
+    } = useAppSelector((state) => state.notesMetadata);
     const { currentContext } = useAppSelector((state) => state.notes);
+
+    // Use overrides if provided, otherwise use Redux state
+    const displayContexts = contextsOverride || contexts;
+    const isLoading =
+        isLoadingOverride !== undefined
+            ? isLoadingOverride
+            : status === "loading" && displayContexts.length === 0;
 
     // Filter out date contexts (contexts that match the date slug pattern)
     const filteredContexts = useMemo(() => {
-        return contexts.filter(
+        return displayContexts.filter(
             (contextStat) => !isValidDateSlug(contextStat.context)
         );
-    }, [contexts]);
+    }, [displayContexts]);
 
     // Check if we're refreshing (have contexts but status is loading)
-    const isRefreshing = status === "loading" && contexts.length > 0;
+    // Only relevant when not using override
+    const isRefreshing =
+        !contextsOverride && status === "loading" && contexts.length > 0;
 
     // Fetch contexts when component mounts
     useEffect(() => {
-        if (status === "idle") {
+        if (!contextsOverride && status === "idle") {
             dispatch(fetchContextsPaginated({ reset: true }));
         }
-    }, [status, dispatch]);
+    }, [status, dispatch, contextsOverride]);
 
     const handleContextClick = (contextSlug: string) => {
         if (deviceType === "mobile") {
@@ -53,14 +72,14 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     };
 
     const handleLoadMore = useCallback(() => {
-        if (hasMore && !isLoadingMore) {
+        if (hasMore && !reduxIsLoadingMore) {
             dispatch(fetchContextsPaginated());
         }
-    }, [hasMore, isLoadingMore, dispatch]);
+    }, [hasMore, reduxIsLoadingMore, dispatch]);
 
     // Only show loading when we have no contexts AND we're in a loading state on initial load
     // This prevents flickering when contexts are being refreshed
-    if (status === "loading" && filteredContexts.length === 0) {
+    if (isLoading && filteredContexts.length === 0) {
         return (
             <div className="px-4 py-2 text-sm text-neutral-500">
                 Loading contexts...
@@ -69,7 +88,11 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
     }
 
     // Only show error state if we have no contexts and the request failed
-    if (status === "failed" && filteredContexts.length === 0) {
+    if (
+        !contextsOverride &&
+        status === "failed" &&
+        filteredContexts.length === 0
+    ) {
         return (
             <div className="px-4 py-2 text-sm text-red-500">
                 Failed to load contexts.
@@ -123,17 +146,17 @@ export function ContextList({ onCloseMenu, deviceType }: ContextListProps) {
                 </div>
             ))}
 
-            {/* Load More Button */}
-            {hasMore && (
+            {/* Load More Button - Only show if not using override */}
+            {!contextsOverride && hasMore && (
                 <div className="px-2 mt-2">
                     <Button
                         onClick={handleLoadMore}
-                        disabled={isLoadingMore}
+                        disabled={reduxIsLoadingMore}
                         variant="outline"
                         size="sm"
                         className="w-full h-8 text-xs"
                     >
-                        {isLoadingMore ? (
+                        {reduxIsLoadingMore ? (
                             <>
                                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
                                 Loading...

@@ -27,7 +27,7 @@ export default function JournalLayout({
                 className={cn(
                     "flex-1 transition-all duration-300 ease-in-out",
                     {
-                        "lg:mr-[33vw]": isMenuOpen, // Apply 1/3 viewport width margin on lg screens when menu is open
+                        "lg:mr-[40vw]": isMenuOpen, // Apply 40% viewport width margin on lg screens when menu is open
                     }
                 )}
             >
