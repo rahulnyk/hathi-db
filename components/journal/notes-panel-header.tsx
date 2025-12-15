@@ -16,13 +16,19 @@ import {
     Calendar,
     ChevronLeft,
     ChevronRight,
-    FolderPen,
+    PencilLine,
     Check,
     X,
     Loader2,
 } from "lucide-react";
 import { useContextNavigation } from "@/lib/context-navigation";
 import { renameContext, checkContextExists } from "@/app/actions/contexts";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { ContextMenuModal } from "./context-menu-modal";
 
 export function NotesPanelHeader() {
     const dispatch = useAppDispatch();
@@ -33,6 +39,7 @@ export function NotesPanelHeader() {
 
     // State for edit mode
     const [isEditing, setIsEditing] = useState(false);
+    const [isContextPopoverOpen, setIsContextPopoverOpen] = useState(false);
     const [editValue, setEditValue] = useState("");
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameError, setRenameError] = useState<string | null>(null);
@@ -187,18 +194,42 @@ export function NotesPanelHeader() {
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 min-w-0 group/title">
-                            <h2
-                                className={cn("text-2xl", "truncate text-left")}
+                            <Popover
+                                open={isContextPopoverOpen}
+                                onOpenChange={setIsContextPopoverOpen}
                             >
-                                {slugToSentenceCase(currentContext)}
-                            </h2>
+                                <PopoverTrigger asChild>
+                                    <h2
+                                        className={cn(
+                                            "text-2xl",
+                                            "truncate text-left cursor-pointer hover:underline decoration-dotted underline-offset-4",
+                                            "hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                        )}
+                                    >
+                                        {slugToSentenceCase(currentContext)}
+                                    </h2>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[90vw] md:w-[700px] p-0 z-50"
+                                    align="start"
+                                    sideOffset={10}
+                                >
+                                    <ContextMenuModal
+                                        onClose={() =>
+                                            setIsContextPopoverOpen(false)
+                                        }
+                                    />
+                                </PopoverContent>
+                            </Popover>
                             {canEditContext && (
                                 <button
                                     onClick={handleEditClick}
-                                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors mx-2"
+                                    className={cn(
+                                        "hover:bg-accent p-1 rounded-full transition-colors size-8 justify-center items-center flex"
+                                    )}
                                     title="Edit context name"
                                 >
-                                    <FolderPen size={22} />
+                                    <PencilLine size={20} />
                                 </button>
                             )}
                         </div>
@@ -236,7 +267,9 @@ export function NotesPanelHeader() {
                     {/* Menu toggle button */}
                     <button
                         onClick={() => dispatch(toggleMenu())}
-                        className="text-foreground bg-accent/50 backdrop-blur-md hover:bg-accent p-2 rounded-md"
+                        className={cn(
+                            "hover:bg-accent p-1 rounded-full transition-colors size-8 justify-center items-center flex"
+                        )}
                         aria-label={isMenuOpen ? "Close menu" : "Open menu"}
                         aria-expanded={isMenuOpen}
                         title={isMenuOpen ? "Close menu" : "Open menu"}

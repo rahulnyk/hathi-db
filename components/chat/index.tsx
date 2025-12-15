@@ -189,16 +189,20 @@ export function ChatComponent({
 
             {/* Input Area */}
             {showInput && (
-                <div className="p-2 sm:p-4 border-t bg-background">
+                <div className="p-4 bg-transparent">
                     <form
                         onSubmit={handleSendMessage}
-                        className="relative flex items-end gap-2"
+                        className={cn(
+                            "relative flex items-end gap-2 p-3 rounded-2xl shadow-sm backdrop-blur-sm",
+                            "bg-zinc-50/90 dark:bg-zinc-900/90",
+                            "border border-zinc-300/50 dark:border-zinc-600/50"
+                        )}
                     >
                         <Textarea
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder="Ask Hathi..."
-                            className="min-h-[44px] max-h-[200px] resize-none"
+                            className="min-h-[28px] max-h-[200px] resize-none border-0 shadow-none focus-visible:ring-0 bg-transparent p-0"
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     handleSendMessage(e);
@@ -209,6 +213,7 @@ export function ChatComponent({
                             type="submit"
                             size="icon"
                             disabled={!inputValue.trim() || isProcessing}
+                            className="mb-0.5 h-8 w-8 shrink-0"
                         >
                             <ArrowUp className="h-4 w-4" />
                         </Button>
@@ -248,12 +253,6 @@ function ChatMessage({
             )}
         >
             <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
-                <div
-                    className={cn("accent-font text-bold text-sm sm:text-base")}
-                >
-                    {message.role === "user" ? "You" : "Hathi"}
-                </div>
-
                 <div className="space-y-2 sm:space-y-3">
                     {message.parts.map((part, index) => (
                         <MessagePartRenderer

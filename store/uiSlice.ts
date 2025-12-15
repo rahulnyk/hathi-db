@@ -19,7 +19,7 @@ interface UIState {
     isMenuOpen: boolean; // Track if the menu is open
     isNavigatingToContext: boolean; // Track if currently navigating to a context
     todayContext: string; // Track the current date's context slug
-    menuMode: "context" | "preferences" | "chat"; // Track current menu mode
+    menuMode: "preferences" | "chat"; // Track current menu mode
 }
 
 const initialState: UIState = {
@@ -28,10 +28,10 @@ const initialState: UIState = {
     activeNoteId: null,
     editingNoteId: null, // Initialize editingNoteId
     originalNoteStates: {}, // Initialize empty original note states
-    isMenuOpen: false, // Initialize menu as closed
+    isMenuOpen: true, // Initialize menu as open
     isNavigatingToContext: false, // Initialize context navigation state
     todayContext: dateToSlug(new Date()), // Initialize with current date
-    menuMode: "context", // Initialize with context menu
+    menuMode: "chat", // Initialize with chat menu
 };
 
 const uiSlice = createSlice({
@@ -93,10 +93,7 @@ const uiSlice = createSlice({
         setTodayContext: (state, action: PayloadAction<string>) => {
             state.todayContext = action.payload;
         },
-        setMenuMode: (
-            state,
-            action: PayloadAction<"context" | "preferences" | "chat">
-        ) => {
+        setMenuMode: (state, action: PayloadAction<"preferences" | "chat">) => {
             state.menuMode = action.payload;
         },
     },

@@ -194,10 +194,11 @@ export function Thread() {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-0">
                     {reversedNotes.map((note) => {
-                        const cardKey = `${note.id}-${note.isSearchResult || "default"
-                            }`;
+                        const cardKey = `${note.id}-${
+                            note.isSearchResult || "default"
+                        }`;
                         if (note.note_type === "ai-note") {
                             return <AiNoteCard key={cardKey} note={note} />;
                         } else if (note.note_type === "todo") {

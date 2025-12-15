@@ -1,17 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import {
-    Settings2,
-    LayoutList,
-    MessageCircle,
-    ChevronRight,
-} from "lucide-react";
+import { Settings2, MessageCircle, ChevronRight } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { setMenuMode } from "@/store/uiSlice";
 import { cn } from "@/lib/utils";
 import { HathiIcon } from "../icon";
-import { ContextMenu } from "./context-menu";
 import { PreferencesMenu } from "./preferences-menu";
 import { ChatMenu } from "./chat-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,10 +22,9 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
 
     const handleClose = useCallback(() => {
-        // Reset to context menu when closing for better UX
-        // This ensures the menu always opens to the context view
-        if (menuMode !== "context") {
-            dispatch(setMenuMode("context"));
+        // Reset to chat menu when closing for better UX
+        if (menuMode !== "chat") {
+            dispatch(setMenuMode("chat"));
         }
         onClose();
     }, [menuMode, dispatch, onClose]);
@@ -63,7 +56,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                 ref={menuRef}
                 className={cn(
                     "fixed top-0 right-0 h-[calc(var(--dynamic-vh,1vh)*100)] bg-zinc-200 dark:bg-zinc-800 text-foreground",
-                    "transition-transform duration-300 ease-in-out border-l border-zinc-300/50 dark:border-zinc-700/50 w-full sm:w-1/2 lg:w-[33vw] z-[100]",
+                    "transition-transform duration-300 ease-in-out border-l border-zinc-300/50 dark:border-zinc-600/50 w-full sm:w-1/2 lg:w-[40vw] z-[100]",
                     "flex flex-col",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
@@ -83,57 +76,39 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
 
                         {/* Navigation Buttons */}
                         <div className="flex items-center gap-1 ml-2">
-                            {/* Settings Button - Pill Style */}
                             <button
                                 onClick={() =>
-                                    dispatch(setMenuMode("preferences"))
+                                    dispatch(
+                                        setMenuMode(
+                                            menuMode === "preferences"
+                                                ? "chat"
+                                                : "preferences"
+                                        )
+                                    )
                                 }
                                 className={cn(
                                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
                                     "transition-colors duration-150",
                                     "text-xs font-medium",
+                                    "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
+                                )}
+                                aria-label={
                                     menuMode === "preferences"
-                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
-                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
-                                )}
-                                aria-label="Preferences menu"
+                                        ? "Back to Chat"
+                                        : "Settings"
+                                }
                             >
-                                <Settings2 size={14} />
-                                <span>Settings</span>
-                            </button>
-
-                            {/* Context Button - Pill Style */}
-                            <button
-                                onClick={() => dispatch(setMenuMode("context"))}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-                                    "transition-colors duration-150",
-                                    "text-xs font-medium",
-                                    menuMode === "context"
-                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
-                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
+                                {menuMode === "preferences" ? (
+                                    <>
+                                        <MessageCircle size={14} />
+                                        <span>Chat</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Settings2 size={14} />
+                                        <span>Settings</span>
+                                    </>
                                 )}
-                                aria-label="Context menu"
-                            >
-                                <LayoutList size={14} />
-                                <span>Context</span>
-                            </button>
-
-                            {/* Chat Button - Pill Style */}
-                            <button
-                                onClick={() => dispatch(setMenuMode("chat"))}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-                                    "transition-colors duration-150",
-                                    "text-xs font-medium",
-                                    menuMode === "chat"
-                                        ? "bg-gray-300 dark:bg-gray-700 text-foreground"
-                                        : "bg-gray-200/50 dark:bg-gray-800/50 text-foreground/70 hover:bg-gray-300/70 dark:hover:bg-gray-700/70 hover:text-foreground"
-                                )}
-                                aria-label="Chat menu"
-                            >
-                                <MessageCircle size={14} />
-                                <span>Chat</span>
                             </button>
                         </div>
                     </div>
@@ -152,9 +127,7 @@ export function Menu({ isOpen, onClose }: RetractableMenuProps) {
                 {/* Content Area */}
                 <div className="flex flex-col flex-1 min-h-0 pt-2">
                     <div className="flex-grow overflow-y-auto px-2 space-y-2">
-                        {menuMode === "context" ? (
-                            <ContextMenu onCloseMenu={onClose} />
-                        ) : menuMode === "chat" ? (
+                        {menuMode === "chat" ? (
                             <ChatMenu />
                         ) : (
                             <PreferencesMenu />
