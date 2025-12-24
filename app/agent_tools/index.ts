@@ -7,11 +7,11 @@ import type { ToolSet } from "ai";
 import type { SearchToolResponse } from "@/app/agent_tools/types";
 import { formatSearchMessage } from "@/app/agent_tools/types";
 import { answerToolInputSchema } from "@/app/agent_tools/types";
-
+import { summarizeNotes } from "@/app/agent_tools/summarize-notes";
 export const tools: ToolSet = {
     filterNotes: tool({
         description:
-            "Filter and search notes based on various criteria like date, contexts, note type, deadline, status, and content search. Returns up to 20 notes by default.",
+            "Filter and search notes based on various criteria like date, contexts, note type, deadline, status, etc. Returns up to 20 notes by default.",
         inputSchema: z.object({
             createdAfter: z
                 .string()
@@ -184,40 +184,40 @@ export const tools: ToolSet = {
         inputSchema: answerToolInputSchema,
     }),
 
-    // summarizeNotes: tool({
-    //     description:
-    //         "Generate an AI-powered intelligent summary with key insights, themes, and action items from the provided notes.",
-    //     inputSchema: z.object({
-    //         noteIds: z
-    //             .array(z.string())
-    //             .describe(
-    //                 "Array of note IDs to summarize. Use this after filtering notes to get their IDs."
-    //             ),
-    //         includeMetadata: z
-    //             .boolean()
-    //             .optional()
-    //             .default(true)
-    //             .describe(
-    //                 "Whether to include metadata like creation date and contexts in the summary"
-    //             ),
-    //     }),
-    //     execute: async (params) => {
-    //         try {
-    //             const result = await summarizeNotes(params);
-    //             return result;
-    //         } catch (error) {
-    //             return {
-    //                 success: false,
-    //                 summary: "",
-    //                 noteCount: 0,
-    //                 error:
-    //                     error instanceof Error
-    //                         ? error.message
-    //                         : "Unknown error occurred",
-    //                 message:
-    //                     "Failed to generate notes summary. Please try again.",
-    //             };
-    //         }
-    //     },
-    // }),
+    summarizeNotes: tool({
+        description:
+            "Generate a summary from the provided notes. Use this tool sparingly only when necessary to condense information.",
+        inputSchema: z.object({
+            noteIds: z
+                .array(z.string())
+                .describe(
+                    "Array of note IDs to summarize. Use this after filtering notes to get their IDs."
+                ),
+            includeMetadata: z
+                .boolean()
+                .optional()
+                .default(true)
+                .describe(
+                    "Whether to include metadata like creation date and contexts in the summary"
+                ),
+        }),
+        execute: async (params) => {
+            try {
+                const result = await summarizeNotes(params);
+                return result;
+            } catch (error) {
+                return {
+                    success: false,
+                    summary: "",
+                    noteCount: 0,
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error occurred",
+                    message:
+                        "Failed to generate notes summary. Please try again.",
+                };
+            }
+        },
+    }),
 };

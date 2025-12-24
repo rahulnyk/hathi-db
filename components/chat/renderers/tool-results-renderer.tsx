@@ -10,10 +10,12 @@ export function ToolResultRenderer({
     toolName,
     result,
     displayToolInfo,
+    defaultCollapsed = false,
 }: {
     toolName: string;
     result: unknown;
     displayToolInfo: boolean;
+    defaultCollapsed?: boolean;
 }) {
     // Tool info header (only shown if displayToolInfo is true)
     const toolInfoHeader = displayToolInfo && (
@@ -40,6 +42,7 @@ export function ToolResultRenderer({
                 <SummaryRenderer
                     result={result as SummarizeToolResponse}
                     toolInfoHeader={toolInfoHeader}
+                    defaultCollapsed={defaultCollapsed}
                 />
             );
 

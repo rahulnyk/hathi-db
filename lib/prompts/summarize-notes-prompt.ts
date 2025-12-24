@@ -22,16 +22,15 @@ export function summarizeNotesPrompt(
 
     return `Create an succinct summary of the following ${notes.length} notes. 
     
-CRITICAL REQUIREMENTS:
-- Maximum 3-4 bullet points per section
+GUIDELINES:
 - Each bullet point should be ONE sentence maximum
 - Focus on ONLY the most essential information
-- Divide summary into sections like "At a Glance", "Action Items", "Key Takeaways"
+- Divide summary into sections like "At a Glance", "Action Items", "Key Takeaways", etc. where applicable.
 - Use active, direct language as if conversing with the user.
 - Perfect for a 30-second quick scan
-- DO not repeat yourself. 
-- Be as concise as possible.
-- Do not add any explaination, unnecessary text, or filler content. KEEP IT BRIEF.
+- Do not repeat yourself. 
+- Be as concise as possible, but maintain clarity.
+- Do not add any explanation, unnecessary text, or filler content. KEEP IT BRIEF.
 
 Notes to summarize:
 ${notesContent}

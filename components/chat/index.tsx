@@ -300,6 +300,7 @@ function MessagePartRenderer({
             <ToolPartComponent
                 part={part as ToolUIPart | DynamicToolUIPart}
                 displayToolInfo={displayToolInfo}
+                isAnswerAvailable={isAnswerAvailable}
             />
         );
     }
@@ -326,12 +327,12 @@ function MessagePartRenderer({
 function ToolPartComponent({
     part,
     displayToolInfo,
+    isAnswerAvailable,
 }: {
     part: ToolUIPart | DynamicToolUIPart; // Tool part with type 'tool-${toolName}' or 'data-${string}'
     displayToolInfo: boolean;
+    isAnswerAvailable: boolean;
 }) {
-    console.log("Rendering tool part:", part);
-
     // Extract tool name from type (remove 'tool-' prefix)
     const toolName = part.type.startsWith("tool-")
         ? part.type.substring(5)
@@ -355,6 +356,7 @@ function ToolPartComponent({
                     toolName={toolName}
                     result={part.output}
                     displayToolInfo={displayToolInfo}
+                    defaultCollapsed={isAnswerAvailable}
                 />
             );
         case "output-error":

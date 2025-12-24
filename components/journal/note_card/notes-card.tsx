@@ -140,9 +140,9 @@ export function NoteCard({
     }, [navigateToContext]); // Only navigateToContext is actually used
 
     const textSizeClass = {
-        normal: "text-base",
-        small: "text-sm",
-        smaller: "text-xs",
+        normal: "text-base text-zinc-900 dark:text-zinc-100",
+        small: "text-sm text-zinc-900 dark:text-zinc-100",
+        smaller: "text-xs text-zinc-900 dark:text-zinc-100",
     }[textSize];
 
     return (
