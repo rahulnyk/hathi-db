@@ -20,7 +20,7 @@ export function summarizeNotesPrompt(
         })
         .join("");
 
-    return `Create an succinct summary of the following ${notes.length} notes. 
+    return `Create a succinct summary of the following ${notes.length} notes. 
     
 GUIDELINES:
 - Each bullet point should be ONE sentence maximum
