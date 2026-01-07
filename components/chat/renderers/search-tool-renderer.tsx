@@ -62,17 +62,19 @@ export function SearchResultsRenderer({
                 <Button
                     variant="ghost"
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full justify-between p-2 sm:p-3 text-left font-normal h-auto"
+                    className="w-full justify-between p-2 sm:p-3 text-left font-normal h-auto whitespace-normal"
                 >
-                    <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                        <NotebookText className="inline-block h-4 w-4 flex-shrink-0" />
-                        <span className="text-xs sm:text-sm font-medium truncate">
-                            Found {result.notes.length} note
-                            {result.notes.length === 1 ? "" : "s"}
-                        </span>
-                        <span className="text-xs text-muted-foreground hidden sm:block">
-                            ({result.message})
-                        </span>
+                    <div className="flex items-start gap-1 sm:gap-2 min-w-0">
+                        <NotebookText className="inline-block h-4 w-4 flex-shrink-0 sm:mt-0.5" />
+                        <div className="min-w-0">
+                            <span className="text-xs sm:text-sm font-medium">
+                                Found {result.notes.length} note
+                                {result.notes.length === 1 ? "" : "s"}
+                            </span>
+                            <span className="text-xs text-muted-foreground hidden sm:inline ml-1 sm:ml-2">
+                                ({result.message})
+                            </span>
+                        </div>
                     </div>
                     {collapsed ? (
                         <ChevronRight className="h-4 w-4 flex-shrink-0" />
