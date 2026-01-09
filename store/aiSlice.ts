@@ -90,47 +90,45 @@ async function fetchAndProcessContextSuggestions(
 
     const suggestions = result.data.map((ctx) => sentenceCaseToSlug(ctx));
 
-    // If no suggestions, skip Redux and database updates
-    // Empty array is a valid response, not an error
-    if (suggestions.length === 0) {
-        console.log("No context suggestions for note:", noteId);
-        return suggestions;
-    }
-
-    const mergedContexts = [
-        ...new Set([...currentNoteContexts, ...suggestions]),
-    ];
-
-    // Update Redux store if dispatch is provided
-    if (dispatch) {
-        dispatch(
-            updateNoteWithSuggestedContexts({
-                noteId,
-                suggestions,
-            })
-        );
-
-        if (autoContext) {
-            dispatch(
-                updateNoteOptimistically({
-                    noteId,
-                    patches: {
-                        contexts: mergedContexts,
-                    },
-                })
-            );
-        }
-    }
-
-    // Update database with suggestions
+    // Always update database to clear stale suggestions (empty array is valid)
+    // But skip Redux updates when empty since there's nothing to display
     const patches: UpdateNoteParams = {
-        suggested_contexts: suggestions,
+        suggested_contexts: suggestions, // Empty array clears old suggestions
     };
 
-    if (autoContext) {
-        patches.contexts = mergedContexts;
+    if (suggestions.length > 0) {
+        // We have suggestions - update Redux for UI display
+        const mergedContexts = [
+            ...new Set([...currentNoteContexts, ...suggestions]),
+        ];
+
+        if (dispatch) {
+            dispatch(
+                updateNoteWithSuggestedContexts({
+                    noteId,
+                    suggestions,
+                })
+            );
+
+            if (autoContext) {
+                dispatch(
+                    updateNoteOptimistically({
+                        noteId,
+                        patches: {
+                            contexts: mergedContexts,
+                        },
+                    })
+                );
+                // Add contexts to database patch
+                patches.contexts = mergedContexts;
+            }
+        }
+    } else {
+        // No suggestions - clear stale data in database
+        console.log("No context suggestions for note:", noteId);
     }
 
+    // Always persist to database (clears stale data when empty)
     await patchNote({
         noteId,
         patches,

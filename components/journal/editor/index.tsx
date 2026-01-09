@@ -152,6 +152,10 @@ export function NotesEditor({ note }: NotesEditorProps) {
      */
     const exitEditMode = (): void => {
         if (!note) return;
+
+        // Flush any pending debounced updates to ensure all changes are saved
+        debouncedUpdateNote.flush();
+
         dispatch(setEditingNoteId(null));
     };
 
@@ -161,6 +165,9 @@ export function NotesEditor({ note }: NotesEditorProps) {
      */
     const cancelEdit = (): void => {
         if (!note || !originalNoteState) return;
+
+        // Cancel any pending debounced updates to prevent overwriting restored content
+        debouncedUpdateNote.cancel();
 
         // Revert Redux state to original content
         dispatch(
@@ -257,6 +264,16 @@ export function NotesEditor({ note }: NotesEditorProps) {
             setContexts(note.contexts || []);
         }
     }, [note?.id]);
+
+    /**
+     * Cleanup debounced updates when component unmounts or note changes
+     * Prevents stale updates from dispatching after unmount or with wrong noteId
+     */
+    useEffect(() => {
+        return () => {
+            debouncedUpdateNote.cancel();
+        };
+    }, [note?.id, debouncedUpdateNote]);
 
     /**
      * Load draft content for new notes from Redux persist
