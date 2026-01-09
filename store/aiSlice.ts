@@ -183,15 +183,12 @@ export const generateSuggestedContexts = createAsyncThunk(
                 );
 
             if (!note) {
-                console.error(
-                    `generateSuggestedContexts: Note with ID ${noteId} not found in Redux store`,
+                console.warn(
+                    `generateSuggestedContexts: Note ${noteId} not yet in Redux store (expected for newly created notes)`,
                     {
                         contextNotesCount: state.notes.contextNotes.length,
                         searchResultNotesCount:
                             state.notes.searchResultNotes.length,
-                        contextNotesIds: state.notes.contextNotes
-                            .map((n) => n.id)
-                            .slice(0, 5),
                     }
                 );
             }

@@ -164,10 +164,11 @@ export function NotesEditor({ note }: NotesEditorProps) {
      * Reverts both Redux state and local state to snapshot taken when entering edit mode
      */
     const cancelEdit = (): void => {
-        if (!note || !originalNoteState) return;
-
-        // Cancel any pending debounced updates to prevent overwriting restored content
+        // Cancel any pending debounced updates FIRST to prevent race conditions
+        // This must happen before any other operations to ensure no updates sneak through
         debouncedUpdateNote.cancel();
+
+        if (!note || !originalNoteState) return;
 
         // Revert Redux state to original content
         dispatch(
@@ -273,7 +274,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
         return () => {
             debouncedUpdateNote.cancel();
         };
-    }, [note?.id, debouncedUpdateNote]);
+    }, [note?.id]); // debouncedUpdateNote is stable due to useDebouncedCallback, no need to include it in deps
 
     /**
      * Load draft content for new notes from Redux persist

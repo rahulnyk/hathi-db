@@ -41,9 +41,6 @@ export function NoteStatusIndicator({
                 />
             )}
 
-            {/* Note: Empty suggestions are valid - AI determined no contexts are needed.
-                Only show error badge on actual API/processing failures */}
-
             {/* Structurization error state */}
             {aiStructurizeState?.status === "failed" && (
                 <NoteErrorBadge

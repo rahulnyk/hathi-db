@@ -160,14 +160,12 @@ export function NoteCard({
                 className={cn(
                     "absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full border-2 bg-background transition-colors duration-300",
                     isNoteEditing
-                        ? "border-blue-500" // Currently editing
+                        ? "border-blue-500"
                         : currentNote.persistenceStatus === "pending"
-                        ? "border-orange-500" // Saving...
+                        ? "border-orange-500"
                         : currentNote.persistenceStatus === "failed"
-                        ? "border-red-500" // Save failed
-                        : currentNote.persistenceStatus === "persisted"
-                        ? "border-zinc-200 dark:border-zinc-700" // Saved successfully
-                        : "border-zinc-200 dark:border-zinc-700" // Default state
+                        ? "border-red-500"
+                        : "border-zinc-200 dark:border-zinc-700"
                 )}
             />
             {showCardHeader && (
