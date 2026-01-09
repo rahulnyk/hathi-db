@@ -30,7 +30,7 @@ export function NoteStatusIndicator({
                 <LoadingStateDisplay message="Generating context suggestions..." />
             )}
 
-            {/* Context suggestions error state */}
+            {/* Context suggestions error state - only show on actual failures */}
             {aiSuggestedContexts?.status === "failed" && (
                 <NoteErrorBadge
                     message={
@@ -40,17 +40,6 @@ export function NoteStatusIndicator({
                     onRetry={onRefreshContextSuggestions}
                 />
             )}
-
-            {/* Show retry button only when suggestions explicitly failed or succeeded with no results */}
-            {aiSuggestedContexts &&
-                aiSuggestedContexts.status === "succeeded" &&
-                !note.suggested_contexts?.length &&
-                note.persistenceStatus === "persisted" && (
-                    <NoteErrorBadge
-                        message="Context suggestions not available"
-                        onRetry={onRefreshContextSuggestions}
-                    />
-                )}
 
             {/* Structurization error state */}
             {aiStructurizeState?.status === "failed" && (

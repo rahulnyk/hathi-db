@@ -27,11 +27,17 @@ export async function suggestContexts({
                 userContexts,
             });
 
+            console.log("Context suggestions:", {
+                count: suggestions.length,
+                suggestions: suggestions.slice(0, 5),
+            });
+
             return { success: true, data: suggestions };
         } catch (error) {
+            console.error("Error suggesting contexts:", error);
+
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {
-                console.error("Error suggesting contexts:", error.message);
                 return {
                     success: false,
                     error: error.userMessage || error.message,
@@ -43,7 +49,6 @@ export async function suggestContexts({
                 error instanceof Error
                     ? error.message
                     : "Unknown error occurred";
-            console.error("Error suggesting contexts:", errorMessage);
             return {
                 success: false,
                 error: `Failed to suggest contexts: ${errorMessage}`,
@@ -168,7 +173,10 @@ export async function generateDocumentEmbedding({
         } catch (error: unknown) {
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {
-                console.error("Error generating document embedding:", error.message);
+                console.error(
+                    "Error generating document embedding:",
+                    error.message
+                );
                 return {
                     success: false,
                     error: error.userMessage || error.message,
@@ -210,7 +218,10 @@ export async function generateQueryEmbedding({
         } catch (error: unknown) {
             // If it's an AIError with a userMessage, use that
             if (error instanceof AIError) {
-                console.error("Error generating query embedding:", error.message);
+                console.error(
+                    "Error generating query embedding:",
+                    error.message
+                );
                 return {
                     success: false,
                     error: error.userMessage || error.message,
