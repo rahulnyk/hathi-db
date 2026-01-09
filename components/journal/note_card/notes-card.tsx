@@ -37,12 +37,9 @@ export function NoteCard({
 }: NoteCardProps) {
     const dispatch = useAppDispatch();
     const { navigateToContext } = useContextNavigation();
-    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId); // Get editingNoteId
+    const editingNoteId = useAppSelector((state) => state.ui.editingNoteId);
 
-    // Check if there's a version of this note in the Redux store
-    // If so, use that version to ensure edits are reflected in the UI
-    // Check if there's a version of this note in the Redux store
-    // If so, use that version to ensure edits are reflected in the UI
+    // Check if there's a version of this note in the Redux store to ensure edits are reflected
     const storeNote = useAppSelector((state) => {
         const inContext = state.notes.contextNotes.find(
             (n) => n.id === note.id
@@ -158,12 +155,19 @@ export function NoteCard({
                     : "border-zinc-200 dark:border-zinc-700"
             )}
         >
+            {/* Circle indicator showing edit/save status */}
             <div
                 className={cn(
-                    "absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full border-2 bg-background",
+                    "absolute -left-1.5 top-0 w-2.5 h-2.5 rounded-full border-2 bg-background transition-colors duration-300",
                     isNoteEditing
-                        ? "border-blue-500"
-                        : "border-zinc-200 dark:border-zinc-700"
+                        ? "border-blue-500" // Currently editing
+                        : currentNote.persistenceStatus === "pending"
+                        ? "border-orange-500" // Saving...
+                        : currentNote.persistenceStatus === "failed"
+                        ? "border-red-500" // Save failed
+                        : currentNote.persistenceStatus === "persisted"
+                        ? "border-zinc-200 dark:border-zinc-700" // Saved successfully
+                        : "border-zinc-200 dark:border-zinc-700" // Default state
                 )}
             />
             {showCardHeader && (

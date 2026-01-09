@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { Note } from "@/store/notesSlice";
 import { cn } from "@/lib/utils";
 import { insertContextInBrackets } from "@/lib/bracketMatchUtils";
@@ -32,11 +33,11 @@ interface NotesEditorProps {
 /**
  * NotesEditor Component
  *
- * A simplified notes editor that provides basic text editing functionality with:
- * - Content persistence through draft storage
- * - Note creation and editing
- * - Chat mode for AI interactions
- * - Auto-save of unsaved drafts
+ * Unified notes editor with automatic content persistence:
+ * - New notes: Auto-save to draft storage on every keystroke
+ * - Editing notes: Auto-save to Redux with 300ms debounce
+ * - All changes automatically persisted via middleware
+ * - No manual save required - changes are never lost
  *
  * @param note - Optional note to edit. If provided, enters edit mode.
  */
@@ -78,8 +79,24 @@ export function NotesEditor({ note }: NotesEditorProps) {
     });
 
     /**
+     * Debounced auto-save for editing notes
+     * Delays Redux dispatch by 300ms to avoid excessive updates while typing
+     */
+    const debouncedUpdateNote = useDebouncedCallback(
+        (noteId: string, newContent: string) => {
+            dispatch(
+                updateNoteOptimistically({
+                    noteId,
+                    patches: { content: newContent },
+                })
+            );
+        },
+        300
+    );
+
+    /**
      * Handles content changes in the textarea
-     * Updates local state and persists draft for new notes
+     * Auto-saves content immediately for new notes, with 300ms debounce for edits
      */
     const handleContentChange = (
         event: React.ChangeEvent<HTMLTextAreaElement>
@@ -87,9 +104,12 @@ export function NotesEditor({ note }: NotesEditorProps) {
         const newContent = event.target.value;
         setContent(newContent);
 
-        // Auto-save draft for new notes (not in edit mode)
         if (!isEditMode) {
+            // New note: Update draft immediately
             dispatch(updateDraftContent(newContent));
+        } else if (note) {
+            // Edit mode: Debounced Redux update (300ms)
+            debouncedUpdateNote(note.id, newContent);
         }
     };
 
@@ -127,44 +147,48 @@ export function NotesEditor({ note }: NotesEditorProps) {
     };
 
     /**
-     * Saves edits to existing note
+     * Exits edit mode
+     * Content is already auto-saved via handleContentChange
      */
-    const saveEdit = (): void => {
+    const exitEditMode = (): void => {
         if (!note) return;
-
-        dispatch(
-            updateNoteOptimistically({
-                noteId: note.id,
-                patches: { content },
-            })
-        );
-
         dispatch(setEditingNoteId(null));
     };
 
     /**
      * Cancels note editing and restores original content
+     * Reverts both Redux state and local state to snapshot taken when entering edit mode
      */
     const cancelEdit = (): void => {
         if (!note || !originalNoteState) return;
 
+        // Revert Redux state to original content
+        dispatch(
+            updateNoteOptimistically({
+                noteId: note.id,
+                patches: { content: originalNoteState.content },
+            })
+        );
+
+        // Revert local state
         setContent(originalNoteState.content);
+
+        // Exit edit mode
         dispatch(setEditingNoteId(null));
     };
 
     /**
      * Handles form submission
-     * Routes to note creation/editing
+     * Creates new note or exits edit mode (content already auto-saved)
      */
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
         if (!content.trim() || isSubmitting) return;
 
-        // Note mode: create or update note
         if (isEditMode) {
-            saveEdit();
+            exitEditMode(); // Just exits edit mode
         } else {
-            await createNote();
+            await createNote(); // Creates and persists new note
         }
     };
 
@@ -200,9 +224,11 @@ export function NotesEditor({ note }: NotesEditorProps) {
         // Update the content
         setContent(result.newContent);
 
-        // Update draft for new notes
+        // Auto-save the updated content
         if (!isEditMode) {
             dispatch(updateDraftContent(result.newContent));
+        } else if (note) {
+            debouncedUpdateNote(note.id, result.newContent);
         }
 
         // Close suggestion box
@@ -220,22 +246,32 @@ export function NotesEditor({ note }: NotesEditorProps) {
         }, 0);
     };
 
-    // Sync content when editing a note
+    /**
+     * Sync content when entering edit mode for a different note
+     * Only triggers when note ID changes, not on every Redux update
+     * This prevents the snap-back bug where typing gets overwritten
+     */
     useEffect(() => {
         if (note?.id) {
             setContent(note.content);
             setContexts(note.contexts || []);
         }
-    }, [note]);
+    }, [note?.id]);
 
-    // Load draft content for new notes
+    /**
+     * Load draft content for new notes from Redux persist
+     * Restores unsaved work after page refresh
+     */
     useEffect(() => {
         if (!isEditMode) {
             setContent(draftContent);
         }
     }, [draftContent, isEditMode]);
 
-    // Focus textarea when entering edit mode
+    /**
+     * Auto-focus textarea when entering edit mode
+     * Cursor positioned at end of content
+     */
     useEffect(() => {
         if (isEditMode && textareaRef.current) {
             textareaRef.current.focus();
@@ -291,7 +327,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={saveEdit}
+                                    onClick={exitEditMode}
                                     disabled={isSubmitting || !content.trim()}
                                     className="flex items-center gap-2 rounded-xl"
                                     size="icon"
