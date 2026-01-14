@@ -289,7 +289,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
         return () => {
             debouncedUpdateNote.cancel();
         };
-    }, [note?.id, debouncedUpdateNote]);
+    }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /**
      * Load draft content for new notes from Redux persist
