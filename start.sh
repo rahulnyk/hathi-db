@@ -110,8 +110,15 @@ install_dependencies() {
         yarn install
         print_success "Dependencies installed successfully"
     else
-        print_status "Dependencies already installed, running yarn install to ensure they're up to date..."
-        yarn install
+        print_status "Dependencies already installed."
+        echo -ne "${YELLOW}[QUERY]${NC} Check for updates? (y/N) "
+        read -r response
+        if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            print_status "Checking dependencies with yarn..."
+            yarn install
+        else
+            print_status "Skipping dependency check..."
+        fi
     fi
 }
 

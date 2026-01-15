@@ -54,6 +54,9 @@ export function NotesEditor({ note }: NotesEditorProps) {
         note?.id ? state.ui.originalNoteStates[note.id] : null
     );
 
+    // Track previous note ID to control state resets
+    const prevNoteIdRef = useRef(note?.id);
+
     // Local state
     const [contexts, setContexts] = useState(note?.contexts || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -255,16 +258,28 @@ export function NotesEditor({ note }: NotesEditorProps) {
     };
 
     /**
-     * Sync content when entering edit mode for a different note
-     * Only triggers when note ID changes, not on every Redux update
-     * This prevents the snap-back bug where typing gets overwritten
+     * Sync content when entering edit mode for a different note.
+     *
+     * Design Pattern Improvement:
+     * We depend on the full 'note' object to satisfy exhaustive-deps, but we guard
+     * the logic with a Ref check to ensure we ONLY reset local state when switching
+     * to a different note ID. This prevents "snap-back" issues where typing triggers
+     * a prop update that resets the cursor.
      */
     useEffect(() => {
-        if (note?.id) {
-            setContent(note.content);
-            setContexts(note.contexts || []);
+        const hasNoteChanged = note?.id !== prevNoteIdRef.current;
+
+        if (hasNoteChanged) {
+            // Update the ref to the new ID
+            prevNoteIdRef.current = note?.id;
+
+            // Only sync state if we have switched to a valid existing note
+            if (note?.id) {
+                setContent(note.content);
+                setContexts(note.contexts || []);
+            }
         }
-    }, [note?.id]);
+    }, [note]);
 
     /**
      * Cleanup debounced updates when component unmounts or note changes
@@ -274,7 +289,7 @@ export function NotesEditor({ note }: NotesEditorProps) {
         return () => {
             debouncedUpdateNote.cancel();
         };
-    }, [note?.id]); // debouncedUpdateNote is stable due to useDebouncedCallback, no need to include it in deps
+    }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /**
      * Load draft content for new notes from Redux persist
