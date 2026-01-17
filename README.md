@@ -63,7 +63,7 @@ Contexts are Hathi's way of organizing notes without manual folder management.
 
 -   **What are contexts?** - Think of them as intelligent tags that group related notes
 -   **How to use them?** - Simply wrap any word in double square brackets: `[[meeting]]`, `[[project-alpha]]`
--   **Automatic tagging** - AI suggests relevant contexts as you write
+-   **Automatic tagging** - AI can automatically tag the notes with relevant contexts. The AI will check if your existing contexts are applicable to the note and calculate any new context that may be pertinent.
 -   **No drilling required** - Related notes are automatically linked
 -   **Context editing** - Rename contexts anytime; all notes update automatically
 
@@ -89,6 +89,17 @@ The journal page treats every date as a context, perfect for daily notes.
 
 ### 🤖 AI-Powered Intelligence
 
+#### Automatic Vector Embeddings
+
+**Every note is automatically semantically indexed.** When you create or update a note, Hathi generates vector embeddings using a local model—no API calls needed. These embeddings enable powerful semantic search, allowing the AI agent to understand meaning, not just match keywords.
+
+**Benefits:**
+
+-   **Semantic organization** - Notes are organized by meaning, not just tags
+-   **Intelligent retrieval** - Find notes by concept, even with different wording
+-   **Privacy-first** - Embeddings generated locally on your machine
+-   **Automatic** - Works silently in the background on every note
+
 #### Automatic Structuring
 
 Write messy, think freely. AI cleans it up:
@@ -110,7 +121,18 @@ Automatically detects action items and extracts due dates from natural language 
 
 #### Smart Context Tagging
 
-AI suggests relevant contexts based on your note content and existing contexts.
+AI automatically analyzes your notes and suggests relevant contexts—building your knowledge graph with every entry.
+
+**How it works:**
+
+-   **Learns from your contexts** - AI understands your existing context patterns and suggests matches
+-   **Suggests new contexts** - Identifies emerging themes and proposes new contexts when appropriate
+-   **Gets smarter over time** - The more contexts you have, the better the predictions become
+-   **Automatic enrichment** - Each note strengthens connections in your knowledge graph
+
+**Example:** Write "discussed quarterly targets with Sarah from marketing" and the AI might suggest existing contexts like `[[work]]`, `[[marketing]]`, `[[quarterly-review]]`, or propose new ones like `[[sarah]]` if it's a new connection.
+
+This ensures your notes are always properly connected, making retrieval effortless without manual organization.
 
 ### 🔍 AI Agent: Your Information Retriever
 
