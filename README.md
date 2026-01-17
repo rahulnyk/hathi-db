@@ -63,7 +63,7 @@ Contexts are Hathi's way of organizing notes without manual folder management.
 
 -   **What are contexts?** - Think of them as intelligent tags that group related notes
 -   **How to use them?** - Simply wrap any word in double square brackets: `[[meeting]]`, `[[project-alpha]]`
--   **Automatic tagging** - AI can automatically tag the notes with relevant contexts. The AI will check if your existing contexts are applicable to the note and calculate any new context that may be pertinent.
+-   **Automatic tagging** - AI can automatically tag the notes with relevant contexts. The AI will check if your existing contexts are applicable to the note and identify any new contexts that may be pertinent.
 -   **No drilling required** - Related notes are automatically linked
 -   **Context editing** - Rename contexts anytime; all notes update automatically
 
