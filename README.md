@@ -3,379 +3,656 @@
 <h1 align="center">🐘 Hathi - Your AI-Powered Second Brain</h1>
 
 <p align="center">
-  A smart journaling and note-taking application that helps you organize your thoughts, ideas, and knowledge with AI assistance.
+  <strong>Local-first, AI-powered note-taking that eliminates the friction of organization.</strong><br/>
+  Dump your thoughts freely. Let AI handle the structure, context, and retrieval.
 </p>
 
 <p align="center">
+  <a href="#why-hathi"><strong>Why Hathi?</strong></a> ·
   <a href="#features"><strong>Features</strong></a> ·
   <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
-  <a href="#getting-started"><strong>Getting Started</strong></a> ·
-  <a href="#development"><strong>Development</strong></a> ·
-  <a href="#deployment"><strong>Deployment</strong></a>
+  <a href="#setup"><strong>Setup</strong></a> ·
+  <a href="#usage"><strong>Usage</strong></a>
 </p>
+
+---
+
+## Why Hathi?
+
+Hathi is built on a simple philosophy: **your thoughts shouldn't wait for perfect organization**.
+
+### 🌐 Local-First, No Cloud Required
+
+-   **100% local storage** - Your notes never leave your machine
+-   **No subscriptions, no servers** - Complete data ownership
+-   **Offline-first** - Works entirely without internet (except for AI features)
+-   **Privacy-focused** - Your thoughts remain private
+
+### 🧠 AI-First Note Taking
+
+Stop worrying about:
+
+-   ❌ Perfect grammar and formatting
+-   ❌ Organizing notes into folders
+-   ❌ Remembering where you saved something
+-   ❌ Structuring your thoughts before writing
+
+Start focusing on:
+
+-   ✅ **Capturing ideas instantly** as they come
+-   ✅ **Natural language** - write however you think
+-   ✅ **Automatic organization** - AI tags and categorizes for you
+-   ✅ **Effortless retrieval** - just ask Hathi
+
+### 🎯 The Hathi Workflow
+
+1. **Dump** - Write anything, anywhere. No formatting needed.
+2. **Let AI structure** - Automatically fixes grammar, adds context, identifies TODOs
+3. **Ask when needed** - "What should I remember about John?" or "Get me started for today"
+4. **Never search again** - Your AI agent finds what you need
+
+---
 
 ## Features
 
-### 🚀 Core Functionality
+### 📝 Note-Taking Without Friction
 
--   **Smart Journaling**: Create and organize notes with context-based categorization
--   **AI Integration**: Powered by Google Gemini for intelligent note suggestions and insights
--   **Context Management**: Organize notes by contexts with pagination and search
--   **Local Database**: PostgreSQL with pgvector for semantic search
--   **Performance Monitoring**: Built-in performance logging and optimization
+#### Contexts: Automatic Organization
 
-### 🔐 Database & Performance
+Contexts are Hathi's way of organizing notes without manual folder management.
 
--   **Dual Database Support**: Choose between PostgreSQL (production) or SQLite (embedded)
--   **Environment Switching**: Switch databases with `USE_DB=postgres|sqlite` environment variable
--   **PostgreSQL**: Full-featured with pgvector extension for production deployments
--   **SQLite + sqlite-vec**: Lightweight embedded option with vector search capabilities
--   **Drizzle ORM**: Type-safe database operations across both backends
--   **Vector Search**: Semantic similarity search with embeddings (both databases)
--   **Performance Monitoring**: Built-in performance logging and optimization
+-   **What are contexts?** - Think of them as intelligent tags that group related notes
+-   **How to use them?** - Simply wrap any word in double square brackets: `[[meeting]]`, `[[project-alpha]]`
+-   **Automatic tagging** - AI can automatically tag the notes with relevant contexts. The AI will check if your existing contexts are applicable to the note and identify any new contexts that may be pertinent.
+-   **No drilling required** - Related notes are automatically linked
+-   **Context editing** - Rename contexts anytime; all notes update automatically
 
-### 🎨 User Experience
+**Why contexts work:** Instead of "Where should I save this?", just write `[[work]]` or `[[ideas]]` and it's organized.
 
--   **Modern UI**: Built with shadcn/ui components and Tailwind CSS
--   **Dark/Light Mode**: Theme switching with next-themes
--   **Responsive Design**: Works seamlessly across desktop and mobile
--   **Type Safety**: Full TypeScript implementation
--   **State Management**: Redux Toolkit for predictable state updates
+#### Journal: Every Day is a Context
 
-### 📝 Advanced Note Features
+The journal page treats every date as a context, perfect for daily notes.
 
--   **Rich Text Support**: Markdown rendering with custom plugins
--   **Hashtag Support**: Auto-detection and linking of hashtags
--   **Context Linking**: Smart context detection and suggestions
--   **Note Types**: Support for different note categories
--   **Search & Filter**: Advanced search capabilities across notes and contexts
--   **AI Chat Integration**: Chat agent with powerful note filtering tools
--   **Smart Note Discovery**: Filter by date, context, hashtags, content, and note type
+-   **Today button** - Instantly jump to today's journal (keyboard shortcut friendly)
+-   **Date navigation** - Browse past and future dates with ease
+-   **Date contexts** - Each date (e.g., `[[2026-01-17]]`) is automatically a context
+-   **Timeline view** - See your day-by-day thought progression
+
+**Pro tip:** Write meeting notes on their date, then reference them with `[[2026-01-17]]` from anywhere.
+
+#### Smart Editor Features
+
+-   **Markdown support** - Format text with standard Markdown syntax
+-   **Auto-closing brackets** - Type `[[` and get `]]` automatically positioned
+-   **Context suggestions** - Start typing `[[proj` to see matching contexts
+-   **Real-time auto-save** - Never lose your work, every keystroke is saved
+
+### 🤖 AI-Powered Intelligence
+
+#### Automatic Vector Embeddings
+
+**Every note is automatically semantically indexed.** When you create or update a note, Hathi generates vector embeddings using a local model—no API calls needed. These embeddings enable powerful semantic search, allowing the AI agent to understand meaning, not just match keywords.
+
+**Benefits:**
+
+-   **Semantic organization** - Notes are organized by meaning, not just tags
+-   **Intelligent retrieval** - Find notes by concept, even with different wording
+-   **Privacy-first** - Embeddings generated locally on your machine
+-   **Automatic** - Works silently in the background on every note
+
+#### Automatic Structuring
+
+Write messy, think freely. AI cleans it up:
+
+```
+Before: "remember buy milk also finish report tomorrow john meeting 3pm"
+After: "Remember to buy milk. Also finish report by tomorrow. John meeting at 3pm."
+```
+
+Fixes grammar, adds punctuation, and preserves your meaning.
+
+#### Intelligent TODO Detection
+
+Automatically detects action items and extracts due dates from natural language like "tomorrow" or "next Friday". Examples:
+
+-   "need to call Sarah about the project"
+-   "don't forget meeting at 3pm tomorrow"
+-   "review the budget before Friday"
+
+#### Smart Context Tagging
+
+AI automatically analyzes your notes and suggests relevant contexts—building your knowledge graph with every entry.
+
+**How it works:**
+
+-   **Learns from your contexts** - AI understands your existing context patterns and suggests matches
+-   **Suggests new contexts** - Identifies emerging themes and proposes new contexts when appropriate
+-   **Gets smarter over time** - The more contexts you have, the better the predictions become
+-   **Automatic enrichment** - Each note strengthens connections in your knowledge graph
+
+**Example:** Write "discussed quarterly targets with Sarah from marketing" and the AI might suggest existing contexts like `[[work]]`, `[[marketing]]`, `[[quarterly-review]]`, or propose new ones like `[[sarah]]` if it's a new connection.
+
+This ensures your notes are always properly connected, making retrieval effortless without manual organization.
+
+### 🔍 AI Agent: Your Information Retriever
+
+Ask questions naturally and the agent finds relevant notes using semantic search, context filtering, and date ranges. View and edit source notes directly in the chat.
+
+#### Example Queries
+
+-   "Get me started for today" - Surfaces relevant TODOs
+-   "What should I remember before meeting John?" - Pulls related notes with a quick summary
+-   "Show me ideas about the product launch" - Semantic search
+-   "What was decided in last week's meeting?" - Date + context filtering
+-   "Find notes about authentication" - Conceptual similarity
+
+**Conversational**: Ask follow-up questions to dig deeper. The agent remembers context throughout the conversation.
+
+---
 
 ## Tech Stack
 
--   **Frontend**: Next.js 15 with App Router, React 19
--   **Backend**: PostgreSQL with Drizzle ORM
--   **AI**: Google Gemini API integration (flash-2.5 model)
--   **Styling**: Tailwind CSS, shadcn/ui components
--   **State Management**: Redux Toolkit
--   **Database**: PostgreSQL with custom functions and triggers
--   **Vector Search**: pgvector extension for semantic similarity
--   **Deployment**: Vercel-ready
+### Core Technologies
 
-## Getting Started
+-   **Frontend**: Next.js 15 (App Router) + React 19
+-   **Language**: TypeScript (full type safety)
+-   **Styling**: Tailwind CSS + shadcn/ui components
+-   **State Management**: Redux Toolkit with redux-persist
+-   **Database ORM**: Drizzle ORM
+-   **Agent**: Vercel AI SDK
+
+### Database Architecture
+
+Hathi uses **SQLite** as the primary database (PostgreSQL support exists but is optional).
+
+#### SQLite Schema
+
+**Notes Table** (`notes`):
+
+-   `id` (TEXT) - UUID primary key
+-   `content` (TEXT) - Note content
+-   `key_context` (TEXT) - Primary context for the note
+-   `tags` (TEXT) - JSON array of tags
+-   `suggested_contexts` (TEXT) - AI-suggested contexts
+-   `note_type` (TEXT) - Type: 'note', 'todo', etc.
+-   `embedding` (TEXT) - JSON array (768-dim vector for semantic search)
+-   `embedding_model` (TEXT) - Model used for embedding
+-   `deadline` (INTEGER) - Unix timestamp for TODOs
+-   `status` (TEXT) - TODO status tracking
+-   `created_at`, `updated_at` (INTEGER) - Timestamps
+
+**Contexts Table** (`contexts`):
+
+-   `id` (TEXT) - UUID primary key
+-   `name` (TEXT) - Unique context name
+-   `created_at`, `updated_at` (INTEGER) - Timestamps
+
+**Notes-Contexts Junction** (`notes_contexts`):
+
+-   Many-to-many relationship between notes and contexts
+-   Enables notes to belong to multiple contexts
+
+#### Vector Search
+
+-   **sqlite-vec extension** - Efficient vector similarity search
+-   **768-dimensional embeddings** - Using multilingual-e5-base model
+-   **Local embeddings** - Runs entirely on your machine (HuggingFace Transformers)
+
+### AI Configuration
+
+Flexible AI provider system configurable from the UI:
+
+-   **Text Generation**: Google Gemini (configurable model)
+
+    -   Default: `gemini-2.5-flash`
+    -   Lightweight tasks: `gemini-2.0-flash-lite`
+    -   Agent operations: `gemini-2.5-flash`
+
+-   **Embeddings**: HuggingFace (local) or Gemini (remote)
+    -   Default: `intfloat/multilingual-e5-base` (768 dimensions, local)
+    -   Alternative: `gemini-embedding-exp-03-07` (1536 dimensions, API)
+
+**Configure AI from UI** - No need to edit config files manually! Access AI settings directly from the application interface.
+
+---
+
+## Setup
 
 ### Prerequisites
 
--   Node.js 18+
--   Docker and Docker Compose (for local PostgreSQL)
--   A [Google AI](https://aistudio.google.com/) API key
+-   **Node.js 18+** (18.17.0 or higher recommended)
+-   **Yarn** package manager
+-   _Optional_: Google AI API key (for Gemini models)
 
-### 1. Clone the Repository
+### Quick Start with `start.sh`
+
+Hathi includes an automated setup script that handles everything:
 
 ```bash
-git clone <your-repo-url>
-cd hathi-3
+chmod +x start.sh
+./start.sh
 ```
 
-### 2. Install Dependencies
+**That's it!** The script handles:
+
+-   ✅ Node.js installation (if needed)
+-   ✅ Dependency installation
+-   ✅ Environment configuration
+-   ✅ SQLite database setup
+-   ✅ Embedding model download (local, no API needed)
+-   ✅ Application launch
+
+Visit [http://localhost:3000](http://localhost:3000) and configure your AI models from the UI.
+
+### Manual Setup (Alternative)
+
+If you prefer manual control:
+
+#### 1. Install Dependencies
 
 ```bash
 yarn install
 ```
 
-### 3. Set Up Environment Variables
+#### 2. Configure Environment
 
-1. Copy the environment example file:
-
-    ```bash
-    cp .env.example .env.local
-    ```
-
-2. Update `.env.local` with your credentials:
-
-    ```bash
-    # PostgreSQL Configuration (defaults work with Docker setup)
-    POSTGRES_HOST=localhost
-    POSTGRES_PORT=5432
-    POSTGRES_USER=postgres
-    POSTGRES_PASSWORD=hathi-db-123!
-    POSTGRES_DB=hathi_db
-
-    # Google AI Configuration
-    GOOGLE_AI_API_KEY=your-google-ai-api-key
-
-    # AI Model Configuration (Optional - uses defaults if not specified)
-    GEMINI_TEXT_GENERATION_MODEL=gemini-2.5-flash
-    GEMINI_TEXT_GENERATION_LITE_MODEL=gemini-2.0-flash-lite
-    GEMINI_AGENT_MODEL=gemini-2.5-flash
-    GEMINI_EMBEDDING_MODEL=gemini-embedding-exp-03-07
-    HUGGINGFACE_EMBEDDING_MODEL=intfloat/multilingual-e5-base
-
-    # Provider Configuration
-    AI_PROVIDER=GEMINI                    # LLM provider
-    EMBEDDING_PROVIDER=HUGGINGFACE        # Embedding provider
-    EMBEDDINGS_DIMS=768                   # Vector dimensions
-
-    # Optional: Performance Logging
-    LOG_PERF_TO_CSV=false
-
-    # Optional: Development Settings
-    NEXT_PUBLIC_DISPLAY_TOOL_INFO=false  # Set to true to show AI tool execution info in chat
-    ```
-
-    You can get your Google AI API key from [Google AI Studio](https://aistudio.google.com/).
-
-3. **Validate your configuration** (optional):
-
-    ```bash
-    yarn validate-config
-    ```
-
-    This will check your AI provider settings and model configurations.
-
-### 4. Choose Your Database Backend
-
-Hathi supports two database options. Choose one based on your needs:
-
-#### Option A: SQLite (Embedded - Recommended for Development/Personal Use)
-
-SQLite provides a lightweight, embedded database perfect for development, personal use, or standalone deployments.
+Create `.env.local`:
 
 ```bash
-# Set SQLite as your database
-echo "USE_DB=sqlite" >> .env.local
+# Database Configuration (SQLite - local file)
+USE_DB=sqlite
 
-# Run SQLite migrations and seed with sample data
-USE_DB=sqlite yarn db:sqlite:migrate
-USE_DB=sqlite yarn db:sqlite:seed
+# Google AI Configuration (Optional - configure from UI)
+GOOGLE_AI_API_KEY=your-google-ai-api-key
+
+# AI Provider Configuration
+AI_PROVIDER=GEMINI                    # LLM provider
+EMBEDDING_PROVIDER=HUGGINGFACE        # Embedding provider (local, no API)
+EMBEDDINGS_DIMS=768                   # Vector dimensions
+
+# AI Model Configuration (Optional - uses defaults)
+GEMINI_TEXT_GENERATION_MODEL=gemini-2.5-flash
+GEMINI_TEXT_GENERATION_LITE_MODEL=gemini-2.0-flash-lite
+GEMINI_AGENT_MODEL=gemini-2.5-flash
+HUGGINGFACE_EMBEDDING_MODEL=intfloat/multilingual-e5-base
+
+# Optional: Performance Logging
+LOG_PERF_TO_CSV=false
+
+# Optional: Development Settings
+NEXT_PUBLIC_DISPLAY_TOOL_INFO=false  # Show AI tool execution info
 ```
 
-#### Option B: PostgreSQL (Recommended for Production)
+Get your Google AI API key from [Google AI Studio](https://aistudio.google.com/) or configure it from the app UI.
 
-PostgreSQL provides a full-featured database with advanced capabilities, ideal for production deployments.
+#### 3. Setup SQLite Database
 
 ```bash
-# Start PostgreSQL using Docker
-cd docker
-docker-compose up -d
+# Run migrations to create tables
+yarn db:sqlite:migrate
 
-# Set PostgreSQL as your database (default)
-echo "USE_DB=postgres" >> .env.local
-
-# Run PostgreSQL migrations and seed with sample data
-yarn db:migrate
-yarn db:seed
+# Optional: Seed with sample data
+yarn db:sqlite:seed
 ```
 
-### 5. Start the Development Server
+#### 4. Download Embedding Model (Optional)
+
+For local embeddings without API calls:
+
+```bash
+yarn model:download
+```
+
+This downloads the HuggingFace model for offline use.
+
+#### 5. Start Development Server
 
 ```bash
 yarn dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to see your application.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 6. Alternative: Automated Setup with start.sh
+### AI Configuration
 
-For a fully automated setup and launch experience, you can use the included start script:
+**Configure from UI (Recommended):** Access AI settings directly in the application to set your Google AI API key and select models—no need to edit files!
 
-```bash
-# First-time setup and launch (handles everything automatically)
-./start.sh
+**Environment Variables (Alternative):**
 
-# Subsequent launches (automatically detects if rebuild/migration is needed)
-./start.sh
+-   Set `GOOGLE_AI_API_KEY` for Gemini models
+-   Configure specific models with `GEMINI_*_MODEL` variables
+-   Use `EMBEDDING_PROVIDER=HUGGINGFACE` for local embeddings (no API key needed)
 
-# Force rebuild only
-./start.sh --force-rebuild
+---
 
-# Force migration only
-./start.sh --force-migration
+## Usage
 
-# Force both rebuild and migration
-./start.sh --force-all
+### Creating Your First Note
+
+1. **Open the app** at [http://localhost:3000](http://localhost:3000)
+2. **Start typing** - No signup, no setup, just write
+3. **Add context** - Type `[[project-name]]` to categorize
+4. **Let AI help** - Grammar, structure, and TODOs handled automatically
+
+### Using the Journal
+
+1. **Click "Today"** button to jump to today's date
+2. **Write daily notes** - Each date is a context automatically
+3. **Navigate dates** - Use date picker to browse past/future entries
+4. **Reference dates** - Link to specific days with `[[2026-01-17]]`
+
+### Working with Contexts
+
+```
+# Creating contexts (automatic)
+[[work]] [[meeting]] [[ideas]]
+
+# Context suggestions (as you type)
+Type "[[proj..." → See matching contexts
+
+# Multiple contexts per note
+[[project-alpha]] [[urgent]] [[client-meetings]]
 ```
 
-The start script will:
+### Using the AI Agent
 
--   ✅ Install Node.js and dependencies if needed
--   ✅ Set up environment files
--   ✅ Configure the database
--   ✅ **Smart rebuild detection** - Only rebuilds when source code changes
--   ✅ **Smart migration detection** - Only runs migrations when database schema changes
--   ✅ Download embedding models (if using HuggingFace)
--   ✅ Launch the application
+Open the chat panel and try:
 
-#### Smart Detection Features
+**Daily Planning:**
 
-**Rebuild Detection:**
-The script automatically detects when a rebuild is necessary based on:
+-   "Get me started for today"
+-   "What are my pending tasks?"
+-   "What's on my agenda?"
 
--   Source file modifications (TypeScript, CSS, config files)
--   Git commits/pulls (detects new HEAD)
--   Uncommitted changes to source files
--   New untracked source files
+**Information Retrieval:**
 
-**Migration Detection:**
-The script automatically detects when database migrations need to run based on:
+-   "What should I remember about John?"
+-   "Show me recent notes about the product launch"
+-   "What was discussed in yesterday's meeting?"
 
--   Changes to existing migration files
--   New migration files added
--   Missing database files (SQLite)
--   Different database type selection (SQLite ↔ PostgreSQL)
+**Date-based Queries:**
 
-This ensures you always run the latest version and database schema after pulling changes, while avoiding unnecessary rebuilds and migrations.
+-   "What did I write last week?"
+-   "Show me notes from January"
+-   "What happened on [[2026-01-15]]?"
+
+**Context Filtering:**
+
+-   "All notes about [[project-alpha]]"
+-   "Work-related TODOs"
+-   "Show me urgent tasks"
+
+### Editing Notes
+
+-   **In Journal**: Click any note to edit inline
+-   **In Agent Chat**: Click source notes to edit directly
+-   **Auto-save**: Changes save automatically as you type
+-   **Context updates**: Edit context names; all notes update
+
+---
 
 ## Development
 
 ### Available Scripts
 
-#### General
+#### Development
 
 -   `yarn dev` - Start development server with Turbopack
 -   `yarn build` - Build for production
 -   `yarn start` - Start production server
 -   `yarn lint` - Run ESLint
+-   `yarn test` - Run tests with Jest
+-   `yarn test:watch` - Run tests in watch mode
 
-#### PostgreSQL Database
-
--   `yarn db:migrate` - Run PostgreSQL migrations
--   `yarn db:reset` - Reset PostgreSQL database and run all migrations
--   `yarn db:seed` - Seed PostgreSQL with sample data
--   `yarn db:tables` - List all PostgreSQL tables
--   `yarn db:data <table>` - View data from a specific PostgreSQL table
-
-#### SQLite Database
+#### SQLite Database (Primary)
 
 -   `yarn db:sqlite:migrate` - Run SQLite migrations
 -   `yarn db:sqlite:reset` - Reset SQLite database and run all migrations
 -   `yarn db:sqlite:seed` - Seed SQLite with sample data
--   `yarn db:sqlite:test` - Test SQLite connection
--   `yarn db:sqlite:fresh` - Truncate and reseed SQLite database
--   `yarn db:sqlite:tables` - List all SQLite tables
--   `yarn db:sqlite:schema` - Show SQLite database schema
--   `yarn db:sqlite:indexes` - List all SQLite indexes
--   `yarn db:sqlite:data <table>` - View data from a specific SQLite table
--   `yarn db:sqlite:overview` - Show SQLite database overview
+-   `yarn db:sqlite:fresh` - Truncate and reseed database
+-   `yarn db:sqlite:tables` - List all tables
+-   `yarn db:sqlite:schema` - Show database schema
+-   `yarn db:sqlite:data` - View table data
+-   `yarn db:sqlite:overview` - Show database overview
 
-#### Environment Switching
+#### AI Configuration
 
-```bash
-# Use SQLite (embedded)
-USE_DB=sqlite yarn dev
-
-# Use PostgreSQL (production)
-USE_DB=postgres yarn dev  # or just yarn dev (default)
-```
-
-### Development Tools
-
-#### AI Tool Debugging
-
-To see AI tool execution information in the chat interface during development:
-
-1. Set `NEXT_PUBLIC_DISPLAY_TOOL_INFO=true` in your `.env.local` file, or
-2. Open browser console and call `window.toggleToolInfo()` to toggle on/off
-
-This will show detailed information about AI tool calls and their results.
+-   `yarn validate-config` - Validate AI configuration
+-   `yarn model:download` - Download local embedding model
 
 ### Project Structure
 
 ```
-├── app/                    # Next.js App Router
-│   ├── actions/           # Server actions for database
-│   ├── chat/              # AI chat interface
-│   ├── journal/           # Main journal interface
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── chat/              # Chat-related components
-│   ├── journal/           # Journal components
-│   ├── menu/              # Navigation components
-│   └── ui/                # shadcn/ui components
-├── db/                    # Database configuration
-│   ├── migrate/           # Migration files
-│   ├── connection.ts      # Database connection
-│   └── schema.ts          # Drizzle schema
-├── docker/                # Docker configuration
-│   ├── docker-compose.yml # PostgreSQL setup
-│   └── Dockerfile.postgres # Custom PostgreSQL image
-├── hooks/                 # Custom React hooks
-├── lib/                   # Utility functions
-│   ├── ai/                # AI integration
-│   └── prompts/           # AI prompts
-├── store/                 # Redux store and slices
-├── tests/                 # Test files
-└── scripts/               # Build and utility scripts
+hathi-db/
+├── app/                        # Next.js App Router
+│   ├── actions/               # Server actions
+│   │   ├── ai.ts             # AI operations (structurize, suggest contexts)
+│   │   ├── notes.ts          # Note CRUD operations
+│   │   └── contexts.ts       # Context management
+│   ├── agent_tools/          # AI Agent tools
+│   │   ├── filter-notes.ts   # Advanced note filtering
+│   │   ├── semantic-search.ts # Vector similarity search
+│   │   └── summarize-notes.ts # Note summarization
+│   ├── api/chat/             # Chat API endpoint
+│   └── journal/              # Journal page routes
+├── components/
+│   ├── journal/              # Journal components
+│   │   ├── editor/           # Note editor with plugins
+│   │   ├── note_card/        # Note display components
+│   │   └── date-context-picker.tsx
+│   ├── chat/                 # AI agent chat interface
+│   └── ui/                   # shadcn/ui components
+├── db/
+│   ├── sqlite/               # SQLite implementation
+│   │   ├── schema.ts        # Database schema
+│   │   ├── adapter.ts       # Database operations
+│   │   └── migrate-runner.ts
+│   ├── postgres/             # PostgreSQL (optional)
+│   └── types.ts              # Shared types
+├── lib/
+│   ├── ai/                   # AI service layer
+│   │   ├── gemini.ts        # Gemini LLM integration
+│   │   ├── huggingface-embedding.ts # Local embeddings
+│   │   └── ai-config.ts     # Configuration management
+│   ├── prompts/              # AI prompts
+│   ├── noteUtils.ts          # Note manipulation utilities
+│   ├── date-utils.ts         # Date formatting
+│   └── bracketMatchUtils.ts  # Context bracket handling
+├── store/                    # Redux state management
+│   ├── notesSlice.ts        # Notes state
+│   ├── journalSlice.ts      # Journal state
+│   ├── agentSlice.ts        # Agent state
+│   └── middleware/          # Persistence middleware
+├── hooks/                    # Custom React hooks
+├── scripts/
+│   ├── download-model.js    # HuggingFace model downloader
+│   └── validate-config.ts   # Config validation
+└── start.sh                 # Automated setup script
 ```
 
-### Key Features Implementation
+### Key Concepts
 
-#### Context Management
+#### Database Architecture
 
-The app organizes notes by "contexts" - thematic categories that group related notes. Contexts have statistics showing note counts and are paginated for performance.
+Hathi uses **SQLite with sqlite-vec** for local storage:
 
-#### AI Integration
+-   **Notes table**: Stores note content, metadata, embeddings
+-   **Contexts table**: Manages context definitions
+-   **Notes-Contexts junction**: Many-to-many relationships
+-   **Vector embeddings**: 768-dimensional vectors stored as JSON
+-   **Semantic search**: Using cosine similarity on embeddings
 
--   Smart context suggestions based on note content
--   Note embeddings for semantic search
--   AI-powered insights and recommendations
+#### AI Pipeline
 
-#### Performance Optimization
+1. **Note Creation** → Extract contexts with `[[...]]` regex
+2. **AI Processing** → Suggest contexts, detect TODOs, extract deadlines
+3. **Structurization** (optional) → Clean up grammar and formatting
+4. **Embedding Generation** → Create 768-dim vector (local)
+5. **Storage** → Save to SQLite with all metadata
 
--   Redux Toolkit for efficient state management
--   Pagination for large datasets
--   Performance logging to CSV for monitoring
--   Optimized database queries with proper indexing
+#### Agent System
 
-## Deployment
+The AI agent uses multiple tools to answer queries:
 
-### Deploy to Vercel
+-   **filter_notes**: Advanced filtering (date, context, type, content)
+-   **semantic_search**: Vector similarity search
+-   **summarize_notes**: Summarize note collections
+-   **get_filter_options**: Discover available contexts/tags
 
-1. Push your code to a Git repository
-2. Connect your repository to [Vercel](https://vercel.com)
-3. Set up environment variables in Vercel dashboard
-4. Deploy!
+Tools are orchestrated by Gemini with the Vercel AI SDK.
 
-### Environment Variables for Production
+### Development Tips
 
-Ensure these environment variables are set in your production environment:
+#### Debugging AI Operations
+
+Enable tool info display:
 
 ```bash
-# PostgreSQL Database Configuration
-POSTGRES_HOST=your-production-postgres-host
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-secure-password
-POSTGRES_DB=hathi_db
-
-# Google AI API for embeddings
-GOOGLE_AI_API_KEY=your-google-ai-api-key
-
-# Site configuration
-NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
+# In .env.local
+NEXT_PUBLIC_DISPLAY_TOOL_INFO=true
 ```
 
-> **Note**: `NEXT_PUBLIC_SITE_URL` is required for proper URL generation in production environments.
+Or toggle in browser console:
 
-### Database Setup for Production
+```javascript
+window.toggleToolInfo();
+```
 
-1. Set up a PostgreSQL instance with pgvector extension
-2. Run migrations using `yarn db:migrate`
-3. Seed initial data if needed
+#### Testing Database Operations
 
-## Contributing
+```bash
+# Reset and seed database
+yarn db:sqlite:fresh
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+# Inspect database
+yarn db:sqlite:overview
+yarn db:sqlite:schema
+```
 
-## License
+#### Performance Monitoring
 
-This project is private and proprietary.
+Enable CSV logging:
+
+```bash
+# In .env.local
+LOG_PERF_TO_CSV=true
+```
+
+Check `performance_log.csv` for operation timings.
 
 ---
 
-Built with ❤️ using Next.js, PostgreSQL, and Google AI
+## Architecture Decisions
+
+**Local-First**: Privacy, speed, ownership, and offline capability (except AI features).
+
+**SQLite**: Embedded, portable, fast, with native vector search via sqlite-vec. Zero configuration.
+
+**AI-First**: Traditional note-taking requires upfront organization and manual search. Hathi inverts this—write freely, AI organizes automatically, and your agent retrieves information naturally.
+
+---
+
+## FAQ
+
+### Do I need an API key?
+
+**For basic use: No.** Local embeddings work without any API.
+
+**For AI features: Yes.** You need a Google AI API key for:
+
+-   Context suggestions
+-   Note structurization
+-   TODO detection
+-   AI agent chat
+
+Configure it from the UI or set `GOOGLE_AI_API_KEY` in `.env.local`.
+
+### Is my data private?
+
+**Yes, completely.** All notes are stored in a local SQLite file on your machine. Nothing is sent to any cloud service except:
+
+-   AI API calls (if you enable AI features)
+-   These only send note content for processing, not the entire database
+
+### Can I use it offline?
+
+**Mostly yes.** You can create, edit, browse, and search notes offline with local embeddings. Internet is only needed for AI features (structurization, context suggestions, agent queries).
+
+### How accurate is TODO detection?
+
+Very accurate. The system recognizes:
+
+-   Explicit keywords: "todo", "remember", "don't forget"
+-   Action verbs: "call", "email", "buy", "finish"
+-   Checkbox formats: `[ ]`, `- [ ]`, `* [ ]`
+-   Temporal phrases: "tomorrow", "next week", "by Friday"
+
+Due dates are automatically extracted from natural language.
+
+### Can I export my data?
+
+Your data is already in an open format:
+
+-   **Database**: SQLite file at `local.db` (use any SQLite browser)
+-   **Format**: Standard SQL schema, easy to export
+-   **No lock-in**: Simple migration to other systems
+
+### How do I backup my notes?
+
+Simply backup the `local.db` file (SQLite database). You can:
+
+-   Copy it to cloud storage
+-   Version control with git
+-   Use any backup solution
+
+---
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+-   Use TypeScript for type safety
+-   Use Yarn (not npm or pnpm)
+-   Follow existing code structure
+-   Add tests for new features
+-   Update documentation as needed
+
+---
+
+## License
+
+This project is licensed under the **MIT License**.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+See the [LICENSE](LICENSE) file for full details.
+
+---
+
+## Acknowledgments
+
+-   **Next.js** - React framework
+-   **Vercel AI SDK** - AI integration
+-   **Drizzle ORM** - Type-safe database
+-   **shadcn/ui** - UI components
+-   **sqlite-vec** - Vector search in SQLite
+-   **HuggingFace Transformers** - Local embeddings
+-   **Google Gemini** - LLM capabilities
+
+---
+
+<p align="center">
+  Made with ❤️ for better note-taking
+</p>

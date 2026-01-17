@@ -91,29 +91,6 @@ export function Thread() {
                         <div className="space-y-4">
                             <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
                                 <div className="flex items-start gap-3">
-                                    <div className="text-lg">🚀</div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-foreground/70">
-                                            Quick Commands
-                                        </p>
-                                        <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Type{" "}
-                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
-                                                qq
-                                            </code>{" "}
-                                            for assistant mode{" "}
-                                            <span className="mx-1">or</span>
-                                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
-                                                nn
-                                            </code>{" "}
-                                            for notes mode.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="group hover:bg-muted/20 rounded-lg p-3 transition-colors">
-                                <div className="flex items-start gap-3">
                                     <div className="text-lg">🏷️</div>
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium text-foreground/70">

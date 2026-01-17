@@ -33,13 +33,16 @@ export async function getAIConfig(): Promise<AIConfig> {
 
 // getEmbeddingConfig remains unchanged - embeddings stay local
 export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
+    // Parse embedding dimensions from environment variable
+    const embeddingDims = parseInt(process.env.EMBEDDINGS_DIMS || "768", 10);
+
     return {
         GEMINI: {
             embedding: {
                 model:
                     process.env.GEMINI_EMBEDDING_MODEL ||
                     "gemini-embedding-exp-03-07",
-                dimensions: 1536,
+                dimensions: embeddingDims,
             },
             provider: {
                 name: "Google",
@@ -52,7 +55,7 @@ export function getEmbeddingConfig(): Record<string, EmbeddingConfig> {
                 model:
                     process.env.HUGGINGFACE_EMBEDDING_MODEL ||
                     "intfloat/multilingual-e5-base",
-                dimensions: 768,
+                dimensions: embeddingDims,
             },
             provider: {
                 name: "Hugging Face",
