@@ -93,7 +93,7 @@ As you type context brackets `[[`, Hathi provides intelligent suggestions based 
 This makes referencing existing contexts fast while keeping the option to create new ones seamlessly.
 
 <p align="center">
-  <img src="public/ContextSuggestions.gif" alt="Context Suggestions" width="600">
+  <img src="public/ContextSuggestions.gif" alt="Context Suggestions" width="800">
 </p>
 
 #### Automatic Context Tagging
@@ -113,7 +113,7 @@ While you can manually add contexts by typing `[[context-name]]`, Hathi's AI can
 This intelligent tagging ensures your notes are always properly organized, building a rich knowledge graph without manual effort.
 
 <p align="center">
-  <img src="public/AutoContext.gif" alt="Automatic Context Tagging" width="600">
+  <img src="public/AutoContext.gif" alt="Automatic Context Tagging" width="800">
 </p>
 
 #### Journal: Every Day is a Context
@@ -170,16 +170,35 @@ After: "Remember to buy milk. Also finish report by tomorrow. John meeting at 3p
 Think freely, write messily—the AI handles the polish.
 
 <p align="center">
-  <img src="public/StructurizeNote.gif" alt="Automatic Note Structuring" width="600">
+  <img src="public/StructurizeNote.gif" alt="Automatic Note Structuring" width="800">
 </p>
 
 #### Intelligent TODO Detection
 
-Automatically detects action items and extracts due dates from natural language like "tomorrow" or "next Friday". Examples:
+Automatically detects action items and extracts due dates from natural language—no need for strict date formats.
 
-- "need to call Sarah about the project"
-- "don't forget meeting at 3pm tomorrow"
-- "review the budget before Friday"
+**Natural Language Date Understanding:**
+
+Write dates however you naturally think—the AI understands and converts them to actual deadlines:
+
+- **Relative dates**: "tomorrow", "next week", "in 3 days"
+- **Day references**: "Monday", "next Friday", "this weekend"
+- **Casual phrases**: "end of week", "by next month", "after lunch"
+- **Specific dates**: "January 25", "on the 30th", "March 15th"
+
+**Examples:**
+
+- "Call Sarah about the project tomorrow" → Deadline: Jan 20, 2026
+- "Remember to review the budget before Friday" → Deadline: Jan 24, 2026
+- "Need to finish the presentation by end of week" → Deadline: Jan 26, 2026
+- "Don't forget meeting at 3pm tomorrow" → Deadline: Jan 20, 2026 3:00 PM
+- "Buy groceries after work" → Detected as TODO (no specific deadline)
+
+The AI automatically identifies the action item, extracts the deadline from your natural language, and tracks it—all without you specifying structured data.
+
+<p align="center">
+  <img src="public/TodoDetection.gif" alt="Intelligent TODO Detection" width="800">
+</p>
 
 #### Smart Context Tagging
 
@@ -273,7 +292,67 @@ Flexible AI provider system configurable from the UI:
     - Default: `intfloat/multilingual-e5-base` (768 dimensions, local)
     - Alternative: `gemini-embedding-exp-03-07` (1536 dimensions, API)
 
-**Configure AI from UI** - No need to edit config files manually! Access AI settings directly from the application interface.
+---
+
+## Configuration & Settings
+
+Hathi provides a configuration UI accessible directly from the application—no need to edit config files manually! Access all settings from the menu.
+
+<p align="center">
+  <img src="public/ConfigUI.png" alt="Configuration UI" width="800">
+</p>
+
+### User Preferences
+
+**Dark Mode Toggle**
+
+- Switch between light and dark themes instantly
+- Preference is saved locally and persists across sessions
+- Optimized for comfortable reading in any lighting condition
+
+**Enter to Submit**
+
+- Control chat submission behavior in the AI agent
+- When enabled: Press Enter to save the note (Shift+Enter for new line)
+- When disabled: Press Enter for new line (Shift + Enter to save the note)
+
+**Auto Context Suggestions**
+
+- Toggle automatic context tagging powered by AI
+- When enabled: AI automatically adds the relevant contexts to your note. It prefers your existing contexts, but may add a new context if it finds it highly relevant.
+- When disabled: The AI still suggests you the contexts that are relevant to the note. You can double click on the note and accept these suggestions manually.
+- Helps build your knowledge graph automatically without manual organization
+
+### AI Configuration
+
+Hathi currently supports **Google Gemini models** for the AI features and the Agent. Support for additional providers like **OpenAI** and **Anthropic** is planned for future releases.
+
+**Setting Up Your API Key**
+
+1. Obtain your Google AI API key from [Google AI Studio](https://aistudio.google.com/)
+2. Open the Configuration UI in Hathi
+3. Paste your API key in the designated field
+4. Click "Validate" to test the connection
+5. The system will confirm if your API key is valid and working
+
+**API Key Validation**
+
+- Real-time validation checks your API key's authenticity
+- Verifies connectivity to Google's AI services
+- Displays clear success or error messages
+- Ensures AI features are ready before you start using them
+
+**Configurable Models**
+
+Hathi allows you to configure three different Gemini models for different purposes. You can use the same model for all three, or choose different models based on your needs and budget:
+
+1. **Text Generation Model** - Used for note structuring, grammar fixes, and general text generation tasks
+2. **Lite Model** - Used for lightweight tasks like context suggestions and TODO deadline extraction. Using a smaller/cheaper model here can help save on API costs
+3. **Agent Model** - Used for AI agent reasoning, query understanding, and orchestrating tool calls in the chat interface
+
+All three models can be configured to use the same Gemini model (e.g., `gemini-2.5-flash`) or different ones based on your preference. For example, you might use `gemini-2.5-flash` for the agent and text generation, but `gemini-2.0-flash-lite` for the lite model to reduce costs.
+
+Model selections are saved automatically and applied immediately to all relevant operations.
 
 ---
 
