@@ -96,25 +96,7 @@ This makes referencing existing contexts fast while keeping the option to create
   <img src="public/ContextSuggestions.gif" alt="Context Suggestions" width="800">
 </p>
 
-#### Automatic Context Tagging
-
-While you can manually add contexts by typing `[[context-name]]`, Hathi's AI can also automatically tag your notes with relevant contexts—making organization effortless.
-
-**How it works:**
-
-- **Prioritizes your existing contexts** - The AI first scans your current context library to find the best matches for your note
-- **Suggests multiple relevant contexts** - Automatically identifies all applicable contexts from your collection
-- **Learns your organization style** - The more contexts you create and use, the better the AI becomes at predicting which contexts fit your notes
-- **Proposes new contexts when needed** - If none of your existing contexts fit well, the AI may suggest creating new ones
-- **Gets smarter over time** - As your context library grows, the tagging accuracy improves because the AI has more patterns to learn from
-
-**Example:** Write "reviewed the authentication module with the backend team" and the AI might automatically tag it with your existing contexts like `[[work]]`, `[[backend]]`, `[[code-review]]`, or even suggest new contexts like `[[authentication]]` if you don't have one yet.
-
-This intelligent tagging ensures your notes are always properly organized, building a rich knowledge graph without manual effort.
-
-<p align="center">
-  <img src="public/AutoContext.gif" alt="Automatic Context Tagging" width="800">
-</p>
+> **💡 AI-Powered Organization:** Hathi's AI can automatically tag your notes with relevant contexts—making organization effortless. The AI prioritizes your existing contexts and learns your organization style over time. See [Automatic Context Tagging](#automatic-context-tagging) for details.
 
 #### Journal: Every Day is a Context
 
@@ -200,7 +182,7 @@ The AI automatically identifies the action item, extracts the deadline from your
   <img src="public/TodoDetection.gif" alt="Intelligent TODO Detection" width="800">
 </p>
 
-#### Smart Context Tagging
+#### Automatic Context Tagging
 
 AI automatically analyzes your notes and suggests relevant contexts—building your knowledge graph with every entry.
 
@@ -214,6 +196,10 @@ AI automatically analyzes your notes and suggests relevant contexts—building y
 **Example:** Write "discussed quarterly targets with Sarah from marketing" and the AI might suggest existing contexts like `[[work]]`, `[[marketing]]`, `[[quarterly-review]]`, or propose new ones like `[[sarah]]` if it's a new connection.
 
 This ensures your notes are always properly connected, making retrieval effortless without manual organization.
+
+<p align="center">
+  <img src="public/AutoContext.gif" alt="Automatic Context Tagging" width="800">
+</p>
 
 ### 🔍 AI Agent: Your Information Retriever
 
