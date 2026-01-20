@@ -32,7 +32,13 @@
 
 ## Why Hathi?
 
-Hathi is built on a simple philosophy: **your thoughts shouldn't wait for perfect organization**.
+Hathi is built on a simple philosophy:
+
+<div role="note" aria-label="Key idea: Dump anything without worrying about the retrieval." style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #000000; padding: 20px; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); border: 1px solid rgba(255, 255, 255, 0.2);">
+  <strong>💡 Dump anything without worrying about the retrieval</strong>
+</div>
+
+This means you never have to worry about organizing your notes, typing full sentences, grammar, or formatting. Just dump them and let Hathi organize everything. And when you want to retrieve information from your personal knowledge graph, instead of searching, just ask Hathi!
 
 ### 🌐 Local-First, No Cloud Required
 
@@ -60,7 +66,7 @@ Start focusing on:
 ### 🎯 The Hathi Workflow
 
 1. **Dump** - Write anything, anywhere. No formatting needed.
-2. **Let AI structure** - Automatically fixes grammar, adds context, identifies TODOs
+2. **Let AI structure** - Fixes grammar, adds context, identifies TODOs
 3. **Ask when needed** - "What should I remember about John?" or "Get me started for today"
 4. **Never search again** - Your AI agent finds what you need
 
@@ -74,10 +80,10 @@ Start focusing on:
 
 Contexts are Hathi's way of organizing notes without manual folder management.
 
-- **What are contexts?** - Think of them as intelligent tags that group related notes
-- **How to use them?** - Simply wrap any word in double square brackets: `[[meeting]]`, `[[project-alpha]]`
-- **No drilling required** - Related notes are automatically linked
-- **Context editing** - Rename contexts anytime; all notes update automatically
+- **What are contexts?** - Intelligent tags that group related notes
+- **How to use them?** - Wrap any word in double square brackets: `[[meeting]]`, `[[project-alpha]]`
+- **Automatic linking** - Related notes connect automatically
+- **Easy editing** - Rename contexts anytime; all notes update automatically
 
 **Why contexts work:** Instead of "Where should I save this?", just write `[[work]]` or `[[ideas]]` and it's organized.
 
@@ -96,11 +102,11 @@ This makes referencing existing contexts fast while keeping the option to create
   <img src="public/ContextSuggestions.gif" alt="Context Suggestions" width="800">
 </p>
 
-> **💡 AI-Powered Organization:** Hathi's AI can automatically tag your notes with relevant contexts—making organization effortless. The AI prioritizes your existing contexts and learns your organization style over time. See [Automatic Context Tagging](#automatic-context-tagging) for details.
+> **💡 AI-Powered Organization:** Hathi's AI can automatically tag your notes with relevant contexts. See [Automatic Context Tagging](#automatic-context-tagging) for details.
 
 #### Journal: Every Day is a Context
 
-The journal page treats every date as a context, perfect for daily notes.
+The journal page treats every date as a context. You can dump all your notes in today's journal without leaving the page. The context linking ensures that the notes are automatically linked to their contexts.
 
 - **Today button** - Instantly jump to today's journal (keyboard shortcut friendly)
 - **Date navigation** - Browse past and future dates with ease
@@ -262,21 +268,8 @@ Hathi uses **SQLite** as the primary database (PostgreSQL support exists but is 
 #### Vector Search
 
 - **sqlite-vec extension** - Efficient vector similarity search
-- **768-dimensional embeddings** - Using multilingual-e5-base model
+- **Configurable embeddings model** - By default, the app uses the multilingual-e5-base model that offers 768-dimensional embeddings. You can configure any other model from Hugging Face as long as it is supported by the transformers library.
 - **Local embeddings** - Runs entirely on your machine (HuggingFace Transformers)
-
-### AI Configuration
-
-Flexible AI provider system configurable from the UI:
-
-- **Text Generation**: Google Gemini (configurable model)
-    - Default: `gemini-2.5-flash`
-    - Lightweight tasks: `gemini-2.0-flash-lite`
-    - Agent operations: `gemini-2.5-flash`
-
-- **Embeddings**: HuggingFace (local) or Gemini (remote)
-    - Default: `intfloat/multilingual-e5-base` (768 dimensions, local)
-    - Alternative: `gemini-embedding-exp-03-07` (1536 dimensions, API)
 
 ---
 
@@ -285,7 +278,7 @@ Flexible AI provider system configurable from the UI:
 Hathi provides a configuration UI accessible directly from the application—no need to edit config files manually! Access all settings from the menu.
 
 <p align="center">
-  <img src="public/ConfigUI.png" alt="Configuration UI" width="800">
+  <img src="public/ConfigUI.png" alt="Configuration UI" width="600">
 </p>
 
 ### User Preferences
@@ -315,30 +308,22 @@ Hathi currently supports **Google Gemini models** for the AI features and the Ag
 
 **Setting Up Your API Key**
 
-1. Obtain your Google AI API key from [Google AI Studio](https://aistudio.google.com/)
+1. Get your Google AI API key from [Google AI Studio](https://aistudio.google.com/)
 2. Open the Configuration UI in Hathi
-3. Paste your API key in the designated field
-4. Click "Validate" to test the connection
-5. The system will confirm if your API key is valid and working
-
-**API Key Validation**
-
-- Real-time validation checks your API key's authenticity
-- Verifies connectivity to Google's AI services
-- Displays clear success or error messages
-- Ensures AI features are ready before you start using them
+3. Paste your API key and click "Validate"
+4. The system confirms if your key is valid and working
 
 **Configurable Models**
 
-Hathi allows you to configure three different Gemini models for different purposes. You can use the same model for all three, or choose different models based on your needs and budget:
+Hathi uses three AI models for different tasks:
 
-1. **Text Generation Model** - Used for note structuring, grammar fixes, and general text generation tasks
-2. **Lite Model** - Used for lightweight tasks like context suggestions and TODO deadline extraction. Using a smaller/cheaper model here can help save on API costs
-3. **Agent Model** - Used for AI agent reasoning, query understanding, and orchestrating tool calls in the chat interface
+1. **Text Generation Model** - Structures notes, fixes grammar, and generates text
+2. **Lite Model** - Handles lightweight tasks like context suggestions and TODO extraction (use a cheaper model here to save costs)
+3. **Agent Model** - Powers the AI chat agent
 
-All three models can be configured to use the same Gemini model (e.g., `gemini-2.5-flash`) or different ones based on your preference. For example, you might use `gemini-2.5-flash` for the agent and text generation, but `gemini-2.0-flash-lite` for the lite model to reduce costs.
+You can use the same Gemini model for all three or mix different models based on your needs. For example, use `gemini-2.5-flash` for the agent and `gemini-2.0-flash-lite` for the lite model to reduce costs.
 
-Model selections are saved automatically and applied immediately to all relevant operations.
+Changes save automatically and apply immediately.
 
 ---
 
@@ -409,8 +394,6 @@ LOG_PERF_TO_CSV=false
 NEXT_PUBLIC_DISPLAY_TOOL_INFO=false  # Show AI tool execution info
 ```
 
-Get your Google AI API key from [Google AI Studio](https://aistudio.google.com/) or configure it from the app UI.
-
 #### 3. Setup SQLite Database
 
 ```bash
@@ -441,13 +424,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### AI Configuration
 
-**Configure from UI (Recommended):** Access AI settings directly in the application to set your Google AI API key and select models—no need to edit files!
+**Configure from UI (Recommended):** Set your Google AI API key and select models directly in the app.
 
-**Environment Variables (Alternative):**
-
-- Set `GOOGLE_AI_API_KEY` for Gemini models
-- Configure specific models with `GEMINI_*_MODEL` variables
-- Use `EMBEDDING_PROVIDER=HUGGINGFACE` for local embeddings (no API key needed)
+**Environment Variables (Alternative):** Use `.env.local` to configure models if preferred. UI settings override environment variables.
 
 ---
 
@@ -602,11 +581,11 @@ hathi-db/
 
 Hathi uses **SQLite with sqlite-vec** for local storage:
 
-- **Notes table**: Stores note content, metadata, embeddings
-- **Contexts table**: Manages context definitions
-- **Notes-Contexts junction**: Many-to-many relationships
-- **Vector embeddings**: 768-dimensional vectors stored as JSON
-- **Semantic search**: Using cosine similarity on embeddings
+- **Notes table**: Stores note content, metadata, and embeddings
+- **Contexts table**: Stores context definitions
+- **Notes-Contexts junction**: Links notes to multiple contexts
+- **Vector embeddings**: 768-dimensional vectors for semantic search
+- **Similarity search**: Uses cosine similarity to find related notes
 
 #### AI Pipeline
 
@@ -618,14 +597,12 @@ Hathi uses **SQLite with sqlite-vec** for local storage:
 
 #### Agent System
 
-The AI agent uses multiple tools to answer queries:
+The AI agent uses multiple tools:
 
-- **filter_notes**: Advanced filtering (date, context, type, content)
-- **semantic_search**: Vector similarity search
+- **filter_notes**: Filter by date, context, type, or content
+- **semantic_search**: Find similar notes using vectors
 - **summarize_notes**: Summarize note collections
-- **get_filter_options**: Discover available contexts/tags
-
-Tools are orchestrated by Gemini with the Vercel AI SDK.
+- **get_filter_options**: List available contexts and tags
 
 ### Development Tips
 
@@ -776,6 +753,62 @@ See the [LICENSE](LICENSE) file for full details.
 - **sqlite-vec** - Vector search in SQLite
 - **HuggingFace Transformers** - Local embeddings
 - **Google Gemini** - LLM capabilities
+
+---
+
+## Future Roadmap
+
+Hathi is actively evolving to become an even more powerful AI-powered second brain. Here are the exciting features planned for future releases:
+
+### 🔄 Automatic Database Backup
+
+- [ ] **Scheduled backups** - Automatic daily/weekly backup of your local database
+- [ ] **Cloud sync options** - Optional integration with cloud storage providers
+- [ ] **Version history** - Keep multiple backup versions with restore capabilities
+- [ ] **Cross-device sync** - Seamlessly access your notes across multiple devices
+
+### 🔌 MCP Integration with Agent
+
+- [ ] **Model Context Protocol support** - Enhanced AI agent capabilities through MCP
+- [ ] **Extended tool ecosystem** - Access to a broader range of AI tools and services
+- [ ] **Better reasoning** - More sophisticated agent interactions and workflows
+- [ ] **Plugin architecture** - Community-driven extensions for specialized use cases
+
+### 📝 Custom Prompt Templates
+
+Define your own AI workflows and templates for different scenarios:
+
+- [ ] **Email templates** - Generate professional emails with your personal style
+- [ ] **Daily summary templates** - Customize how your daily summaries are formatted
+- [ ] **Meeting note templates** - Standardized formats for different meeting types
+- [ ] **Content generation** - Custom prompts for blogs, reports, or creative writing
+- [ ] **Workflow automation** - Chain multiple AI operations with custom prompts
+
+### 📅 Weekday Context Descriptions
+
+A prompt for each day of the week that can be used by the AI to generate the `get me started for today` responses. Personalize your weekly workflow for smarter daily summaries:
+
+- [ ] **Monday setup** - "Planning day: Review weekly goals and priorities"
+- [ ] **Wednesday check-ins** - "Mid-week review: Assess progress and adjust plans"
+- [ ] **Friday wrap-ups** - "Reflection day: Document learnings and plan next week"
+- [ ] **Custom descriptions** - Define what you typically do on each weekday
+- [ ] **Smart summaries** - AI uses weekday context to generate relevant "get me started" prompts
+
+### 🎨 Enhanced User Interface
+
+- [ ] **Professional redesign** - Modern, intuitive interface design
+- [ ] **Accessibility improvements** - Better support for screen readers and keyboard navigation
+- [ ] **Mobile optimization** - Responsive design for seamless mobile note-taking
+- [ ] **Customizable themes** - Multiple color schemes and layout options
+- [ ] **Looking for UI designers** - Open to collaboration with talented designers
+
+### 📜 Infinite Scroll Journal
+
+- [ ] **Seamless date navigation** - Scroll through dates without page reloads
+- [ ] **Performance optimization** - Efficient loading of large date ranges
+- [ ] **Smooth transitions** - Fluid scrolling experience across months and years
+- [ ] **Date anchoring** - Maintain context while browsing historical entries
+- [ ] **Quick navigation** - Jump to specific dates while maintaining scroll position
 
 ---
 
