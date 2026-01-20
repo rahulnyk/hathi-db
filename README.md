@@ -34,7 +34,7 @@
 
 Hathi is built on a simple philosophy:
 
-<div role="note" aria-label="Key idea: Dump anything without worrying about the retrieval." style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #000000; padding: 20px; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); border: 1px solid rgba(255, 255, 255, 0.2);">
+<div role="note" aria-label="Key idea: Dump anything without worrying about the retrieval." style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); border: 1px solid rgba(255, 255, 255, 0.2);">
   <strong>💡 Dump anything without worrying about the retrieval</strong>
 </div>
 
