@@ -293,7 +293,7 @@ Hathi provides a configuration UI accessible directly from the application—no 
 
 - Control chat submission behavior in the AI agent
 - When enabled: Press Enter to save the note (Shift+Enter for new line)
-- When disabled: Press Enter for new line (Shift + Enter to save the note)
+- When disabled: Press Enter for new line (Shift+Enter to save the note)
 
 **Auto Context Suggestions**
 
