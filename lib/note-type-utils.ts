@@ -103,6 +103,7 @@ export function isTodoContent(content: string): boolean {
         "remind me to",
         "remember to",
         "don't forget",
+        "dont forget",
         "need to do",
         "have to do",
         "action item:",
@@ -127,7 +128,7 @@ export function isTodoContent(content: string): boolean {
  */
 export function determineNoteType(
     content: string,
-    explicitType?: NoteType
+    explicitType?: NoteType,
 ): NoteType {
     // If an explicit type is provided and it's not null, use it
     if (explicitType && explicitType !== null) {
